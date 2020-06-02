@@ -1,12 +1,12 @@
-# Multi-GPU Extraction of I3D Features
+# Multi-GPU Extraction of Video Features
 
-This is a PyTorch module which does I3D feature extraction in parallel and can be scaled to any number of GPUs. The I3D paper is available here: [Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset](https://arxiv.org/abs/1705.07750). 
+This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, only I3D feature extraction is supported.
 
-Please note, it uses PWC-Net instead of the TVL1 algorithm, which was used in the original I3D paper as it is much faster. Yet, one may create a Pool Request implementing TVL1 as an option to form optical flow frames.
+## I3D
 
-## Quick Start
+Please note, this implementation uses PWC-Net instead of the TVL1 algorithm, which was used in the original I3D paper as PWC Net is much faster. Yet, one may create a Pull Request implementing TVL1 as an option to form optical flow frames.
 
-### Set up the Environment
+### Set up the Environment for I3D
 Setup `conda` environment. Requirements are in file `conda_env_i3d.yml`
 ```bash
 # it will create new conda environment called 'i3d' on your machine 
@@ -15,12 +15,10 @@ conda activate i3d
 ```
 
 ### Run an Example
-It will extract I3D features and print the resulting features for `./sample` videos using 0th and 2nd devices in parallel. The features are going to be extracted with default parameters. Check out `python extrac_i3d.py --help` for help on available options.
+It will extract I3D features for `./sample` videos using 0th and 2nd devices in parallel. The features are going to be extracted with the default parameters. Check out `python extrac_i3d.py --help` for help on available options.
 ```bash
 python main.py --device_ids 0 2 --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
 ```
-
-## More Examples
 
 The video paths can be specified in as a file with paths
 ```bash
@@ -45,10 +43,10 @@ python main.py --device_ids 0 2 --extraction_fps 25 --stack_size 24 --step_size 
 
 Be careful with the `--keep_frames` argument when using `--extraction_fps` as it may mess up the kept frames. If `--keep_frames` is specified, it keeps them in `--tmp_path` (`./tmp` by default).
 
-
-## License 
-All is MIT except for PWC Net implementation in I3D. If you are using PWC Net (in I3D extraction, for example), please read this [License](https://github.com/sniklaus/pytorch-pwc) (Last time I checked it was _GPL-3.0_).
-
-## Credits
+### Credits
 1. An implementation of PWC-Net in PyTorch: https://github.com/sniklaus/pytorch-pwc
 2. A port of I3D weights from TensorFlow to PyTorch: https://github.com/hassony2/kinetics_i3d_pytorch
+3. The I3D paper: [Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset](https://arxiv.org/abs/1705.07750).
+
+### License 
+All is MIT except for PWC Net implementation in I3D. Please read the PWC implementation [License](https://github.com/sniklaus/pytorch-pwc) (Last time I checked it was _GPL-3.0_).
