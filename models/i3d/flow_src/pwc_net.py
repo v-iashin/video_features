@@ -5,7 +5,7 @@
     I need to rewrite it a bit as I cannot import `run.py` without CLI arguments
     but I want to use it for debugging
 '''
-import i3d.flow_src.correlation as correlation
+import models.i3d.flow_src.correlation as correlation
 
 import numpy
 import math

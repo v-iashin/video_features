@@ -10,13 +10,11 @@ from tqdm import tqdm
 # import traceback
 
 # sys.path.insert(1, os.path.join(sys.path[0], '..'))
-from i3d.flow_src.pwc_net import PWCNet
-from i3d.i3d_src.i3d_feats import i3d_features
-from i3d.i3d_src.i3d_net import I3D_RGB_FLOW
-from i3d.utils.utils import (extract_frames_from_video, form_iter_list,
-                             form_list_from_user_input)
-
-
+from models.i3d.flow_src.pwc_net import PWCNet
+from models.i3d.i3d_src.i3d_feats import i3d_features
+from models.i3d.i3d_src.i3d_net import I3D_RGB_FLOW
+from models.i3d.utils.utils import extract_frames_from_video, form_iter_list
+from utils.utils import form_list_from_user_input
 
 class ExtractI3D(torch.nn.Module):
 

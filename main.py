@@ -1,8 +1,8 @@
 import torch
 import argparse
 
-from i3d.utils.utils import form_list_from_user_input
-from i3d.extract_i3d import ExtractI3D
+from utils.utils import form_list_from_user_input
+from models.i3d.extract_i3d import ExtractI3D
 
 
 def parallel_feature_extraction(args: argparse.Namespace, feature_name: str = 'i3d'):
@@ -51,9 +51,9 @@ if __name__ == "__main__":
                         help='what to do once the stack is extracted')
     parser.add_argument('--output_path', default='./output', help='where to store results if saved')
     # I3D options
-    parser.add_argument('--pwc_path', default='./i3d/checkpoints/pwc_net.pt')
-    parser.add_argument('--i3d_rgb_path', default='./i3d/checkpoints/i3d_rgb.pt')
-    parser.add_argument('--i3d_flow_path', default='./i3d/checkpoints/i3d_flow.pt')
+    parser.add_argument('--pwc_path', default='./models/i3d/checkpoints/pwc_net.pt')
+    parser.add_argument('--i3d_rgb_path', default='./models/i3d/checkpoints/i3d_rgb.pt')
+    parser.add_argument('--i3d_flow_path', default='./models/i3d/checkpoints/i3d_flow.pt')
     parser.add_argument('--min_side_size', type=int, default=256, help='min(HEIGHT, WIDTH)')
     parser.add_argument('--extraction_fps', type=int, help='Do not specify for original video fps')
     parser.add_argument('--stack_size', type=int, default=64, help='Feature time span in fps')

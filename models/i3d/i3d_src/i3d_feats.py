@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from i3d.utils.utils import center_crop
+from models.i3d.utils.utils import center_crop
 
 
 def i3d_features(frame_paths: List[str], stack_size: int, device: torch.device,

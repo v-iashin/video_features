@@ -3,6 +3,8 @@ import numpy as np
 import cv2
 import subprocess
 
+from utils.utils import which_ffmpeg
+
 from typing import Union
 
 def center_crop(tensor, crop_size: int = 224):
@@ -75,16 +77,6 @@ def form_iter_list(framepaths, step_size, stack_size, phase=None, min_ratio_for_
 
     return stacks
 
-def which_ffmpeg() -> str:
-    '''Determines the path to ffmpeg library
-
-    Returns:
-        str -- path to the library
-    '''
-    result = subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    ffmpeg_path = result.stdout.decode('utf-8').replace('\n', '')
-    return ffmpeg_path
-
 def extract_frames_from_video(video_path: str, extraction_fps: Union[str, None], 
                               min_side_target_size: int, tmp_path: str) -> str:
     '''Extracts frames from a video using the specified path.
@@ -135,16 +127,3 @@ def extract_frames_from_video(video_path: str, extraction_fps: Union[str, None],
     subprocess.call(extract_cmd.split())
 
     return frames_path
-
-
-def form_list_from_user_input(args):
-    if args.file_with_video_paths is not None:
-        with open(args.file_with_video_paths) as rfile:
-            # remove carriage return
-            path_list = [line.replace('\n', '') for line in rfile.readlines()]
-            # remove empty lines
-            path_list = [path for path in path_list if len(path) > 0]
-    else:
-        path_list = args.video_paths
-
-    return path_list
