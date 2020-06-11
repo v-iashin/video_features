@@ -36,13 +36,10 @@ class ExtractI3D(torch.nn.Module):
         self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
 
-    def forward(self, indices: torch.LongTensor) -> Dict[str, Union[torch.FloatTensor, str]]:
+    def forward(self, indices: torch.LongTensor):
         '''
         Arguments:
             indices {torch.LongTensor} -- indices to self.path_list
-
-        Returns:
-            Dict[str, Union[torch.FloatTensor, str]] -- dict features and its type
         '''
         device = indices.device
         
