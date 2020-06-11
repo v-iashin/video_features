@@ -1,27 +1,20 @@
 import torch
 import argparse
 
-from utils.utils import form_list_from_user_input
-from models.i3d.extract_i3d import ExtractI3D
+from utils.utils import form_list_from_user_input, fix_tensorflow_gpu_allocation
 
 
-def parallel_feature_extraction(args: argparse.Namespace, feature_name: str = 'i3d'):
+def parallel_feature_extraction(args):
     '''Distributes the feature extraction in a embarasingly-parallel fashion. Specifically,
-    it divides the dataset (list of video paths) among all specified devices evenly.
+    it divides the dataset (list of video paths) among all specified devices evenly.'''
 
-    Arguments:
-        args {argparse.Namespace} -- user-defined arguments
-
-    Keyword Arguments:
-        feature_name {str} (default: {'i3d'})
-    '''
-    if args.on_extraction == 'save_numpy':
-        print(f'Saving features to {args.output_path}')
-    if args.keep_frames:
-        print(f'Saving frames to {args.tmp_path}')
-
-    if feature_name == 'i3d':
+    if args.feature_type == 'i3d':
+        from models.i3d.extract_i3d import ExtractI3D  # defined here to avoid import errors
         extractor = ExtractI3D(args)
+    elif args.feature_type == 'vggish':
+        from models.vggish.extract_vggish import ExtractVGGish  # defined here to avoid import errors
+        fix_tensorflow_gpu_allocation(args)
+        extractor = ExtractVGGish(args)
 
     # the indices correspond to the positions of the target videos in
     # the video_paths list. They are required here because
@@ -34,15 +27,17 @@ def parallel_feature_extraction(args: argparse.Namespace, feature_name: str = 'i
     replicas = torch.nn.parallel.replicate(extractor, args.device_ids[:len(indices)])
     inputs = torch.nn.parallel.scatter(indices, args.device_ids[:len(indices)])
     torch.nn.parallel.parallel_apply(replicas[:len(inputs)], inputs)
+    # closing the tqdm progress bar to avoid some unexpected errors due to multi-threading
+    extractor.progress.close()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Extract Features')
     # Main args
+    parser.add_argument('--feature_type', required=True, choices=['i3d', 'vggish'])
     parser.add_argument('--video_paths', nargs='+', help='space-separated paths to videos')
     parser.add_argument('--file_with_video_paths', help='.txt file where each line is a path')
     parser.add_argument('--device_ids', type=int, nargs='+', help='space-separated device ids')
-    parser.add_argument('--feature_type', default='i3d', choices=['i3d'])
     parser.add_argument('--tmp_path', default='./tmp',
                         help='folder to store the extracted frames before the extraction')
     parser.add_argument('--keep_frames', dest='keep_frames', action='store_true', default=False,
@@ -63,7 +58,16 @@ if __name__ == "__main__":
         help='to show the predictions of the i3d model into kinetics classes for each feature'
     )
     parser.add_argument('--kinetics_class_labels', default='./checkpoints/label_map.txt')
+    # VGGish options
+    parser.add_argument('--vggish_model_path', default='./models/vggish/checkpoints/vggish_model.ckpt')
+    parser.add_argument('--vggish_pca_path', default='./models/vggish/checkpoints/vggish_pca_params.npz')
 
     args = parser.parse_args()
+
+    # some printing
+    if args.on_extraction == 'save_numpy':
+        print(f'Saving features to {args.output_path}')
+    if args.keep_frames:
+        print(f'Keeping temp files in {args.tmp_path}')
 
     parallel_feature_extraction(args)

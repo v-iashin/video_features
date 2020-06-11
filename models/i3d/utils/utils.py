@@ -87,12 +87,10 @@ def extract_frames_from_video(video_path: str, extraction_fps: Union[str, None],
         min_side_target_size {int} -- min(height, width) of the resized video
         tmp_path {str} -- path where to extract frames
 
-    Raises:
-        Exeption: ffmpeg is not installed
-
     Returns:
         [str] -- path to the folder with extracted frames
     '''
+    assert which_ffmpeg() != '', 'Is ffmpeg installed? Check if the conda environment is activated.'
     assert video_path.endswith('.mp4'), 'The file does not end with .mp4. Comment this if expected'
 
     video = cv2.VideoCapture(video_path)
@@ -111,16 +109,13 @@ def extract_frames_from_video(video_path: str, extraction_fps: Union[str, None],
     else:
         os.makedirs(frames_path, exist_ok=True)
     
-    # Extract frames: call ffmpeg
     # vertical/horizontal video handling
     if width > height:
         size = f'-1:{min_side_target_size}'
     else:
         size = f'{min_side_target_size}:-1'
     
-    if which_ffmpeg() == '':
-        raise Exception('Is ffmpeg installed? Check if the conda environment is activated.')
-
+    # Extract frames: call ffmpeg
     extract_cmd = f'{which_ffmpeg()} -hide_banner -loglevel panic -y -i {video_path}'
     extract_cmd += f' -vf scale={size} -r {extraction_fps} -q:v 2 {frames_path}/%6d.jpg'
 

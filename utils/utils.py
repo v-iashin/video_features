@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 def form_list_from_user_input(args):
@@ -22,3 +23,21 @@ def which_ffmpeg() -> str:
     result = subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     ffmpeg_path = result.stdout.decode('utf-8').replace('\n', '')
     return ffmpeg_path
+
+
+def fix_tensorflow_gpu_allocation(argparse_args):
+    '''tf somehow makes it impossible to specify a GPU index in the code, hence we use the env variable.
+    To address this, we will assign the user-defined cuda ids to environment variable CUDA_VISIBLE_DEVICES.
+
+    For example: if user specifies --device_ids 1 3 5 we will assign 1,3,5 to CUDA_VISIBLE_DEVICES environment
+                 variable and reassign args.device_ids with [0, 1, 2] which are indices to the list of
+                 user specified ids [1, 3, 5].
+
+    Args:
+        argparse_args (args): user-defined arguments from argparse
+    '''
+    # argparse_args.device_ids are ints which cannot be joined with ','.join()
+    device_ids = [str(index) for index in argparse_args.device_ids]
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(device_ids)
+    # [1, 3, 5] -> [0, 1, 2]
+    argparse_args.device_ids = list(range(len(argparse_args.device_ids)))
