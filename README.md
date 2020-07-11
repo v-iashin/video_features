@@ -1,11 +1,13 @@
 # Multi-GPU Extraction of Video Features
 
-This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, I3D and VGGish features are supported.
+This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D** and **VGGish** features are supported.
 
 
 ## I3D
 
-Please note, this implementation uses PWC-Net instead of the TVL1 algorithm, which was used in the original I3D paper as PWC Net is much faster. Yet, one may create a Pull Request implementing TVL1 as an option to form optical flow frames.
+The _Inflated 3D ([I3D](https://arxiv.org/abs/1705.07750))_ features are extracted using a pre-trained model on [Kinetics](https://deepmind.com/research/open-source/kinetics). Here, the features are extracted from the second-to-the-last layer of I3D, before summing them up. Therefore, it outputs two tensors with 1024-d features: for RGB and flow streams. By default, it expects to input 64 RGB and flow frames which spans 2.56 seconds of the video recorded at 25 fps. In the default case, the features will be of size `Tv x 1024` where `Tv = duration / 2.56`.
+
+Please note, this implementation uses [PWC-Net](https://arxiv.org/abs/1709.02371) instead of the TV-L1 algorithm, which was used in the original I3D paper as PWC-Net is much faster. Yet, it might possibly lead to worse peformance. We tested it with PWC-Net flow frames and found that the performance is reasonable. You may test it yourself by providing `--show_kinetics_pred` flag. Also, one may create a Pull Request implementing [TV-L1](https://docs.opencv.org/master/d4/dee/tutorial_optical_flow.html) as an option to form optical flow frames.
 
 ### Set up the Environment for I3D
 Setup `conda` environment. Requirements are in file `conda_env_i3d.yml`
@@ -54,7 +56,9 @@ All is MIT except for PWC Net implementation in I3D. Please read the PWC impleme
 
 ## VGGish
 
-The extraction of VGGish features is implemeted as a wrapper of the TensorFlow implementation.
+The [VGGish](https://research.google/pubs/pub45611/) feature extraction mimics the procedure provided in the [TensorFlow repository](https://github.com/tensorflow/models/tree/0b3a8abf095cb8866ca74c2e118c1894c0e6f947/research/audioset/vggish). Specifically, the VGGish model was pre-trained on [AudioSet](https://research.google.com/audioset/). The extracted features are from pre-classification layer after activation. The feature tensor will be 128-d and correspond to 0.96 sec of the original video. Interestingly, this might be represented as 24 frames of a 25 fps video. Therefore, you should expect `Ta x 128` features, where `Ta = duration / 0.96`.
+
+The extraction of VGGish features is implemeted as a wrapper of the TensorFlow implementation. See [Credits](#credits).
 
 ### Set up the Environment for VGGish
 Setup `conda` environment. Requirements are in file `conda_env_vggish.yml`
