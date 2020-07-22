@@ -1,6 +1,5 @@
 import os
-import shutil
-from typing import Dict, Union
+from typing import Union
 
 import numpy as np
 import torch
@@ -25,13 +24,16 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 cfg = tf.ConfigProto(allow_soft_placement=True)
 cfg.gpu_options.allow_growth = True
 
+VGGISH_MODEL_PATH = './models/vggish/checkpoints/vggish_model.ckpt'
+VGGISH_PCA_PATH = './models/vggish/checkpoints/vggish_pca_params.npz'
+
 class ExtractVGGish(torch.nn.Module):
 
     def __init__(self, args):
         super(ExtractVGGish, self).__init__()
         self.path_list = form_list_from_user_input(args)
-        self.vggish_model_path = args.vggish_model_path
-        self.vggish_pca_path = args.vggish_pca_path
+        self.vggish_model_path = VGGISH_MODEL_PATH
+        self.vggish_pca_path = VGGISH_PCA_PATH
         self.keep_audio_files = args.keep_frames  # naming problem, yes. :TODO
         self.on_extraction = args.on_extraction
         self.tmp_path = args.tmp_path
