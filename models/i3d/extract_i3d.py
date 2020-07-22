@@ -16,20 +16,34 @@ from models.i3d.i3d_src.i3d_net import I3D_RGB_FLOW
 from models.i3d.utils.utils import extract_frames_from_video, form_iter_list
 from utils.utils import form_list_from_user_input
 
+KINETICS_CLASSES_PATH = './models/i3d/checkpoints/label_map.txt'
+PWC_PATH = './models/i3d/checkpoints/pwc_net.pt'
+I3D_RGB_PATH = './models/i3d/checkpoints/i3d_rgb.pt'
+I3D_FLOW_PATH = './models/i3d/checkpoints/i3d_flow.pt'
+PRE_CENTRAL_CROP_MIN_SIDE_SIZE = 256
+CENTRAL_CROP_MIN_SIDE_SIZE = 224
+DEFAULT_I3D_STEP_SIZE = 64
+DEFAULT_I3D_STACK_SIZE = 64
+
+
 class ExtractI3D(torch.nn.Module):
 
     def __init__(self, args):
         super(ExtractI3D, self).__init__()
         self.path_list = form_list_from_user_input(args)
-        self.pwc_path = args.pwc_path
-        self.i3d_rgb_path = args.i3d_rgb_path
-        self.i3d_flow_path = args.i3d_flow_path
-        self.min_side_size = args.min_side_size
+        self.pwc_path = PWC_PATH
+        self.i3d_rgb_path = I3D_RGB_PATH
+        self.i3d_flow_path = I3D_FLOW_PATH
+        self.min_side_size = PRE_CENTRAL_CROP_MIN_SIDE_SIZE
         self.extraction_fps = args.extraction_fps
         self.step_size = args.step_size
         self.stack_size = args.stack_size
+        if self.step_size is None:
+            self.step_size = DEFAULT_I3D_STEP_SIZE
+        if self.stack_size is None:
+            self.stack_size = DEFAULT_I3D_STACK_SIZE
         self.show_kinetics_pred = args.show_kinetics_pred
-        self.kinetics_class_labels = args.kinetics_class_labels
+        self.kinetics_class_path = KINETICS_CLASSES_PATH
         self.keep_frames = args.keep_frames
         self.on_extraction = args.on_extraction
         self.tmp_path = args.tmp_path
@@ -88,10 +102,8 @@ class ExtractI3D(torch.nn.Module):
         # T+1, since T flow frames require T+1 rgb frames
         frame_paths = form_iter_list(frame_paths, self.step_size, self.stack_size+1)
         # extract features
-        i3d_feats = i3d_features(
-            frame_paths, self.stack_size, device, pwc_model, i3d_model,
-            self.show_kinetics_pred, self.kinetics_class_labels
-        )
+        i3d_feats = i3d_features(frame_paths, self.stack_size, device, pwc_model, i3d_model, 
+                                 self.show_kinetics_pred, self.kinetics_class_path)
 
         # removes the folder with extracted frames to preserve disk space
         if not self.keep_frames:
@@ -116,46 +128,3 @@ class ExtractI3D(torch.nn.Module):
             raise NotImplementedError
 
         return i3d_feats
-
-
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description='Extract I3D Features')
-#     parser.add_argument('--video_paths', nargs='+', help='space-separated paths to videos')
-#     parser.add_argument('--file_with_video_paths', help='.txt file where each line is a path')
-#     parser.add_argument('--tmp_path', default='../tmp'
-#                         help='folder to store the extracted frames before the extraction')
-#     parser.add_argument('--output_path', default='./output', help='where to store results if saved')
-#     parser.add_argument('--pwc_path', default='./checkpoints/pwc_net.pt')
-#     parser.add_argument('--i3d_rgb_path', default='./checkpoints/i3d_rgb.pt')
-#     parser.add_argument('--i3d_flow_path', default='./checkpoints/i3d_flow.pt')
-#     parser.add_argument('--min_side_size', type=int, default=256, help='min(HEIGHT, WIDTH)')
-#     parser.add_argument('--extraction_fps', type=int, help='Do not specify for original video fps')
-#     parser.add_argument('--stack_size', type=int, default=64, help='Feature time span in fps')
-#     parser.add_argument('--step_size', type=int, default=64, help='Feature step size in fps')
-#     parser.add_argument('--device_id', type=int, default=0, help='Device to run the extraction on')
-#     parser.add_argument(
-#         '--show_kinetics_pred', dest='show_kinetics_pred', action='store_true', default=False,
-#         help='to show the predictions of the i3d model into kinetics classes for each feature'
-#     )
-#     parser.add_argument('--kinetics_class_labels', default='./checkpoints/label_map.txt')
-#     parser.add_argument(
-#         '--keep_frames', dest='keep_frames', action='store_true', default=False,
-#         help='to keep frames after feature extraction'
-#     )
-#     parser.add_argument(
-#         '--on_extraction', default='print', choices=['print', 'save_numpy'],
-#         help='what to do once the stack is extracted'
-#     )
-
-#     args = parser.parse_args()
-
-#     if torch.cuda.is_available():
-#         video_paths = form_list_from_user_input(args)
-#         # create a list of indices [0, video_paths_length]. ExtractI3D will use them and their
-#         # device in the forward pass
-#         indices = torch.arange(len(video_paths), device=torch.device(args.device_id))
-#         # init the module and call forward pass
-#         i3d_extractor = ExtractI3D(args)
-#         i3d_extractor(indices)
-#     else:
-#         raise Exception('Cannot detect a cuda device. Sorry, it is implemented for GPU-only.')

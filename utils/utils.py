@@ -1,7 +1,33 @@
+import argparse
 import os
 import subprocess
 
-def form_list_from_user_input(args):
+
+def sanity_check(args: argparse.Namespace):
+    '''Checks the prased user arguments.
+
+    Args:
+        args (argparse.Namespace): Parsed user arguments
+    '''
+    if args.show_kinetics_pred:
+        print('You want to see predictions. So, I will use only the first GPU from the list you specified.')
+        args.device_ids = [args.device_ids[0]]
+    if args.feature_type == 'r21d_rgb':
+        message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
+        assert args.extraction_fps is None, message
+        if args.keep_frames:
+            print('If you want to keep frames while extracting R(2+1)D features, please create an issue')
+
+def form_list_from_user_input(args: argparse.Namespace) -> list:
+    '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
+    transforms the user input into a list of paths.
+
+    Args:
+        args (argparse.Namespace): Parsed user arguments
+
+    Returns:
+        list: list with paths
+    '''
     if args.file_with_video_paths is not None:
         with open(args.file_with_video_paths) as rfile:
             # remove carriage return
