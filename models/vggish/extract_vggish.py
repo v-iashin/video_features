@@ -1,4 +1,5 @@
 import os
+import pathlib
 from typing import Union
 
 import numpy as np
@@ -79,7 +80,7 @@ class ExtractVGGish(torch.nn.Module):
             video_path (Union[str, None], optional): . Defaults to None.
 
         Keyword Arguments:
-            video_path {Union[str, None]} -- if you would like to use import it and use it as 
+            video_path {Union[str, None]} -- if you would like to use import it and use it as
                                              "path -> i3d features"-fashion (default: {None})
 
         Returns:
@@ -89,8 +90,16 @@ class ExtractVGGish(torch.nn.Module):
         if video_path is None:
             video_path = self.path_list[idx]
 
-        # extract audio files from .mp4
-        audio_wav_path, audio_aac_path = extract_wav_from_mp4(video_path, self.tmp_path)
+        file_ext = pathlib.Path(video_path).suffix
+
+        if file_ext == '.mp4':
+            # extract audio files from .mp4
+            audio_wav_path, audio_aac_path = extract_wav_from_mp4(video_path, self.tmp_path)
+        elif file_ext == '.wav':
+            audio_wav_path = video_path
+            audio_aac_path = None
+        else:
+            raise NotImplementedError
 
         # extract features (credits: tensorflow models)
         examples_batch = vggish_input.wavfile_to_examples(audio_wav_path)
@@ -100,8 +109,9 @@ class ExtractVGGish(torch.nn.Module):
 
         # removes the folder with extracted frames to preserve disk space
         if not self.keep_audio_files:
-            os.remove(audio_wav_path)
-            os.remove(audio_aac_path)
+            if video_path.endswith('.mp4'):
+                os.remove(audio_wav_path)
+                os.remove(audio_aac_path)
 
         # What to do once features are extracted.
         if self.on_extraction == 'print':
@@ -111,13 +121,12 @@ class ExtractVGGish(torch.nn.Module):
             # make dir if doesn't exist
             os.makedirs(self.output_path, exist_ok=True)
             # extract file name and change the extention
-            filename = os.path.split(video_path)[-1].replace('.mp4', '_vggish.npy')
+            filename = os.path.split(video_path)[-1].replace(f'{file_ext}', '_vggish.npy')
             # construct the paths to save the features
             feature_path = os.path.join(self.output_path, filename)
             # save features
             np.save(feature_path, vggish_stack)
         else:
             raise NotImplementedError
-        
-        return vggish_stack
 
+        return vggish_stack
