@@ -1,3 +1,8 @@
+# we import unused `numpy` before `torch` because if run from `subprocess.run()`
+# it fails with
+# `Error: mkl-service + Intel(R) MKL: MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library.`
+# (see https://github.com/pytorch/pytorch/issues/37377)
+import numpy
 import torch
 import argparse
 
