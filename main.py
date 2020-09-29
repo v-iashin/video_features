@@ -9,8 +9,8 @@ import argparse
 from utils.utils import form_list_from_user_input, fix_tensorflow_gpu_allocation, sanity_check
 
 def parallel_feature_extraction(args):
-    '''Distributes the feature extraction in a embarasingly-parallel fashion. Specifically,
-    it divides the dataset (list of video paths) among all specified devices evenly.'''
+    '''Distributes the feature extraction in embarasingly-parallel fashion. Specifically,
+    it divides the dataset (list of video paths) among all specified devices evenly and extract features.'''
 
     if args.feature_type == 'i3d':
         from models.i3d.extract_i3d import ExtractI3D  # defined here to avoid import errors
@@ -22,6 +22,11 @@ def parallel_feature_extraction(args):
         from models.vggish.extract_vggish import ExtractVGGish  # defined here to avoid import errors
         fix_tensorflow_gpu_allocation(args)
         extractor = ExtractVGGish(args)
+    elif args.feature_type in ['resnet50']:
+        from models.resnet50.extract_resnet50 import ExtractResNet50
+        extractor = ExtractResNet50(args)
+    else:
+        raise NotADirectoryError
 
     # the indices correspond to the positions of the target videos in
     # the video_paths list. They are required here because
@@ -40,7 +45,7 @@ def parallel_feature_extraction(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Extract Features')
-    parser.add_argument('--feature_type', required=True, choices=['i3d', 'vggish', 'r21d_rgb'])
+    parser.add_argument('--feature_type', required=True, choices=['i3d', 'vggish', 'r21d_rgb', 'resnet50'])
     parser.add_argument('--video_paths', nargs='+', help='space-separated paths to videos')
     parser.add_argument('--file_with_video_paths', help='.txt file where each line is a path')
     parser.add_argument('--device_ids', type=int, nargs='+', help='space-separated device ids')
@@ -55,9 +60,15 @@ if __name__ == "__main__":
     parser.add_argument('--extraction_fps', type=int, help='Do not specify for original video fps')
     parser.add_argument('--stack_size', type=int, help='Feature time span in fps')
     parser.add_argument('--step_size', type=int, help='Feature step size in fps')
+    parser.add_argument('--batch_size', type=int, default=1,
+                        help='Batchsize (only frame-wise extractors are supported)')
     parser.add_argument(
         '--show_kinetics_pred', dest='show_kinetics_pred', action='store_true', default=False,
         help='to show the predictions of the i3d/R(2+1)D models into kinetics 400 classes for each feature'
+    )
+    parser.add_argument(
+        '--show_imagenet_pred', dest='show_imagenet_pred', action='store_true', default=False,
+        help='to show the predictions of the frame-wise models into imagenet 1k classes for each feature'
     )
 
     args = parser.parse_args()
