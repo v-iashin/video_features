@@ -1,6 +1,6 @@
 # Multi-GPU Extraction of Video Features
 
-This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D**, **R(2+1)D** (RGB-only), and **VGGish** features are supported.
+This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D**, **R(2+1)D** (RGB-only), and **VGGish** features are supported as well as `ResNet-50` (frame-wise).
 
 - [Multi-GPU Extraction of Video Features](#multi-gpu-extraction-of-video-features)
   - [I3D](#i3d)

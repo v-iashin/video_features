@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torchvision.io import video
 
 def show_predictions_on_IN(logits: torch.FloatTensor, imagenet_class_path: str):
-    '''Prints out predictions using logits extracted from one feature window
+    '''Prints out ImageNet predictions for each frame
 
     Args:
         logits (torch.FloatTensor): after-classification layer vector
@@ -97,38 +97,3 @@ def resnet50_features(
     }
 
     return features_with_meta
-
-
-
-# if __name__ == "__main__":
-#     import torchvision.models as models
-#     import sys
-#     import torchvision.transforms as transforms
-#     sys.path.insert(0, '.')  # nopep8
-#     video_path = '/home/vladimir/project4/video_features/sample/v_ZNVhz7ctTq0.mp4'
-#     RESIZE_SIZE = 256
-#     CENTER_CROP_SIZE = 224
-#     TRAIN_MEAN = [0.485, 0.456, 0.406]
-#     TRAIN_STD = [0.229, 0.224, 0.225]
-#     IMAGENET_CLASS_LABELS = '/home/vladimir/project4/video_features/models/resnet50/checkpoints/IN_label_map.txt'
-#     show_imagenet_pred = True
-#     B = 32
-
-#     transforms = transforms.Compose([
-#         transforms.ToPILImage(),
-#         transforms.Resize(RESIZE_SIZE),
-#         transforms.CenterCrop(CENTER_CROP_SIZE),
-#         transforms.ToTensor(),
-#         transforms.Normalize(mean=TRAIN_MEAN, std=TRAIN_STD)
-#     ])
-#     device = torch.device('cuda:0')
-#     model = models.resnet50(pretrained=True).to(device)
-#     model.eval()
-#     # save the pre-trained classifier for show_preds and replace it in the net with identity
-#     model_class = model.fc
-#     model.fc = torch.nn.Identity()
-
-#     features = resnet50_features(
-#         model, video_path, B, device, transforms, show_imagenet_pred, IMAGENET_CLASS_LABELS, model_class
-#     )
-#     print(features['resnet50'].shape)
