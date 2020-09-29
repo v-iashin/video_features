@@ -53,7 +53,7 @@ class ExtractR21D(torch.nn.Module):
             indices {torch.LongTensor} -- indices to self.path_list
         '''
         device = indices.device
-        
+
         r21d = r2plus1d_18(pretrained=True).to(device)
         r21d.eval()
         # save the pre-trained classifier for show_preds and replace it in the net with identity
@@ -76,22 +76,22 @@ class ExtractR21D(torch.nn.Module):
 
     def extract(self, device: torch.device, model: torch.nn.Module, classifier: torch.nn.Module,
                 idx: int, video_path: Union[str, None] = None
-                ) -> Dict[str, Union[torch.nn.Module, str]]:
+                ) -> torch.FloatTensor:
         '''The extraction call. Made to clean the forward call a bit.
 
         Arguments:
             device {torch.device}
             model {torch.nn.Module}
-            classifier {torch.nn.Module} -- pre-trained classification layer, will be used if 
+            classifier {torch.nn.Module} -- pre-trained classification layer, will be used if
                                             show_kinetics_pred is True
             idx {int} -- index to self.video_paths
 
         Keyword Arguments:
-            video_path {Union[str, None]} -- if you would like to use import it and use it as 
-                                             "path -> i3d features"-fashion (default: {None})
+            video_path {Union[str, None]} -- if you would like to use import it and use it as
+                                             "path -> model features"-fashion (default: {None})
 
         Returns:
-            Dict[str, Union[torch.nn.Module, str]] -- dict with i3d features and their type
+            torch.FloatTensor -- float tensor with features (r21d_rgb)
         '''
         if video_path is None:
             video_path = self.path_list[idx]
@@ -118,4 +118,3 @@ class ExtractR21D(torch.nn.Module):
             raise NotImplementedError
 
         return r21d_feats
-

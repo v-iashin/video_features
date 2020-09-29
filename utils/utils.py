@@ -15,8 +15,9 @@ def sanity_check(args: argparse.Namespace):
     if args.feature_type == 'r21d_rgb':
         message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
         assert args.extraction_fps is None, message
+    if args.feature_type in ['resnet50', 'r21d_rgb']:
         if args.keep_frames:
-            print('If you want to keep frames while extracting R(2+1)D features, please create an issue')
+            print('If you want to keep frames while extracting features, please create an issue')
 
 def form_list_from_user_input(args: argparse.Namespace) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function

@@ -23,8 +23,8 @@ def show_predictions_on_K400(logits: torch.FloatTensor, kinetics_class_path: str
 
 
 def r21d_features(
-    model: torch.nn.Module, video_path: str, feature_size: int, stack_size: int, step_size: int, 
-    device: torch.device, transforms: callable, show_kinetics_pred: bool, kinetics_class_path: str, 
+    model: torch.nn.Module, video_path: str, feature_size: int, stack_size: int, step_size: int,
+    device: torch.device, transforms: callable, show_kinetics_pred: bool, kinetics_class_path: str,
     classifier: torch.nn.Module
 ) -> torch.FloatTensor:
     '''Loads the video for a specified video path, generates a slicing pattern given the stack and step sizes,
@@ -63,5 +63,5 @@ def r21d_features(
                 logits = classifier(r21d_feats[stack_idx])
                 print(f'{video_path} @ frames ({start_idx}, {end_idx})')
                 show_predictions_on_K400(logits, kinetics_class_path)
-    
+
     return r21d_feats
