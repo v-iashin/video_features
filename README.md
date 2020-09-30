@@ -1,6 +1,6 @@
 # Multi-GPU Extraction of Video Features
 
-This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D**, **R(2+1)D** (RGB-only), and **VGGish** features are supported as well as `ResNet-50` (frame-wise).
+This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D**, **R(2+1)D** (RGB-only), and **VGGish** features are supported as well as **ResNet-50** (frame-wise).
 
 - [Multi-GPU Extraction of Video Features](#multi-gpu-extraction-of-video-features)
   - [I3D](#i3d)
@@ -27,7 +27,7 @@ This is a PyTorch module that does a feature extraction in parallel on any numbe
 ## I3D
 The _Inflated 3D ([I3D](https://arxiv.org/abs/1705.07750))_ features are extracted using a pre-trained model on [Kinetics 400](https://deepmind.com/research/open-source/kinetics). Here, the features are extracted from the second-to-the-last layer of I3D, before summing them up. Therefore, it outputs two tensors with 1024-d features: for RGB and flow streams. By default, it expects to input 64 RGB and flow frames (`224x224`) which spans 2.56 seconds of the video recorded at 25 fps. In the default case, the features will be of size `Tv x 1024` where `Tv = duration / 2.56`.
 
-Please note, this implementation uses [PWC-Net](https://arxiv.org/abs/1709.02371) instead of the TV-L1 algorithm, which was used in the original I3D paper as PWC-Net is much faster. Yet, it might possibly lead to worse peformance. We tested it with PWC-Net flow frames and found that the performance is reasonable. You may test it yourself by providing `--show_kinetics_pred` flag. Also, one may create a Pull Request implementing [TV-L1](https://docs.opencv.org/master/d4/dee/tutorial_optical_flow.html) as an option to form optical flow frames.
+Please note, this implementation uses [PWC-Net](https://arxiv.org/abs/1709.02371) instead of the TV-L1 algorithm, which was used in the original I3D paper as PWC-Net is much faster. Yet, it might possibly lead to worse peformance. We tested it with PWC-Net flow frames and found that the performance is reasonable. You may test it yourself by providing `--show_class_pred` flag. Also, one may create a Pull Request implementing [TV-L1](https://docs.opencv.org/master/d4/dee/tutorial_optical_flow.html) as an option to form optical flow frames.
 
 ### Set up the Environment for I3D
 Setup `conda` environment. Requirements are in file `conda_env_i3d.yml`
@@ -64,7 +64,7 @@ By default, the frames are extracted according to the original fps of a video. I
 python main.py --feature_type i3d --device_ids 0 2 --extraction_fps 25 --stack_size 24 --step_size 24 --file_with_video_paths ./sample/sample_video_paths.txt
 ```
 
-If `--keep_frames` is specified, it keeps them in `--tmp_path` which is `./tmp` by default. Be careful with the `--keep_frames` argument when playing with `--extraction_fps` as it may mess up the frames you extracted before in the same folder.
+If `--keep_tmp_files` is specified, it keeps them in `--tmp_path` which is `./tmp` by default. Be careful with the `--keep_tmp_files` argument when playing with `--extraction_fps` as it may mess up the frames you extracted before in the same folder.
 
 ### Credits
 1. [An implementation of PWC-Net in PyTorch](https://github.com/sniklaus/pytorch-pwc)
@@ -78,11 +78,11 @@ The wrapping code is MIT and the port of I3D weights from TensorFlow to PyTorch.
 The extraction of an [18-layer R(2+1)D (RGB-only)](https://arxiv.org/abs/1711.11248) network is borrowed from [torchvision models](https://pytorch.org/docs/1.5.0/torchvision/models.html#resnet-2-1-d). Similar to [I3D](#i3d), R(2+1)D is pre-trained on [Kinetics 400](https://deepmind.com/research/open-source/kinetics). The features are extracted from the pre-classification layer of the net. Therefore, it outputs a tensor with 512-d features for each stack. By default, [according to torchvision docs](https://pytorch.org/docs/1.5.0/torchvision/models.html#video-classification), it expects to input a stack of 16 RGB frames (`112x112`), which spans 0.64 seconds of the video recorded at 25 fps. Specify `--step_size` and `--stack_size` to change the default behavior. In the default case, the features will be of size `Tv x 512` where `Tv = duration / 0.64`. The augmentations are similar to the proposed in [torchvision training scripts](https://github.com/pytorch/vision/blob/1aef87d01eec2c0989458387fa04baebcc86ea7b/references/video_classification/train.py#L154-L159).
 
 ### Set up the Environment for R(2+1)D
-Setup `conda` environment. Requirements are in file `conda_env_r21d.yml`
+Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
 ```bash
-# it will create a new conda environment called 'r21d' on your machine
-conda env create -f conda_env_r21d.yml
-conda activate r21d
+# it will create a new conda environment called 'torch_zoo' on your machine
+conda env create -f conda_env_torch_zoo.yml
+conda activate torch_zoo
 ```
 
 ### Example
@@ -105,14 +105,14 @@ The [ResNet-50](https://arxiv.org/abs/1512.03385) features are extracted frame-w
 
 Please note, the features are extracted for each frame in the video at the _original_ fps. Create an issue if you would be interested in having such functionality. A workaround is to, first, reencode videos with `ffmpeg` to the desired fps and then extract the features using this repo.
 
-Also note, the `--keep_frames` is not supported for these features as `opencv` is used to iterate over a video. Fortunately, implementation of such requires adding one line of code – let me know if you would like some guidance on this.
+Also note, the `--keep_tmp_files` is not supported for these features as `opencv` is used to iterate over a video. Fortunately, implementation of such requires adding one line of code – let me know if you would like some guidance on this.
 
 ### Set up the Environment for ResNet-50
-Setup `conda` environment. Requirements are in file `conda_env_torchvision.yml`
+Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
 ```bash
-# it will create a new conda environment called 'torchvision_zoo' on your machine
-conda env create -f conda_env_torchvision.yml
-conda activate torchvision_zoo
+# it will create a new conda environment called 'torch_zoo' on your machine
+conda env create -f conda_env_torch_zoo.yml
+conda activate torch_zoo
 ```
 
 ### Examples

@@ -1,6 +1,83 @@
 import argparse
 import os
+import pathlib
 import subprocess
+from typing import Dict
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+
+IMAGENET_CLASS_PATH = './utils/IN_label_map.txt'
+KINETICS_CLASS_PATH = './utils/K400_label_map.txt'
+
+
+def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: str):
+    '''Prints out predictions for each feature
+
+    Args:
+        logits (torch.FloatTensor): after-classification layer vector (B, classes)
+        dataset (str): which dataset to use to show the predictions on. In ('imagenet', 'kinetics')
+    '''
+    if dataset == 'kinetics':
+        path_to_class_list = KINETICS_CLASS_PATH
+    elif dataset == 'imagenet':
+        path_to_class_list = IMAGENET_CLASS_PATH
+    else:
+        raise NotImplementedError
+
+    dataset_classes = [x.strip() for x in open(path_to_class_list)]
+
+    # Show predictions
+    softmaxes = F.softmax(logits, dim=-1)
+    top_val, top_idx = torch.sort(softmaxes, dim=-1, descending=True)
+
+    k = 5
+    logits_score = logits.gather(1, top_idx[:, :k]).tolist()
+    softmax_score = softmaxes.gather(1, top_idx[:, :k]).tolist()
+    class_labels = [[dataset_classes[idx] for idx in i_row] for i_row in top_idx[:, :k]]
+
+    for b in range(len(logits)):
+        for (logit, smax, cls) in zip(logits_score[b], softmax_score[b], class_labels[b]):
+            print(f'{logit:.3f} {smax:.3f} {cls}')
+        print()
+
+def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_path, on_extraction: str):
+    '''What is going to be done with the extracted features.
+
+    Args:
+        feats_dict (Dict[str, np.ndarray]): A dict with features and possibly some meta. Key will be used as
+                                            suffixes to the saved files if `save_numpy` is used.
+        video_path (str): A path to the video.
+        on_extraction (str): What to do with the features on extraction.
+        output_path (str): Where to save the features if `save_numpy` is used.
+    '''
+    if on_extraction == 'print':
+        print(feats_dict)
+    elif on_extraction == 'save_numpy':
+        # make dir if doesn't exist
+        os.makedirs(output_path, exist_ok=True)
+        # since the features are enclosed in a dict with another meta information we will iterate on kv
+        for key, value in feats_dict.items():
+            # extract file name and change the extention
+            fname = f'{pathlib.Path(video_path).stem}_{key}.npy'
+            # construct the paths to save the features
+            fpath = os.path.join(output_path, fname)
+            # save the info behind the each key
+            np.save(fpath, value)
+    else:
+        raise NotImplementedError
+
+def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
+    '''print(form_slices(100, 15, 15) - example'''
+    slices = []
+    # calc how many full stacks can be formed out of framepaths
+    full_stack_num = (size - stack_size) // step_size + 1
+    for i in range(full_stack_num):
+        start_idx = i * step_size
+        end_idx = start_idx + stack_size
+        slices.append((start_idx, end_idx))
+    return slices
 
 
 def sanity_check(args: argparse.Namespace):
@@ -9,15 +86,18 @@ def sanity_check(args: argparse.Namespace):
     Args:
         args (argparse.Namespace): Parsed user arguments
     '''
-    if args.show_kinetics_pred:
+    if args.show_class_pred:
         print('You want to see predictions. So, I will use only the first GPU from the list you specified.')
         args.device_ids = [args.device_ids[0]]
+        if args.feature_type == 'vggish':
+            print('Showing class predictions is not implemented for VGGish')
     if args.feature_type == 'r21d_rgb':
         message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
         assert args.extraction_fps is None, message
     if args.feature_type in ['resnet50', 'r21d_rgb']:
-        if args.keep_frames:
+        if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
+
 
 def form_list_from_user_input(args: argparse.Namespace) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
@@ -38,6 +118,12 @@ def form_list_from_user_input(args: argparse.Namespace) -> list:
     else:
         path_list = args.video_paths
 
+    # sanity check: prints paths which do not exist
+    for path in path_list:
+        not_exist = not os.path.exists(path)
+        if not_exist:
+            print(f'The path does not exist: {path}')
+
     return path_list
 
 
@@ -50,6 +136,38 @@ def which_ffmpeg() -> str:
     result = subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     ffmpeg_path = result.stdout.decode('utf-8').replace('\n', '')
     return ffmpeg_path
+
+
+def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:
+    '''Extracts .wav file from .aac which is extracted from .mp4
+    We cannot convert .mp4 to .wav directly. For this we do it in two stages: .mp4 -> .aac -> .wav
+
+    Args:
+        video_path (str): Path to a video
+        audio_path_wo_ext (str):
+
+    Returns:
+        [str, str] -- path to the .wav and .aac audio
+    '''
+    assert which_ffmpeg() != '', 'Is ffmpeg installed? Check if the conda environment is activated.'
+    assert video_path.endswith('.mp4'), 'The file does not end with .mp4. Comment this if expected'
+    # create tmp dir if doesn't exist
+    os.makedirs(tmp_path, exist_ok=True)
+
+    # extract video filename from the video_path
+    video_filename = os.path.split(video_path)[-1].replace('.mp4', '')
+
+    # the temp files will be saved in `tmp_path` with the same name
+    audio_aac_path = os.path.join(tmp_path, f'{video_filename}.aac')
+    audio_wav_path = os.path.join(tmp_path, f'{video_filename}.wav')
+
+    # constructing shell commands and calling them
+    mp4_to_acc = f'{which_ffmpeg()} -hide_banner -loglevel panic -y -i {video_path} -acodec copy {audio_aac_path}'
+    aac_to_wav = f'{which_ffmpeg()} -hide_banner -loglevel panic -y -i {audio_aac_path} {audio_wav_path}'
+    subprocess.call(mp4_to_acc.split())
+    subprocess.call(aac_to_wav.split())
+
+    return audio_wav_path, audio_aac_path
 
 
 def fix_tensorflow_gpu_allocation(argparse_args):
@@ -68,3 +186,58 @@ def fix_tensorflow_gpu_allocation(argparse_args):
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(device_ids)
     # [1, 3, 5] -> [0, 1, 2]
     argparse_args.device_ids = list(range(len(argparse_args.device_ids)))
+
+
+def form_iter_list(framepaths, step_size, stack_size, phase=None, min_ratio_for_cycling=0.2):
+    '''
+        Forms a list of lists each containing paths for a rgb stack.
+        The window of a specified stack_size applied for the given list
+        with step_size. Since most of the time framepaths cannot be fully
+        devided into stacks, the last list is cycled if the number of
+        remaining paths in it is higher than a specified threshold.
+    '''
+    framelist_empty = len(framepaths) == 0
+
+    if framelist_empty:
+        return []
+
+    # calc how many full stacks can be formed out of framepaths
+    full_stack_num = (len(framepaths) - stack_size) // step_size + 1
+
+    stacks = []
+
+    # how many elements are in the last list
+    reminder = len(framepaths) % stack_size
+
+    # if the segment is too short but is large enough to cycle
+    # we want to repeat the frames regardless of the number
+    # of frames on validation (only but Todo: for train as well)
+    # changing this for validation (and train but requires recalculation of meta and i3d)
+    frame_num_is_lower_than_stacksize = len(framepaths) < stack_size
+    reminder_is_large_enough = reminder >= min_ratio_for_cycling * stack_size
+
+    # if frame_num_is_lower_than_stacksize and (reminder_is_large_enough or not train):
+    if frame_num_is_lower_than_stacksize and (reminder_is_large_enough or (phase != 'train')):
+        remained_paths = np.array(framepaths)
+        # performs cycling
+        cycled_remained_paths = np.resize(remained_paths, stack_size)
+        stacks.append(list(cycled_remained_paths))
+
+        return stacks
+
+    # else form full stack and deal with the remaining in the same fashion.
+    for i in range(full_stack_num):
+        start_idx = i * step_size
+        end_idx = start_idx + stack_size
+        stacks.append(framepaths[start_idx:end_idx])
+
+    # if the number of remaining elements in the list
+    # is high enough, cycle those elements until stack_size is reached
+    if reminder_is_large_enough:
+        start_idx = full_stack_num * step_size
+        remained_paths = np.array(framepaths[start_idx:])
+        # performs cycling
+        cycled_remained_paths = np.resize(remained_paths, stack_size)
+        stacks.append(list(cycled_remained_paths))
+
+    return stacks
