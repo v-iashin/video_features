@@ -17,7 +17,7 @@ from utils.utils import (action_on_extraction, form_iter_list,
                          form_list_from_user_input,
                          show_predictions_on_dataset, which_ffmpeg)
 
-PWC_PATH = './models/i3d/checkpoints/pwc_net.pt'
+PWC_PATH = './models/i3d/checkpoints/pwc_net_sintel.pt'
 I3D_RGB_PATH = './models/i3d/checkpoints/i3d_rgb.pt'
 I3D_FLOW_PATH = './models/i3d/checkpoints/i3d_flow.pt'
 PRE_CENTRAL_CROP_MIN_SIDE_SIZE = 256
