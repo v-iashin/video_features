@@ -1,20 +1,24 @@
 import os
 import pathlib
-from models.resnet50.resnet50_src.resnet50_feats import resnet50_features
+from typing import Dict, Union
+
+import cv2
 import numpy as np
 import torch
-from tqdm import tqdm
-# import traceback
 import torchvision.models as models
 import torchvision.transforms as transforms
-from utils.utils import form_list_from_user_input
-from typing import Dict, Union
+from tqdm import tqdm
+from utils.utils import (action_on_extraction, form_list_from_user_input,
+                         show_predictions_on_dataset)
+
+# import traceback
+
 
 RESIZE_SIZE = 256
 CENTER_CROP_SIZE = 224
 TRAIN_MEAN = [0.485, 0.456, 0.406]
 TRAIN_STD = [0.229, 0.224, 0.225]
-IMAGENET_CLASS_PATH = './models/resnet50/checkpoints/IN_label_map.txt'
+
 
 class ExtractResNet50(torch.nn.Module):
 
@@ -33,11 +37,11 @@ class ExtractResNet50(torch.nn.Module):
             transforms.ToTensor(),
             transforms.Normalize(mean=TRAIN_MEAN, std=TRAIN_STD)
         ])
-        self.show_imagenet_pred = args.show_imagenet_pred
-        self.imagenet_class_path = IMAGENET_CLASS_PATH
-        self.keep_frames = args.keep_frames
+        self.show_class_pred = args.show_class_pred
+        self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
-        self.tmp_path = args.tmp_path
+        # not used, create an issue if you would like to save the frames
+        self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
         self.output_path = os.path.join(args.output_path, self.feature_type)
         self.progress = tqdm(total=len(self.path_list))
 
@@ -57,7 +61,8 @@ class ExtractResNet50(torch.nn.Module):
         for idx in indices:
             # when error occurs might fail silently when run from torch data parallel
             try:
-                self.extract(device, model, model_class, idx)
+                feats_dict = self.extract(device, model, model_class, self.path_list[idx])
+                action_on_extraction(feats_dict, self.path_list[idx], self.output_path, self.on_extraction)
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
@@ -69,16 +74,14 @@ class ExtractResNet50(torch.nn.Module):
             self.progress.update()
 
     def extract(self, device: torch.device, model: torch.nn.Module, classifier: torch.nn.Module,
-                idx: int, video_path: Union[str, None] = None
-                ) -> Dict[str, np.ndarray]:
+                video_path: Union[str, None] = None) -> Dict[str, np.ndarray]:
         '''The extraction call. Made to clean the forward call a bit.
 
         Arguments:
             device {torch.device}
             model {torch.nn.Module}
             classifier {torch.nn.Module} -- pre-trained classification layer, will be used if
-                                            show_imagenet_pred is True
-            idx {int} -- index to self.video_paths
+                                            show_class_pred is True
 
         Keyword Arguments:
             video_path {Union[str, None]} -- if you would like to use import it and use it as
@@ -87,30 +90,50 @@ class ExtractResNet50(torch.nn.Module):
         Returns:
             Dict[str, np.ndarray]: 'features_nme', 'fps', 'timestamps_ms'
         '''
-        if video_path is None:
-            video_path = self.path_list[idx]
+        def _run_on_a_batch(vid_feats, batch, model, classifier, device):
+            batch = torch.cat(batch).to(device)
 
-        # extract features
-        feats_dict = resnet50_features(
-            model, video_path, self.batch_size, device, self.transforms, self.show_imagenet_pred,
-            self.imagenet_class_path, classifier, self.feature_type
-        )
+            with torch.no_grad():
+                batch_feats = model(batch)
+                vid_feats.extend(batch_feats.tolist())
+                # show predicitons on imagenet dataset (might be useful for debugging)
+                if self.show_class_pred:
+                    logits = classifier(batch_feats)
+                    show_predictions_on_dataset(logits, 'imagenet')
 
-        # What to do once features are extracted.
-        if self.on_extraction == 'print':
-            print(feats_dict)
-        elif self.on_extraction == 'save_numpy':
-            # make dir if doesn't exist
-            os.makedirs(self.output_path, exist_ok=True)
-            # since the features are enclosed in a dict with another meta information we will iterate on kv
-            for key, value in feats_dict.items():
-                # extract file name and change the extention
-                fname = f'{pathlib.Path(video_path).stem}_{key}.npy'
-                # construct the paths to save the features
-                fpath = os.path.join(self.output_path, fname)
-                # save the info behind the each key
-                np.save(fpath, value)
-        else:
-            raise NotImplementedError
+        # read a video
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        timestamps_ms = []
+        batch = []
+        vid_feats = []
 
-        return feats_dict
+        while cap.isOpened():
+            frame_exists, rgb = cap.read()
+
+            if frame_exists:
+                timestamps_ms.append(cap.get(cv2.CAP_PROP_POS_MSEC))
+                # prepare data (first -- transform, then -- unsqueeze)
+                rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
+                rgb = self.transforms(rgb)
+                rgb = rgb.unsqueeze(0)
+                batch.append(rgb)
+                # when batch is formed to inference
+                if len(batch) == self.batch_size:
+                    _run_on_a_batch(vid_feats, batch, model, classifier, device)
+                    # clean up the batch list
+                    batch = []
+            else:
+                # if the last batch was smaller than the batch size
+                if len(batch) != 0:
+                    _run_on_a_batch(vid_feats, batch, model, classifier, device)
+                cap.release()
+                break
+
+        features_with_meta = {
+            self.feature_type: np.array(vid_feats),
+            'fps': np.array(fps),
+            'timestamps_ms': np.array(timestamps_ms)
+        }
+
+        return features_with_meta

@@ -1,22 +1,30 @@
-name: torchvision_zoo
+name: torch_zoo
 channels:
   - pytorch
+  - conda-forge
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
+  - av=8.0.2=py38he20a9df_1
   - blas=1.0=mkl
-  - ca-certificates=2020.7.22=0
-  - certifi=2020.6.20=py38_0
+  - bzip2=1.0.8=h516909a_3
+  - ca-certificates=2020.6.20=hecda079_0
+  - certifi=2020.6.20=py38h32f6830_0
   - cudatoolkit=10.2.89=hfd86e86_1
+  - ffmpeg=4.3.1=h167e202_0
   - freetype=2.10.2=h5ab3b9f_0
+  - gmp=6.2.0=he1b5a44_2
+  - gnutls=3.6.13=h79a8f9a_0
   - intel-openmp=2020.2=254
   - jpeg=9b=h024ee3a_2
+  - lame=3.100=h14c3975_1001
   - lcms2=2.11=h396b838_0
   - ld_impl_linux-64=2.33.1=h53a641e_7
   - libedit=3.1.20191231=h14c3975_1
   - libffi=3.3=he6710b0_2
   - libgcc-ng=9.1.0=hdf63c60_0
   - libgfortran-ng=7.3.0=hdf63c60_0
+  - libiconv=1.16=h516909a_0
   - libpng=1.6.37=hbc83047_0
   - libstdcxx-ng=9.1.0=hdf63c60_0
   - libtiff=4.1.0=h2733197_1
@@ -26,14 +34,17 @@ dependencies:
   - mkl_fft=1.2.0=py38h23d657b_0
   - mkl_random=1.1.1=py38h0573a6f_0
   - ncurses=6.2=he6710b0_1
+  - nettle=3.4.1=h1bed415_1002
   - ninja=1.10.1=py38hfd86e86_0
   - numpy=1.19.1=py38hbc911f0_0
   - numpy-base=1.19.1=py38hfa32c7d_0
   - olefile=0.46=py_0
-  - openssl=1.1.1h=h7b6447c_0
+  - openh264=2.1.1=h8b12597_0
+  - openssl=1.1.1h=h516909a_0
   - pillow=7.2.0=py38hb39fc2d_0
   - pip=20.2.2=py38_0
   - python=3.8.5=h7579374_1
+  - python_abi=3.8=1_cp38
   - pytorch=1.6.0=py3.8_cuda10.2.89_cudnn7.6.5_0
   - readline=8.0=h7b6447c_0
   - scipy=1.5.2=py38h0b6359f_0
@@ -44,6 +55,7 @@ dependencies:
   - torchvision=0.7.0=py38_cu102
   - tqdm=4.49.0=py_0
   - wheel=0.35.1=py_0
+  - x264=1!152.20180806=h14c3975_0
   - xz=5.2.5=h7b6447c_0
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.5=h9ceee32_0

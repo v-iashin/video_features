@@ -1,14 +1,13 @@
 import os
 import pathlib
-from typing import Union
+from typing import Dict, Union
 
 import numpy as np
 import torch
 from tqdm import tqdm
 # import traceback
 
-from utils.utils import form_list_from_user_input
-from models.vggish.utils.utils import extract_wav_from_mp4
+from utils.utils import form_list_from_user_input, extract_wav_from_mp4, action_on_extraction
 from models.vggish.vggish_src import (vggish_input, vggish_params,
                                       vggish_postprocess, vggish_slim)
 
@@ -32,13 +31,14 @@ class ExtractVGGish(torch.nn.Module):
 
     def __init__(self, args):
         super(ExtractVGGish, self).__init__()
+        self.feature_type = args.feature_type
         self.path_list = form_list_from_user_input(args)
         self.vggish_model_path = VGGISH_MODEL_PATH
         self.vggish_pca_path = VGGISH_PCA_PATH
-        self.keep_audio_files = args.keep_frames  # naming problem, yes. :TODO
+        self.keep_audio_files = args.keep_tmp_files  # naming problem, yes. :TODO
         self.on_extraction = args.on_extraction
-        self.tmp_path = args.tmp_path
-        self.output_path = args.output_path
+        self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
+        self.output_path = os.path.join(args.output_path, self.feature_type)
         self.progress = tqdm(total=len(self.path_list))
 
     def forward(self, indices: torch.LongTensor):
@@ -60,7 +60,8 @@ class ExtractVGGish(torch.nn.Module):
             for idx in indices:
                 # when error occurs might fail silently when run from torch data parallel
                 try:
-                    self.extract(idx, sess)
+                    feats_dict = self.extract(sess, self.path_list[idx])
+                    action_on_extraction(feats_dict, self.path_list[idx], self.output_path, self.on_extraction)
                 except KeyboardInterrupt:
                     raise KeyboardInterrupt
                 except Exception as e:
@@ -71,25 +72,20 @@ class ExtractVGGish(torch.nn.Module):
                 # update tqdm progress bar
                 self.progress.update()
 
-    def extract(self, idx: int, tf_session, video_path: Union[str, None] = None) -> np.ndarray:
+    def extract(self, tf_session, video_path: Union[str, None] = None) -> Dict[str, np.ndarray]:
         '''The extraction call. Made to clean the forward call a bit.
 
         Args:
-            idx (int): index to self.path_list
             tf_session (tensorflow.python.client.session.Session): tf session
             video_path (Union[str, None], optional): . Defaults to None.
 
         Keyword Arguments:
             video_path {Union[str, None]} -- if you would like to use import it and use it as
-                                             "path -> i3d features"-fashion (default: {None})
+                                             "path -> model"-fashion (default: {None})
 
         Returns:
-            np.ndarray: extracted VGGish features
+            Dict[str, np.ndarray]: extracted VGGish features
         '''
-        # if video_path is not specified, take one from the self.path_list
-        if video_path is None:
-            video_path = self.path_list[idx]
-
         file_ext = pathlib.Path(video_path).suffix
 
         if file_ext == '.mp4':
@@ -107,26 +103,14 @@ class ExtractVGGish(torch.nn.Module):
         embedding_tensor = tf_session.graph.get_tensor_by_name(vggish_params.OUTPUT_TENSOR_NAME)
         [vggish_stack] = tf_session.run([embedding_tensor], feed_dict={features_tensor: examples_batch})
 
-        # removes the folder with extracted frames to preserve disk space
+        # removes the folder with audio files created during the process
         if not self.keep_audio_files:
             if video_path.endswith('.mp4'):
                 os.remove(audio_wav_path)
                 os.remove(audio_aac_path)
 
-        # What to do once features are extracted.
-        if self.on_extraction == 'print':
-            print(vggish_stack)
-            # print(vggish_stack.sum())
-        elif self.on_extraction == 'save_numpy':
-            # make dir if doesn't exist
-            os.makedirs(self.output_path, exist_ok=True)
-            # extract file name and change the extention
-            filename = os.path.split(video_path)[-1].replace(f'{file_ext}', '_vggish.npy')
-            # construct the paths to save the features
-            feature_path = os.path.join(self.output_path, filename)
-            # save features
-            np.save(feature_path, vggish_stack)
-        else:
-            raise NotImplementedError
+        feats_dict = {
+            self.feature_type: vggish_stack
+        }
 
-        return vggish_stack
+        return feats_dict

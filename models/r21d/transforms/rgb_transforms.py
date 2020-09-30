@@ -6,9 +6,6 @@ pytorch/vision/blob/fe36f0663e231b9c875ad727cd76bc0922c9437b/references/video_cl
 import torch
 import random
 
-KINETICS_MEAN = [0.43216, 0.394666, 0.37645]
-KINETICS_STD = [0.22803, 0.22145, 0.216989]
-
 
 def crop(vid, i, j, h, w):
     return vid[..., i:(i + h), j:(j + w)]

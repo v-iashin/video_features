@@ -50,9 +50,9 @@ if __name__ == "__main__":
     parser.add_argument('--file_with_video_paths', help='.txt file where each line is a path')
     parser.add_argument('--device_ids', type=int, nargs='+', help='space-separated device ids')
     parser.add_argument('--tmp_path', default='./tmp',
-                        help='folder to store the extracted frames before the extraction')
-    parser.add_argument('--keep_frames', dest='keep_frames', action='store_true', default=False,
-                        help='to keep frames after feature extraction. R(2+1)d extraction doesn`t allow it.')
+                        help='folder to store the temporary files used for extraction (frames or aud files)')
+    parser.add_argument('--keep_tmp_files', dest='keep_tmp_files', action='store_true', default=False,
+                        help='to keep temp files after feature extraction. (works only for vggish and i3d)')
     parser.add_argument('--on_extraction', default='print', choices=['print', 'save_numpy'],
                         help='what to do once the stack is extracted')
     parser.add_argument('--output_path', default='./output', help='where to store results if saved')
@@ -63,12 +63,8 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=1,
                         help='Batchsize (only frame-wise extractors are supported)')
     parser.add_argument(
-        '--show_kinetics_pred', dest='show_kinetics_pred', action='store_true', default=False,
-        help='to show the predictions of the i3d/R(2+1)D models into kinetics 400 classes for each feature'
-    )
-    parser.add_argument(
-        '--show_imagenet_pred', dest='show_imagenet_pred', action='store_true', default=False,
-        help='to show the predictions of the frame-wise models into imagenet 1k classes for each feature'
+        '--show_class_pred', dest='show_class_pred', action='store_true', default=False,
+        help='to show preds of a model on a corresponding dataset (imagenet, or kinetics) for each feature'
     )
 
     args = parser.parse_args()
@@ -76,7 +72,7 @@ if __name__ == "__main__":
     # some printing
     if args.on_extraction == 'save_numpy':
         print(f'Saving features to {args.output_path}')
-    if args.keep_frames:
+    if args.keep_tmp_files:
         print(f'Keeping temp files in {args.tmp_path}')
 
     sanity_check(args)
