@@ -25,6 +25,9 @@ def parallel_feature_extraction(args):
     elif args.feature_type in ['resnet50']:
         from models.resnet50.extract_resnet50 import ExtractResNet50
         extractor = ExtractResNet50(args)
+    elif args.feature_type == 'raft':
+        from models.raft.extract_raft import ExtractRAFT
+        extractor = ExtractRAFT(args)
     else:
         raise NotADirectoryError
 
@@ -45,7 +48,8 @@ def parallel_feature_extraction(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Extract Features')
-    parser.add_argument('--feature_type', required=True, choices=['i3d', 'vggish', 'r21d_rgb', 'resnet50'])
+    parser.add_argument('--feature_type', required=True,
+                        choices=['i3d', 'vggish', 'r21d_rgb', 'resnet50', 'raft'])
     parser.add_argument('--video_paths', nargs='+', help='space-separated paths to videos')
     parser.add_argument('--file_with_video_paths', help='.txt file where each line is a path')
     parser.add_argument('--device_ids', type=int, nargs='+', help='space-separated device ids')
@@ -62,9 +66,14 @@ if __name__ == "__main__":
     parser.add_argument('--step_size', type=int, help='Feature step size in fps')
     parser.add_argument('--batch_size', type=int, default=1,
                         help='Batchsize (only frame-wise extractors are supported)')
+    parser.add_argument('--resize_to_larger_edge', dest='resize_to_smaller_edge', action='store_false',
+                        default=True, help='The larger side will be resized to this number maintaining the'
+                        + 'aspect ratio. By default, uses the smaller side (as Resize in torchvision).')
+    parser.add_argument('--side_size', type=int,
+                        help='If specified, the input images will be resized to this value in RAFT.')
     parser.add_argument(
-        '--show_class_pred', dest='show_class_pred', action='store_true', default=False,
-        help='to show preds of a model on a corresponding dataset (imagenet, or kinetics) for each feature'
+        '--show_pred', dest='show_pred', action='store_true', default=False,
+        help='to show preds of a model, i.e. on a pre-train dataset (imagenet or kinetics) for each feature'
     )
 
     args = parser.parse_args()

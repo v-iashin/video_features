@@ -39,7 +39,7 @@ class ExtractR21D(torch.nn.Module):
             T.Normalize(mean=KINETICS_MEAN, std=KINETICS_STD),
             T.CenterCrop((CENTRAL_CROP_MIN_SIDE_SIZE, CENTRAL_CROP_MIN_SIDE_SIZE))
         ])
-        self.show_class_pred = args.show_class_pred
+        self.show_pred = args.show_pred
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
         # not used, create an issue if you would like to save the frames
@@ -85,7 +85,7 @@ class ExtractR21D(torch.nn.Module):
             device {torch.device}
             model {torch.nn.Module}
             classifier {torch.nn.Module} -- pre-trained classification layer, will be used if
-                                            show_class_pred is True
+                                            show_pred is True
 
         Keyword Arguments:
             video_path {Union[str, None]} -- if you would like to use import it and use it as
@@ -113,7 +113,7 @@ class ExtractR21D(torch.nn.Module):
                 vid_feats.extend(output.tolist())
 
                 # show predicitons on kinetics dataset (might be useful for debugging)
-                if self.show_class_pred:
+                if self.show_pred:
                     logits = classifier(output)
                     print(f'{video_path} @ frames ({start_idx}, {end_idx})')
                     show_predictions_on_dataset(logits, 'kinetics')
