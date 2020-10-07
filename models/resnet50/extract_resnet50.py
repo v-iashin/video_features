@@ -37,7 +37,7 @@ class ExtractResNet50(torch.nn.Module):
             transforms.ToTensor(),
             transforms.Normalize(mean=TRAIN_MEAN, std=TRAIN_STD)
         ])
-        self.show_class_pred = args.show_class_pred
+        self.show_pred = args.show_pred
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
         # not used, create an issue if you would like to save the frames
@@ -81,7 +81,7 @@ class ExtractResNet50(torch.nn.Module):
             device {torch.device}
             model {torch.nn.Module}
             classifier {torch.nn.Module} -- pre-trained classification layer, will be used if
-                                            show_class_pred is True
+                                            show_pred is True
 
         Keyword Arguments:
             video_path {Union[str, None]} -- if you would like to use import it and use it as
@@ -97,7 +97,7 @@ class ExtractResNet50(torch.nn.Module):
                 batch_feats = model(batch)
                 vid_feats.extend(batch_feats.tolist())
                 # show predicitons on imagenet dataset (might be useful for debugging)
-                if self.show_class_pred:
+                if self.show_pred:
                     logits = classifier(batch_feats)
                     show_predictions_on_dataset(logits, 'imagenet')
 

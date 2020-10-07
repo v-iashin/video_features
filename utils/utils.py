@@ -86,7 +86,8 @@ def sanity_check(args: argparse.Namespace):
     Args:
         args (argparse.Namespace): Parsed user arguments
     '''
-    if args.show_class_pred:
+    assert os.path.relpath(args.output_path) != os.path.relpath(args.tmp_path), 'The same path for out & tmp'
+    if args.show_pred:
         print('You want to see predictions. So, I will use only the first GPU from the list you specified.')
         args.device_ids = [args.device_ids[0]]
         if args.feature_type == 'vggish':
@@ -136,6 +137,31 @@ def which_ffmpeg() -> str:
     result = subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     ffmpeg_path = result.stdout.decode('utf-8').replace('\n', '')
     return ffmpeg_path
+
+
+def reencode_video_with_diff_fps(video_path: str, tmp_path: str, extraction_fps: int) -> str:
+    '''Reencodes the video given the path and saves it to the tmp_path folder.
+
+    Args:
+        video_path (str): original video
+        tmp_path (str): the folder where tmp files are stored (will be appended with a proper filename).
+        extraction_fps (int): target fps value
+
+    Returns:
+        str: The path where the tmp file is stored. To be used to load the video from
+    '''
+    assert which_ffmpeg() != '', 'Is ffmpeg installed? Check if the conda environment is activated.'
+    assert video_path.endswith('.mp4'), 'The file does not end with .mp4. Comment this if expected'
+    # create tmp dir if doesn't exist
+    os.makedirs(tmp_path, exist_ok=True)
+
+    # form the path to tmp directory
+    new_path = os.path.join(tmp_path, f'{pathlib.Path(video_path).stem}_new_fps.mp4')
+    cmd = f'{which_ffmpeg()} -hide_banner -loglevel panic '
+    cmd += f'-y -i {video_path} -filter:v fps=fps={extraction_fps} {new_path}'
+    subprocess.call(cmd.split())
+
+    return new_path
 
 
 def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:

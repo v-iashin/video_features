@@ -45,7 +45,7 @@ class ExtractI3D(torch.nn.Module):
             self.step_size = DEFAULT_I3D_STEP_SIZE
         if self.stack_size is None:
             self.stack_size = DEFAULT_I3D_STACK_SIZE
-        self.show_class_pred = args.show_class_pred
+        self.show_pred = args.show_pred
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
         self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
@@ -151,7 +151,7 @@ class ExtractI3D(torch.nn.Module):
                 i3d_rgb.extend(feat_rgb.tolist())
                 i3d_flow.extend(feat_flow.tolist())
 
-                if self.show_class_pred:
+                if self.show_pred:
                     softmaxes, logits = i3d_model(rgb_stack, flow_stack, features=None)
                     print(f'{video_path} @ stack {stack_idx}')
                     show_predictions_on_dataset(logits, 'kinetics')
