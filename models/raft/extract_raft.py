@@ -43,8 +43,8 @@ class ExtractRAFT(torch.nn.Module):
         self.feature_type = args.feature_type
         self.path_list = form_list_from_user_input(args)
         self.model_is_small = False
-        # self.model_path = './models/raft/raft_src/checkpoints/raft-kitti.pth'
-        self.model_path = './models/raft/raft_src/checkpoints/raft-sintel.pth'
+        # self.model_path = './models/raft/checkpoints/raft-kitti.pth'
+        self.model_path = './models/raft/checkpoints/raft-sintel.pth'
         self.batch_size = args.batch_size
         self.extraction_fps = args.extraction_fps
         self.resize_to_smaller_edge = args.resize_to_smaller_edge
