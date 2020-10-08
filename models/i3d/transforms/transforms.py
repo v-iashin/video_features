@@ -1,12 +1,6 @@
 import torch
 
 
-class ToTensorWithoutScaling(object):
-
-    def __call__(self, np_img):
-        return torch.from_numpy(np_img).permute(2, 0, 1).float()
-
-
 class TensorCenterCrop(object):
 
     def __init__(self, crop_size: int) -> None:
@@ -54,7 +48,35 @@ class ToUInt8(object):
         return flow_tensor.round()
 
 
-class ToChannelFirstToFloat(object):
+class ToCFHW_ToFloat(object):
 
     def __call__(self, tensor_fhwc: torch.Tensor) -> torch.Tensor:
         return tensor_fhwc.permute(3, 0, 1, 2).float()
+
+
+class ToFCHW(object):
+
+    def __call__(self, tensor_cfhw: torch.Tensor) -> torch.Tensor:
+        return tensor_cfhw.permute(1, 0, 2, 3)
+
+
+class Resize(object):
+    '''
+    Reference:
+    pytorch/vision/blob/fe36f0663e231b9c875ad727cd76bc0922c9437b/references/video_classification/transforms.py
+    '''
+    def __init__(self, size, interpolation='bilinear'):
+        self.size = size
+        self.interpolation = interpolation
+
+    def __call__(self, vid):
+        # NOTE: using bilinear interpolation because we don't work on minibatches
+        # at this level
+        scale = None
+        size = self.size
+        if isinstance(size, int):
+            scale = float(size) / min(vid.shape[-2:])
+            size = None
+        return torch.nn.functional.interpolate(
+            vid, size=size, scale_factor=scale, mode=self.interpolation, align_corners=False
+        )
