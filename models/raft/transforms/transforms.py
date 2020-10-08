@@ -56,16 +56,10 @@ class ResizeImproved(object):
 
 class ToTensorWithoutScaling(object):
 
-    def __init__(self) -> None:
-        pass
-
     def __call__(self, np_img):
         return torch.from_numpy(np_img).permute(2, 0, 1).float()
 
 class ToFloat(object):
-
-    def __init__(self) -> None:
-        pass
 
     def __call__(self, byte_img):
         return byte_img.float()

@@ -10,9 +10,12 @@ import numpy as np
 import torch
 from models.i3d.flow_src.pwc_net import PWCNet
 from models.i3d.i3d_src.i3d_net import I3D_RGB_FLOW
+from models.i3d.transforms.transforms import (Clamp, PermuteAndUnsqueeze, ScaleTo1_1,
+                                              TensorCenterCrop, ToChannelFirstToFloat,
+                                              ToTensorWithoutScaling, ToUInt8)
 from PIL import Image
+from torchvision import transforms
 from tqdm import tqdm
-
 from utils.utils import (action_on_extraction, form_iter_list,
                          form_list_from_user_input,
                          show_predictions_on_dataset, which_ffmpeg)
@@ -45,6 +48,21 @@ class ExtractI3D(torch.nn.Module):
             self.step_size = DEFAULT_I3D_STEP_SIZE
         if self.stack_size is None:
             self.stack_size = DEFAULT_I3D_STACK_SIZE
+        self.pwc_transforms = transforms.Compose([
+            ToTensorWithoutScaling()
+        ])
+        self.i3d_rgb_transforms = transforms.Compose([
+            TensorCenterCrop(self.central_crop_size),
+            ScaleTo1_1(),
+            PermuteAndUnsqueeze()
+        ])
+        self.i3d_flow_transforms = transforms.Compose([
+            TensorCenterCrop(self.central_crop_size),
+            Clamp(-20, 20),
+            ToUInt8(),
+            ScaleTo1_1(),
+            PermuteAndUnsqueeze()
+        ])
         self.show_pred = args.show_pred
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
@@ -108,42 +126,25 @@ class ExtractI3D(torch.nn.Module):
         i3d_flow = []
 
         for stack_idx, frame_path_stack in enumerate(frame_paths):
-            # T+1, since T flow frames require T+1 rgb frames
-            rgb_stack = torch.zeros(self.stack_size+1, 3, H, W, device=device)
+            rgb_stack = []
 
             # load the rgb stack
             for frame_idx, frame_path in enumerate(frame_path_stack):
+                # (h, w, c)
                 rgb = cv2.imread(frame_path)
                 rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-                rgb = np.array(rgb).transpose(2, 0, 1)
-                rgb = torch.FloatTensor(rgb).unsqueeze(0)
-                rgb_stack[frame_idx] = rgb
+                rgb = self.pwc_transforms(rgb)
+                rgb_stack.append(rgb)
 
             # calculate the optical flow
             with torch.no_grad():
+                # T+1, since T flow frames require T+1 rgb frames
+                assert len(rgb_stack) == (self.stack_size + 1)
+                rgb_stack = torch.stack(rgb_stack).to(device)
                 flow_stack = pwc_model(rgb_stack[:-1], rgb_stack[1:], device)
 
-            # crop
-            rgb_stack = self.center_crop(rgb_stack[:-1], crop_size=self.central_crop_size)
-            flow_stack = self.center_crop(flow_stack, crop_size=self.central_crop_size)
-            # scaling values to be between [-1, 1]
-            rgb_stack = (2 * rgb_stack / 255) - 1
-            # clamping
-            flow_stack = torch.clamp(flow_stack, min=-20, max=20)
-            # preprocessing as in
-            # https://github.com/deepmind/kinetics-i3d/issues/61#issuecomment-506727158
-            # but for pytorch
-            # [-20, 20] -> [0, 255]
-            flow_stack = 128 + 255 / 40 * flow_stack
-            # make it an integer
-            flow_stack = flow_stack.round()
-            # [0, 255] -> [-1, 1]
-            flow_stack = (2 * flow_stack / 255) - 1
-
-            # form inputs to I3D (RGB + FLOW)
-            rgb_stack.unsqueeze_(0), flow_stack.unsqueeze_(0)
-            rgb_stack = rgb_stack.permute(0, 2, 1, 3, 4)
-            flow_stack = flow_stack.permute(0, 2, 1, 3, 4)
+            rgb_stack = self.i3d_rgb_transforms(rgb_stack[:-1])
+            flow_stack = self.i3d_flow_transforms(flow_stack)
 
             # extract i3d features
             with torch.no_grad():
@@ -166,18 +167,6 @@ class ExtractI3D(torch.nn.Module):
         }
 
         return feats_dict
-
-    def center_crop(self, tensor: torch.FloatTensor, crop_size: int = 224) -> torch.FloatTensor:
-        '''
-            Takes a tensor of input (..., H, W) and performs a
-            center crop of provided size.
-        '''
-        H, W = tensor.size(-2), tensor.size(-1)
-        from_H = ((H - crop_size) // 2)
-        from_W = ((W - crop_size) // 2)
-        to_H = from_H + crop_size
-        to_W = from_W + crop_size
-        return tensor[..., from_H:to_H, from_W:to_W]
 
     def extract_frames_from_video(self, video_path: str) -> str:
         '''Extracts frames from a video using the specified path.
