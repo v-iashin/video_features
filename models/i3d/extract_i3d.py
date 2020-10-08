@@ -1,24 +1,21 @@
 import os
-import pathlib
-import shutil
-import subprocess
 # import traceback
 from typing import Dict, Union
 
-import cv2
 import numpy as np
 import torch
 from models.i3d.flow_src.pwc_net import PWCNet
 from models.i3d.i3d_src.i3d_net import I3D_RGB_FLOW
-from models.i3d.transforms.transforms import (Clamp, PermuteAndUnsqueeze, ScaleTo1_1,
-                                              TensorCenterCrop, ToChannelFirstToFloat,
-                                              ToTensorWithoutScaling, ToUInt8)
-from PIL import Image
+from models.i3d.transforms.transforms import (Clamp, PermuteAndUnsqueeze,
+                                              Resize, ScaleTo1_1,
+                                              TensorCenterCrop, ToCFHW_ToFloat,
+                                              ToFCHW, ToUInt8)
 from torchvision import transforms
+from torchvision.io import read_video
 from tqdm import tqdm
-from utils.utils import (action_on_extraction, form_iter_list,
-                         form_list_from_user_input,
-                         show_predictions_on_dataset, which_ffmpeg)
+from utils.utils import (action_on_extraction, form_list_from_user_input,
+                         form_slices, reencode_video_with_diff_fps,
+                         show_predictions_on_dataset)
 
 PWC_PATH = './models/i3d/checkpoints/pwc_net_sintel.pt'
 I3D_RGB_PATH = './models/i3d/checkpoints/i3d_rgb.pt'
@@ -49,7 +46,9 @@ class ExtractI3D(torch.nn.Module):
         if self.stack_size is None:
             self.stack_size = DEFAULT_I3D_STACK_SIZE
         self.pwc_transforms = transforms.Compose([
-            ToTensorWithoutScaling()
+            ToCFHW_ToFloat(),
+            Resize(self.min_side_size),
+            ToFCHW()
         ])
         self.i3d_rgb_transforms = transforms.Compose([
             TensorCenterCrop(self.central_crop_size),
@@ -112,103 +111,53 @@ class ExtractI3D(torch.nn.Module):
         Returns:
             Dict[str, Union[torch.nn.Module, str]] -- dict with i3d features and their type
         '''
-        frames_dir = self.extract_frames_from_video(video_path)
-        # sorted list of frame paths
-        frame_paths = [os.path.join(frames_dir, fname) for fname in sorted(os.listdir(frames_dir))]
-        # T+1, since T flow frames require T+1 rgb frames
-        frame_paths = form_iter_list(frame_paths, self.step_size, self.stack_size+1)
+        # take the video, change fps and save to the tmp folder
+        if self.extraction_fps is not None:
+            video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
 
-        # before we start to extract features, we save the resolution of the video
-        W, H = Image.open(frame_paths[0][0]).size
-        video_path = pathlib.Path(frame_paths[0][0]).parent
+        # rgb: (f, h, w, c)
+        video_rgb, _audio, _info = read_video(video_path)
+        if self.extraction_fps is not None:
+            assert _info['video_fps'] == self.extraction_fps
 
-        i3d_rgb = []
-        i3d_flow = []
+        # (f, c, h`, w`)
+        video_rgb = self.pwc_transforms(video_rgb)
+        video_rgb = video_rgb.to(device)
 
-        for stack_idx, frame_path_stack in enumerate(frame_paths):
-            rgb_stack = []
+        slices = form_slices(video_rgb.size(0), self.stack_size+1, self.step_size)
 
-            # load the rgb stack
-            for frame_idx, frame_path in enumerate(frame_path_stack):
-                # (h, w, c)
-                rgb = cv2.imread(frame_path)
-                rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-                rgb = self.pwc_transforms(rgb)
-                rgb_stack.append(rgb)
+        rgb_feats = []
+        flow_feats = []
 
-            # calculate the optical flow
+        for stack_idx, (start_idx, end_idx) in enumerate(slices):
+            # since we apply some transforms on rgb later, we allocate the slice into a dedicated variable
+            rgb_slice = video_rgb[start_idx:end_idx]
+
             with torch.no_grad():
-                # T+1, since T flow frames require T+1 rgb frames
-                assert len(rgb_stack) == (self.stack_size + 1)
-                rgb_stack = torch.stack(rgb_stack).to(device)
-                flow_stack = pwc_model(rgb_stack[:-1], rgb_stack[1:], device)
+                # `end_idx-1` and `start_idx+1` because flow is calculated between f and f+1 frames
+                flow_slice = pwc_model(rgb_slice[:-1], rgb_slice[1:], device)
 
-            rgb_stack = self.i3d_rgb_transforms(rgb_stack[:-1])
-            flow_stack = self.i3d_flow_transforms(flow_stack)
+                # transformations for i3d input
+                rgb_slice = self.i3d_rgb_transforms(rgb_slice[:-1])
+                flow_slice = self.i3d_flow_transforms(flow_slice)
 
-            # extract i3d features
-            with torch.no_grad():
-                feat_rgb, feat_flow = i3d_model(rgb_stack, flow_stack, features='separately_rgb_flow')
-                i3d_rgb.extend(feat_rgb.tolist())
-                i3d_flow.extend(feat_flow.tolist())
+                # TODO:
+                feat_rgb, feat_flow = i3d_model(rgb_slice, flow_slice, features='separately_rgb_flow')
+                rgb_feats.extend(feat_rgb.tolist())
+                flow_feats.extend(feat_flow.tolist())
 
                 if self.show_pred:
-                    softmaxes, logits = i3d_model(rgb_stack, flow_stack, features=None)
+                    softmaxes, logits = i3d_model(rgb_slice, flow_slice, features=None)
                     print(f'{video_path} @ stack {stack_idx}')
                     show_predictions_on_dataset(logits, 'kinetics')
 
-        # removes the folder with extracted frames to preserve disk space
-        if not self.keep_tmp_files:
-            shutil.rmtree(frames_dir)
+        # removes the video with different fps if it was created to preserve disk space
+        if (self.extraction_fps is not None) and (not self.keep_tmp_files):
+            os.remove(video_path)
 
         feats_dict = {
-            'rgb': np.array(i3d_rgb),
-            'flow': np.array(i3d_flow)
+            'rgb': np.array(rgb_feats),
+            'flow': np.array(flow_feats)
         }
 
         return feats_dict
-
-    def extract_frames_from_video(self, video_path: str) -> str:
-        '''Extracts frames from a video using the specified path.
-
-        Arguments:
-            video_path {str} -- path to a video
-
-        Returns:
-            [str] -- path to the folder with extracted frames
-        '''
-        assert which_ffmpeg() != '', 'Is ffmpeg installed? Check if the conda environment is activated.'
-        assert video_path.endswith('.mp4'), 'The file does not end with .mp4. Comment this if expected'
-
-        video = cv2.VideoCapture(video_path)
-        height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
-
-        # if extraction fps is not specified, use the original fps; if specified, use it
-        if self.extraction_fps is None:
-            extraction_fps = video.get(cv2.CAP_PROP_FPS)
-        else:
-            extraction_fps = self.extraction_fps
-
-        # Make dir for frames
-        folder_name = f'{pathlib.Path(video_path).stem}_frames'
-        frames_path = os.path.join(self.tmp_path, folder_name)
-
-        if os.path.exists(frames_path):
-            print(f'Warning: folder {frames_path} already exists. Possibly these frames are going to be bad')
-        else:
-            os.makedirs(frames_path, exist_ok=True)
-
-        # vertical/horizontal video handling
-        if width > height:
-            size = f'-1:{self.min_side_size}'
-        else:
-            size = f'{self.min_side_size}:-1'
-
-        # Extract frames: call ffmpeg
-        extract_cmd = f'{which_ffmpeg()} -hide_banner -loglevel panic -y -i {video_path}'
-        extract_cmd += f' -vf scale={size} -r {extraction_fps} -q:v 2 {frames_path}/%6d.jpg'
-
-        subprocess.call(extract_cmd.split())
-
-        return frames_path
