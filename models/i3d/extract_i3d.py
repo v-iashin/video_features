@@ -4,7 +4,7 @@ from typing import Dict, Union
 
 import numpy as np
 import torch
-from models.i3d.flow_src.pwc_net import PWCNet
+from models.i3d.pwc_src.pwc_net import PWCNet
 from models.i3d.i3d_src.i3d_net import I3D_RGB_FLOW
 from models.i3d.transforms.transforms import (Clamp, PermuteAndUnsqueeze,
                                               Resize, ScaleTo1_1,
@@ -117,8 +117,8 @@ class ExtractI3D(torch.nn.Module):
 
         # rgb: (f, h, w, c)
         video_rgb, _audio, _info = read_video(video_path)
-        if self.extraction_fps is not None:
-            assert _info['video_fps'] == self.extraction_fps
+        if self.extraction_fps is not None and _info['video_fps'] != self.extraction_fps:
+            print(f'self.extraction_fps {self.extraction_fps} != file`s fps {_info["video_fps"]}')
 
         # (f, c, h`, w`)
         video_rgb = self.pwc_transforms(video_rgb)

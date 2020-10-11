@@ -1,11 +1,11 @@
 ''' (v-iashin):
     Credits: https://github.com/sniklaus/pytorch-pwc
-    This is just a wrapper for `run.py` from `pytorch_pwc` repo. 
+    This is just a wrapper for `run.py` from `pytorch_pwc` repo.
     No refactoring if not stated in comments.
     I need to rewrite it a bit as I cannot import `run.py` without CLI arguments
     but I want to use it for debugging
 '''
-import models.i3d.flow_src.correlation as correlation
+import models.i3d.pwc_src.correlation as correlation
 
 import numpy
 import math
@@ -21,10 +21,10 @@ numpy.random.seed(0)
 assert(int(str('').join(torch.__version__.split('.')[0:3])) >= 41) # requires at least pytorch version 0.4.1
 
 def Backward(tensorInput, tensorFlow, device):
-    
+
     Backward_tensorGrid = {}
     Backward_tensorPartial = {}
-    
+
     tensorHorizontal = torch.linspace(-1.0, 1.0, tensorFlow.size(3)).view(1, 1, 1, tensorFlow.size(3)).expand(tensorFlow.size(0), -1, tensorFlow.size(2), -1)
     tensorVertical = torch.linspace(-1.0, 1.0, tensorFlow.size(2)).view(1, 1, tensorFlow.size(2), 1).expand(tensorFlow.size(0), -1, -1, tensorFlow.size(3))
 
@@ -166,7 +166,7 @@ class Decoder(torch.nn.Module):
         elif objectPrevious is not None:
             tensorFlow = self.moduleUpflow(objectPrevious['tensorFlow'])
             tensorFeat = self.moduleUpfeat(objectPrevious['tensorFeat'])
-            tensorVolume = torch.nn.functional.leaky_relu(input=correlation.FunctionCorrelation(tensorFirst=tensorFirst, tensorSecond=Backward(tensorInput=tensorSecond, 
+            tensorVolume = torch.nn.functional.leaky_relu(input=correlation.FunctionCorrelation(tensorFirst=tensorFirst, tensorSecond=Backward(tensorInput=tensorSecond,
 tensorFlow=tensorFlow * self.dblBackward, device=device), device=device), negative_slope=0.1, inplace=False)
 
             tensorFeat = torch.cat([ tensorVolume, tensorFirst, tensorFlow, tensorFeat ], 1)
@@ -223,7 +223,7 @@ class PWCNet(torch.nn.Module):
 
         self.moduleRefiner = Refiner()
         self.load_state_dict(torch.load(pretrain_path))
-        
+
         self.eval()
 
     def forward(self, tensorFirst, tensorSecond, device):
