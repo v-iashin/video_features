@@ -64,8 +64,8 @@ if __name__ == "__main__":
     parser.add_argument('--extraction_fps', type=int, help='Do not specify for original video fps')
     parser.add_argument('--stack_size', type=int, help='Feature time span in fps')
     parser.add_argument('--step_size', type=int, help='Feature step size in fps')
-    parser.add_argument('--streams', nargs='+', default=['flow', 'rgb'], choices=['flow', 'rgb'],
-                        help='Streams to use for feature extraction')
+    parser.add_argument('--streams', nargs='+', choices=['flow', 'rgb'],
+                        help='Streams to use for feature extraction. Both used if not specified')
     parser.add_argument('--batch_size', type=int, default=1,
                         help='Batchsize (only frame-wise extractors are supported)')
     parser.add_argument('--resize_to_larger_edge', dest='resize_to_smaller_edge', action='store_false',
