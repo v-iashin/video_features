@@ -52,21 +52,24 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
         on_extraction (str): What to do with the features on extraction.
         output_path (str): Where to save the features if `save_numpy` is used.
     '''
-    if on_extraction == 'print':
-        print(feats_dict)
-    elif on_extraction == 'save_numpy':
-        # make dir if doesn't exist
-        os.makedirs(output_path, exist_ok=True)
-        # since the features are enclosed in a dict with another meta information we will iterate on kv
-        for key, value in feats_dict.items():
+    # since the features are enclosed in a dict with another meta information we will iterate on kv
+    for key, value in feats_dict.items():
+        if on_extraction == 'print':
+            print(key)
+            print(value)
+            print(f'max: {value.max():.8f}; mean: {value.mean():.8f}; min: {value.min():.8f}')
+            print()
+        elif on_extraction == 'save_numpy':
+            # make dir if doesn't exist
+            os.makedirs(output_path, exist_ok=True)
             # extract file name and change the extention
             fname = f'{pathlib.Path(video_path).stem}_{key}.npy'
             # construct the paths to save the features
             fpath = os.path.join(output_path, fname)
             # save the info behind the each key
             np.save(fpath, value)
-    else:
-        raise NotImplementedError
+        else:
+            raise NotImplementedError
 
 def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
     '''print(form_slices(100, 15, 15) - example'''
