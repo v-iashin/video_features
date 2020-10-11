@@ -1,77 +1,9 @@
-''' (v-iashin)
-    This is just a wrapper for `i3d_pt_demo.py` and `i3dpt.py` from `kinetics_i3d_pytorch` repo. 
-    I need to rewrite `i3d_pt_demo.py` as I cannot import `i3d_pt_demo.py` without CLI arguments.
-    I need to rewrite `i3dpt.py` as I want the features rather than last layer activations.
-'''
-
 import math
 import os
 
 import numpy as np
 import torch
 
-# (v-iashin) the wrapper starts here
-class I3D_RGB_FLOW(torch.nn.Module):
-    '''Full (rgb + flow) i3d model. '''
-    
-    def __init__(self, rgb_weights_path='./submodules/i3d_pytorch/model/model_rgb.pth', 
-                 flow_weights_path='./submodules/i3d_pytorch/model/model_flow.pth'):
-        ''' Initializes two modalities and loads the weights. '''
-        super(I3D_RGB_FLOW, self).__init__()
-        self.i3d_rgb = I3D(num_classes=400, modality='rgb')
-        self.i3d_flow = I3D(num_classes=400, modality='flow')
-        
-        self.i3d_rgb.load_state_dict(torch.load(rgb_weights_path))
-        self.i3d_flow.load_state_dict(torch.load(flow_weights_path))
-        
-        self.eval()
-        
-    def forward(self, rgb_tensor=None, flow_tensor=None, features=None):
-        ''' Inputs two tensor each of size (B, C, T, 224, 224). '''
-        
-        if features is None:
-            assert (rgb_tensor is not None) and (flow_tensor is not None)
-            rgb_labels, rgb_logits = self.i3d_rgb(rgb_tensor)  # (B, 400)
-            flow_labels, flow_logits = self.i3d_flow(flow_tensor)  # (B, 400)
-            logits = rgb_logits + flow_logits
-            softmaxes = torch.nn.functional.softmax(logits, 1)
-            return softmaxes, logits
-
-            # print('###### USING ONLY FLOW ########')
-            # assert flow_tensor is not None
-            # flow_labels, flow_logits = self.i3d_flow(flow_tensor) # (B, 400)
-            # logits = flow_logits
-            # softmaxes = torch.nn.functional.softmax(logits, 1)
-            # return softmaxes, logits
-            
-            # print('###### USING ONLY RGB ########')
-            # assert rgb_tensor is not None
-            # rgb_labels, rgb_logits = self.i3d_rgb(rgb_tensor) # (B, 400)
-            # logits = rgb_logits
-            # softmaxes = torch.nn.functional.softmax(logits, 1)
-            # return softmaxes, logits
-
-        elif features == 'separately_rgb_flow':
-            assert (rgb_tensor is not None) and (flow_tensor is not None)
-            rgb_logits = self.i3d_rgb(rgb_tensor, features)  # (B, 1024)
-            flow_logits = self.i3d_flow(flow_tensor, features)  # (B, 1024)
-            return rgb_logits, flow_logits
-        elif features == 'rgb_flow':
-            assert (rgb_tensor is not None) and (flow_tensor is not None)
-            rgb_logits = self.i3d_rgb(rgb_tensor, features)  # (B, 1024)
-            flow_logits = self.i3d_flow(flow_tensor, features)  # (B, 1024)
-            logits = rgb_logits + flow_logits
-            return logits
-        elif features == 'rgb':
-            assert rgb_tensor is not None
-            rgb_logits = self.i3d_rgb(rgb_tensor, features)  # (B, 1024)
-            return rgb_logits
-        elif features == 'flow':
-            assert flow_tensor is not None
-            flow_logits = self.i3d_flow(flow_tensor, features)  # (B, 1024)
-            return flow_logits
-        
-# the wrapper ends here
 
 def get_padding_shape(filter_shape, stride):
     def _pad_top_bottom(filter_dim, stride_val):
@@ -301,14 +233,10 @@ class I3D(torch.nn.Module):
             use_bias=True,
             use_bn=False)
         self.softmax = torch.nn.Softmax(1)
-        
-    ''' (v-iashin)
-    Commenting this as I add another argument to the function signature
-    
-    def forward(self, inp):
-    '''
+
+    # (v-iashin) adding features arg to have an ability to output features
     def forward(self, inp, features=None):
-        
+
         # Preprocessing
         out = self.conv3d_1a_7x7(inp)
         out = self.maxPool3d_2a_3x3(out)
@@ -327,25 +255,24 @@ class I3D(torch.nn.Module):
         out = self.mixed_5b(out)
         out = self.mixed_5c(out)  # <- [1, 832, 7 (for T=64) 2 (for T=24), 1, 1]
         out = self.avg_pool(out)  # <- [1, 1024, 7 (for T=64) 2 (for T=24), 1, 1]
-        
-        # (v-iashin) adding this to have an ability to output features
-        if features is not None:
+
+        if features:
             out = out.squeeze(3)  # <- (B, 1024, 7 (for T=64) 2 (for T=24), 1)
             out = out.squeeze(3)  # <- (B, 1024, 7 (for T=64) 2 (for T=24))
             out = out.mean(2)  # (B, 1024)
-            
+
             return out  # (B, 1024)
-        #
-        
-        out = self.dropout(out)
-        out = self.conv3d_0c_1x1(out)
-        out = out.squeeze(3)
-        out = out.squeeze(3)
-        out = out.mean(2)
-        out_logits = out
-        out = self.softmax(out_logits)
-        
-        return out, out_logits
+        else:
+            out = self.dropout(out)
+            out = self.conv3d_0c_1x1(out)
+            out = out.squeeze(3)
+            out = out.squeeze(3)
+            out = out.mean(2)
+            out_logits = out
+            out = self.softmax(out_logits)
+
+            return out, out_logits
+    #
 
     def load_tf_weights(self, sess):
         state_dict = {}

@@ -1,9 +1,9 @@
 # Multi-GPU Extraction of Video Features
 
-This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D**, **R(2+1)D** (RGB-only), and **VGGish** features are supported as well as **ResNet-50** (frame-wise). Now, it also supports optical flow frame extraction using **RAFT**.
+This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D** (RGB + Flow), **R(2+1)D** (RGB-only), and **VGGish** features are supported as well as **ResNet-50** (frame-wise). Now, it also supports optical flow frame extraction using **RAFT**.
 
 - [Multi-GPU Extraction of Video Features](#multi-gpu-extraction-of-video-features)
-  - [I3D](#i3d)
+  - [I3D (RGB + Flow)](#i3d-rgb--flow)
     - [Set up the Environment for I3D](#set-up-the-environment-for-i3d)
     - [Examples](#examples)
     - [Credits](#credits)
@@ -29,7 +29,7 @@ This is a PyTorch module that does a feature extraction in parallel on any numbe
     - [Credits](#credits-4)
     - [License](#license-4)
 
-## I3D
+## I3D (RGB + Flow)
 The _Inflated 3D ([I3D](https://arxiv.org/abs/1705.07750))_ features are extracted using a pre-trained model on [Kinetics 400](https://deepmind.com/research/open-source/kinetics). Here, the features are extracted from the second-to-the-last layer of I3D, before summing them up. Therefore, it outputs two tensors with 1024-d features: for RGB and flow streams. By default, it expects to input 64 RGB and flow frames (`224x224`) which spans 2.56 seconds of the video recorded at 25 fps. In the default case, the features will be of size `Tv x 1024` where `Tv = duration / 2.56`.
 
 Please note, this implementation uses [PWC-Net](https://arxiv.org/abs/1709.02371) (pre-trained on [Sintel Flow dataset](http://sintel.is.tue.mpg.de/)) instead of the TV-L1 algorithm, which was used in the original I3D paper as PWC-Net is much faster. Yet, it might possibly lead to worse peformance. We tested it with PWC-Net flow frames and found that the performance is reasonable. You may test it yourself by providing `--show_pred` flag. Also, one may create a Pull Request implementing [TV-L1](https://docs.opencv.org/master/d4/dee/tutorial_optical_flow.html) as an option to form optical flow frames.
@@ -51,6 +51,10 @@ python main.py --feature_type i3d --device_ids 0 2 --video_paths ./sample/v_ZNVh
 The video paths can be specified as a `.txt` file with paths
 ```bash
 python main.py --feature_type i3d --device_ids 0 2 --file_with_video_paths ./sample/sample_video_paths.txt
+```
+It is also possible to extract features from either `rgb` or `flow` modalities individually (`--streams`) and, therefore, increasing the speed
+```bash
+python main.py --feature_type i3d --streams flow --device_ids 0 2 --file_with_video_paths ./sample/sample_video_paths.txt
 ```
 
 The features can be saved as numpy arrays by specifying `--on_extraction save_numpy`. By default, it will create a folder `./output` and will store features there
