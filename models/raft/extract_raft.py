@@ -42,7 +42,7 @@ class ExtractRAFT(torch.nn.Module):
         super(ExtractRAFT, self).__init__()
         self.feature_type = args.feature_type
         self.path_list = form_list_from_user_input(args)
-        self.model_is_small = False
+        # self.model_is_small = False
         # self.model_path = './models/raft/checkpoints/raft-kitti.pth'
         self.model_path = './models/raft/checkpoints/raft-sintel.pth'
         self.batch_size = args.batch_size
@@ -76,7 +76,7 @@ class ExtractRAFT(torch.nn.Module):
         device = indices.device
 
         # load the model
-        model = RAFT(self.model_is_small)
+        model = RAFT()
         model = torch.nn.DataParallel(model, device_ids=[device])
         model.load_state_dict(torch.load(self.model_path, map_location=device))
         # model = model.module
@@ -119,12 +119,12 @@ class ExtractRAFT(torch.nn.Module):
             batch = padder.pad(batch)
 
             with torch.no_grad():
-                flow_low, flow_up = model(batch[:-1], batch[1:], iters=20, test_mode=True)
+                flow = model(batch[:-1], batch[1:])
                 # upadding only before saving because np.concat will not work if the img is unpadded
-                flow_frames.extend(padder.unpad(flow_up).tolist())
+                flow_frames.extend(padder.unpad(flow).tolist())
                 # show optical flow along with rgb frames
                 if self.show_pred:
-                    self.show_flow_for_every_pair_of_frames(flow_up, batch)
+                    self.show_flow_for_every_pair_of_frames(flow, batch)
 
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:

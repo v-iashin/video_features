@@ -26,11 +26,13 @@ except:
 
 
 class RAFT(nn.Module):
-    def __init__(self, model_is_small):
+
+    # (v-iashin) def __init__(self, model_is_small):
+    def __init__(self):
         super(RAFT, self).__init__()
         self.dropout = 0
         self.alternate_corr = False
-        self.model_is_small = model_is_small
+        self.model_is_small = False
         self.mixed_precision = False
 
         if self.model_is_small:
@@ -90,7 +92,8 @@ class RAFT(nn.Module):
         return up_flow.reshape(N, 2, 8*H, 8*W)
 
 
-    def forward(self, image1, image2, iters=12, flow_init=None, upsample=True, test_mode=False):
+    # (v-iashin) def forward(self, image1, image2, iters=12, flow_init=None, upsample=True, test_mode=False):
+    def forward(self, image1, image2, iters=20, flow_init=None, upsample=True, test_mode=True):
         """ Estimate optical flow between pair of frames """
 
         image1 = 2 * (image1 / 255.0) - 1.0
@@ -146,6 +149,7 @@ class RAFT(nn.Module):
             flow_predictions.append(flow_up)
 
         if test_mode:
-            return coords1 - coords0, flow_up
+            # (v-iashin) return coords1 - coords0, flow_up
+            return flow_up
 
         return flow_predictions
