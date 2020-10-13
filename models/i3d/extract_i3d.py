@@ -1,20 +1,20 @@
 import os
 # import traceback
 from typing import Dict, Union
+import cv2
 
 import numpy as np
 import torch
 from models.i3d.pwc_src.pwc_net import PWCNet
 from models.i3d.i3d_src.i3d_net import I3D
-from models.i3d.transforms.transforms import (Clamp, PermuteAndUnsqueeze,
-                                              Resize, ScaleTo1_1,
-                                              TensorCenterCrop, ToCFHW_ToFloat,
-                                              ToFCHW, ToUInt8)
+from models.i3d.transforms.transforms import (Clamp, PILToTensor, PermuteAndUnsqueeze,
+                                              ResizeImproved, ScaleTo1_1,
+                                              TensorCenterCrop,
+                                              ToFloat, ToUInt8)
 from torchvision import transforms
-from torchvision.io import read_video
 from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
-                         form_slices, reencode_video_with_diff_fps,
+                         reencode_video_with_diff_fps,
                          show_predictions_on_dataset)
 
 PWC_PATH = './models/i3d/checkpoints/pwc_net_sintel.pt'
@@ -49,9 +49,10 @@ class ExtractI3D(torch.nn.Module):
         if self.stack_size is None:
             self.stack_size = DEFAULT_I3D_STACK_SIZE
         self.resize_transforms = transforms.Compose([
-            ToCFHW_ToFloat(),
-            Resize(self.min_side_size),
-            ToFCHW()
+            transforms.ToPILImage(),
+            ResizeImproved(self.min_side_size),
+            PILToTensor(),
+            ToFloat(),
         ])
         self.i3d_transforms = {
             'rgb': transforms.Compose([
@@ -120,30 +121,8 @@ class ExtractI3D(torch.nn.Module):
         Returns:
             Dict[str, Union[torch.nn.Module, str]] -- dict with i3d features and their type
         '''
-        # take the video, change fps and save to the tmp folder
-        if self.extraction_fps is not None:
-            video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
-
-        # loading a video rgb: (f, h, w, c)
-        video_rgb, _audio, _info = read_video(video_path)
-
-        # sanity check
-        if self.extraction_fps is not None and _info['video_fps'] != self.extraction_fps:
-            print(f'self.extraction_fps {self.extraction_fps} != file`s fps {_info["video_fps"]}')
-
-        # (f, c, h`, w`)
-        video_rgb = self.resize_transforms(video_rgb)
-        video_rgb = video_rgb.to(device)
-
-        # form slices which will be used to slice video_rgb, takes into accound the step and stack sizes
-        slices = form_slices(video_rgb.size(0), self.stack_size+1, self.step_size)
-
-        # init a dict: {'rgb': [], 'flow': []} or any subset of these
-        feats_dict = {stream: [] for stream in self.streams}
-
-        for stack_idx, (start_idx, end_idx) in enumerate(slices):
-            # since we apply some transforms on rgb later, we allocate the slice into a dedicated variable
-            rgb_slice = video_rgb[start_idx:end_idx]
+        def _run_on_a_stack(feats_dict, rgb_stack, models, device, stack_counter):
+            rgb_stack = torch.cat(rgb_stack).to(device)
 
             for stream in self.streams:
                 with torch.no_grad():
@@ -152,18 +131,68 @@ class ExtractI3D(torch.nn.Module):
                     # we also use `end_idx-1` for stream == 'rgb' case: just to make sure the feature length
                     # is same regardless of whether only rgb is used or flow
                     if stream == 'flow':
-                        stream_slice = flow_xtr_model(rgb_slice[:-1], rgb_slice[1:], device)
+                        stream_slice = flow_xtr_model(rgb_stack[:-1], rgb_stack[1:], device)
                     elif stream == 'rgb':
-                        stream_slice = rgb_slice[:-1]
+                        stream_slice = rgb_stack[:-1]
                     else:
                         raise NotImplementedError
+                    # apply transforms depending on the stream (flow or rgb)
                     stream_slice = self.i3d_transforms[stream](stream_slice)
+                    # extract features for a stream
                     feats = models[stream](stream_slice, features=True)  # (B, 1024)
+                    # add features to the output dict
                     feats_dict[stream].extend(feats.tolist())
+                    # show predictions on a daataset
                     if self.show_pred:
                         softmaxes, logits = models[stream](stream_slice, features=False)  # (B, classes=400)
-                        print(f'{video_path} @ stack {stack_idx} ({stream} stream)')
+                        print(f'{video_path} @ stack {stack_counter} ({stream} stream)')
                         show_predictions_on_dataset(logits, 'kinetics')
+
+        # take the video, change fps and save to the tmp folder
+        if self.extraction_fps is not None:
+            video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
+
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        # timestamp when the last frame in the stack begins (when the old frame of the last pair ends)
+        timestamps_ms = []
+        stack = []
+        feats_dict = {stream: [] for stream in self.streams}
+
+        # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
+        # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
+        # this case
+        first_frame = True
+        stack_counter = 0
+        while cap.isOpened():
+            frame_exists, rgb = cap.read()
+
+            if first_frame:
+                first_frame = False
+                if frame_exists is False:
+                    continue
+
+            if frame_exists:
+                # preprocess the image
+                rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
+                rgb = self.resize_transforms(rgb)
+                rgb = rgb.unsqueeze(0)
+
+                stack.append(rgb)
+
+                # - 1 is used because we need B+1 frames to calculate B frames
+                if len(stack) - 1 == self.stack_size:
+                    _run_on_a_stack(feats_dict, stack, models, device, stack_counter)
+                    # leaving the elements if step_size < stack_size so they will not be loaded again
+                    # if step_size == stack_size one element is left because the flow between the last element
+                    # in the prev list and the first element in the current list
+                    stack = stack[self.step_size:]
+                    stack_counter += 1
+                    timestamps_ms.append(cap.get(cv2.CAP_PROP_POS_MSEC))
+            else:
+                # we don't run inference if the stack is not full (applicable for i3d)
+                cap.release()
+                break
 
         # removes the video with different fps if it was created to preserve disk space
         if (self.extraction_fps is not None) and (not self.keep_tmp_files):
@@ -171,5 +200,8 @@ class ExtractI3D(torch.nn.Module):
 
         # transforms list of features into a np array
         feats_dict = {stream: np.array(feats) for stream, feats in feats_dict.items()}
+        # also include the timestamps and fps
+        feats_dict['fps'] = np.array(fps)
+        feats_dict['timestamps_ms'] = np.array(timestamps_ms)
 
         return feats_dict
