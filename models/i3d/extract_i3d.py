@@ -182,8 +182,8 @@ class ExtractI3D(torch.nn.Module):
         # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
         # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
         # this case
-        padder = None
         first_frame = True
+        padder = None
         stack_counter = 0
         while cap.isOpened():
             frame_exists, rgb = cap.read()

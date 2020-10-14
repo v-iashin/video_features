@@ -135,10 +135,6 @@ The wrapping code is under MIT, yet, it utilizes `torchvision` library which is 
 
 The [ResNet-50](https://arxiv.org/abs/1512.03385) features are extracted frame-wise for a provided video. The ResNet-50 is pre-trained on the 1k ImageNet dataset. We extract features from the pre-classification layer. The implementation is based on the [torchvision models](https://pytorch.org/docs/1.6.0/torchvision/models.html#classification). The extracted features are going to be of size `num_frames x 2048`. We additionally output timesteps in ms for each feature and fps of the video. We use the standard set of augmentations.
 
-Please note, the features are extracted for each frame in the video at the _original_ fps. Create an issue if you would be interested in having such functionality. A workaround is to, first, reencode videos with `ffmpeg` to the desired fps and then extract the features using this repo.
-
-Also note, the `--keep_tmp_files` is not supported for these features as `opencv` is used to iterate over a video. Fortunately, implementation of such requires adding one line of code – let me know if you would like some guidance on this.
-
 ### Set up the Environment for ResNet-50
 Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
 ```bash
@@ -163,6 +159,10 @@ python main.py --feature_type resnet50 --device_ids 0 2 --on_extraction save_num
 Since these features are so fine-grained and light-weight we may increase the extraction speed with batching. Therefore, frame-wise features have `--batch_size` argument, which defaults to `1`.
 ```bash
 python main.py --feature_type resnet50 --device_ids 0 2 --batch_size 128 --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
+```
+If you would like to extract features at a certain fps, add `--extraction_fps` argument
+```bash
+python main.py --feature_type resnet50 --device_ids 0 2 --extraction_fps 5 --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
 ```
 
 ### Credits
