@@ -9,8 +9,8 @@ dependencies:
   - av=7.0.1=py37hfbe2fac_1
   - blas=1.0=mkl
   - bzip2=1.0.8=h7b6447c_0
-  - ca-certificates=2020.6.20=hecda079_0
-  - certifi=2020.6.20=py37hc8dfbb8_0
+  - ca-certificates=2020.7.22=0
+  - certifi=2020.6.20=py37_0
   - cffi=1.14.0=py37he30daa8_1
   - cudatoolkit=10.0.130=0
   - cudnn=7.3.1=cuda10.0_0
@@ -49,7 +49,7 @@ dependencies:
   - numpy-base=1.15.4=py37hde5b4d6_0
   - olefile=0.46=py37_0
   - openh264=1.8.0=hd408876_0
-  - openssl=1.1.1h=h516909a_0
+  - openssl=1.1.1h=h7b6447c_0
   - pillow=6.1.0=py37h34e0f95_0
   - pip=20.0.2=py37_3
   - pycodestyle=2.6.0=py_0
@@ -60,6 +60,7 @@ dependencies:
   - pytorch=1.2.0=py3.7_cuda10.0.130_cudnn7.6.2_0
   - readline=8.0=h7b6447c_0
   - rope=0.17.0=py_0
+  - scipy=1.5.2=py37h0b6359f_0
   - setuptools=46.4.0=py37_0
   - six=1.14.0=py37_0
   - sqlite=3.31.1=h62c20be_1

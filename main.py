@@ -28,6 +28,9 @@ def parallel_feature_extraction(args):
     elif args.feature_type == 'raft':
         from models.raft.extract_raft import ExtractRAFT
         extractor = ExtractRAFT(args)
+    elif args.feature_type == 'pwc':
+        from models.pwc.extract_pwc import ExtractPWC
+        extractor = ExtractPWC(args)
     else:
         raise NotADirectoryError
 
@@ -49,7 +52,7 @@ def parallel_feature_extraction(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Extract Features')
     parser.add_argument('--feature_type', required=True,
-                        choices=['i3d', 'vggish', 'r21d_rgb', 'resnet50', 'raft'])
+                        choices=['i3d', 'vggish', 'r21d_rgb', 'resnet50', 'raft', 'pwc'])
     parser.add_argument('--video_paths', nargs='+', help='space-separated paths to videos')
     parser.add_argument('--file_with_video_paths', help='.txt file where each line is a path')
     parser.add_argument('--device_ids', type=int, nargs='+', help='space-separated device ids')
@@ -66,6 +69,8 @@ if __name__ == "__main__":
     parser.add_argument('--step_size', type=int, help='Feature step size in fps')
     parser.add_argument('--streams', nargs='+', choices=['flow', 'rgb'],
                         help='Streams to use for feature extraction. Both used if not specified')
+    parser.add_argument('--flow_type', choices=['raft', 'pwc'], default='pwc',
+                        help='Flow to use in I3D. PWC is faster while RAFT is more accurate.')
     parser.add_argument('--batch_size', type=int, default=1,
                         help='Batchsize (only frame-wise extractors are supported)')
     parser.add_argument('--resize_to_larger_edge', dest='resize_to_smaller_edge', action='store_false',

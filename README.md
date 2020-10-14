@@ -1,6 +1,6 @@
 # Multi-GPU Extraction of Video Features
 
-This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D** (RGB + Flow), **R(2+1)D** (RGB-only), and **VGGish** features are supported as well as **ResNet-50** (frame-wise). Now, it also supports optical flow frame extraction using **RAFT**.
+This is a PyTorch module that does a feature extraction in parallel on any number of GPUs. So far, **I3D** (RGB + Flow), **R(2+1)D** (RGB-only), and **VGGish** features are supported as well as **ResNet-50** (frame-wise). Now, it also supports optical flow frame extraction using **RAFT** and **PWC-Net**.
 
 - [Multi-GPU Extraction of Video Features](#multi-gpu-extraction-of-video-features)
   - [I3D (RGB + Flow)](#i3d-rgb--flow)
@@ -23,27 +23,38 @@ This is a PyTorch module that does a feature extraction in parallel on any numbe
     - [Examples](#examples-2)
     - [Credits](#credits-3)
     - [License](#license-3)
+  - [PWC-Net (Optical Flow, frame-wise)](#pwc-net-optical-flow-frame-wise)
+    - [Set up the Environment for PWC](#set-up-the-environment-for-pwc)
+    - [Examples](#examples-3)
+    - [Credits](#credits-4)
+    - [License](#license-4)
   - [VGGish](#vggish)
     - [Set up the Environment for VGGish](#set-up-the-environment-for-vggish)
     - [Example](#example-1)
-    - [Credits](#credits-4)
-    - [License](#license-4)
+    - [Credits](#credits-5)
+    - [License](#license-5)
 
 ## I3D (RGB + Flow)
 The _Inflated 3D ([I3D](https://arxiv.org/abs/1705.07750))_ features are extracted using a pre-trained model on [Kinetics 400](https://deepmind.com/research/open-source/kinetics). Here, the features are extracted from the second-to-the-last layer of I3D, before summing them up. Therefore, it outputs two tensors with 1024-d features: for RGB and flow streams. By default, it expects to input 64 RGB and flow frames (`224x224`) which spans 2.56 seconds of the video recorded at 25 fps. In the default case, the features will be of size `Tv x 1024` where `Tv = duration / 2.56`.
 
-Please note, this implementation uses [PWC-Net](https://arxiv.org/abs/1709.02371) (pre-trained on [Sintel Flow dataset](http://sintel.is.tue.mpg.de/)) instead of the TV-L1 algorithm, which was used in the original I3D paper as PWC-Net is much faster. Yet, it might possibly lead to worse peformance. We tested it with PWC-Net flow frames and found that the performance is reasonable. You may test it yourself by providing `--show_pred` flag. Also, one may create a Pull Request implementing [TV-L1](https://docs.opencv.org/master/d4/dee/tutorial_optical_flow.html) as an option to form optical flow frames.
+Please note, this implementation uses either [PWC-Net](https://arxiv.org/abs/1709.02371) (the default) and [RAFT](https://arxiv.org/abs/2003.12039) optical flow extraction instead of the TV-L1 algorithm, which was used in the original I3D paper as it hampers speed. Yet, it might possibly lead to worse peformance. Our tests show that the performance is reasonable. You may test it yourself by providing `--show_pred` flag.
 
 ### Set up the Environment for I3D
-Setup `conda` environment. Requirements are in file `conda_env_i3d.yml`
+Depending on whether you would like to use PWC-Net or RAFT for optical flow extraction, you will need to install separate conda environments – `conda_env_pwc.yml` and `conda_env_torch_zoo`, respectively
 ```bash
-# it will create a new conda environment called 'i3d' on your machine
-conda env create -f conda_env_i3d.yml
-conda activate i3d
+# it will create a new conda environment called 'pwc' (or/and `torch_zoo`) on your machine
+conda env create -f conda_env_pwc.yml
+# or/and
+conda env create -f conda_env_torch_zoo.yml
 ```
 
 ### Examples
-It will extract I3D features for sample videos using 0th and 2nd devices in parallel. The features are going to be extracted with the default parameters. Check out `python main.py --help` for help on available options.
+Start by activating the environment
+```bash
+conda activate pwc
+```
+
+The following will extract I3D features for sample videos using 0th and 2nd devices in parallel. The features are going to be extracted with the default parameters.
 ```bash
 python main.py --feature_type i3d --device_ids 0 2 --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
 ```
@@ -55,6 +66,12 @@ python main.py --feature_type i3d --device_ids 0 2 --file_with_video_paths ./sam
 It is also possible to extract features from either `rgb` or `flow` modalities individually (`--streams`) and, therefore, increasing the speed
 ```bash
 python main.py --feature_type i3d --streams flow --device_ids 0 2 --file_with_video_paths ./sample/sample_video_paths.txt
+```
+
+To extract optical flow frames using RAFT approach, specify `--flow_type raft`. Note that using RAFT will make the extraction slower than with PWC-Net yet visual inspection of extracted flow frames suggests that RAFT has a better quality of the estimated flow
+```bash
+# make usre to activate the correct environment (`torch_zoo`)
+python main.py --feature_type i3d --flow_type raft --device_ids 0 2 --file_with_video_paths ./sample/sample_video_paths.txt
 ```
 
 The features can be saved as numpy arrays by specifying `--on_extraction save_numpy`. By default, it will create a folder `./output` and will store features there
@@ -72,16 +89,18 @@ By default, the frames are extracted according to the original fps of a video. I
 ```bash
 python main.py --feature_type i3d --device_ids 0 2 --extraction_fps 25 --stack_size 24 --step_size 24 --file_with_video_paths ./sample/sample_video_paths.txt
 ```
+A fun note, the time span of the I3D features in the last example will match the time span of VGGish features with default parameters (24/25 = 0.96).
 
 If `--keep_tmp_files` is specified, it keeps them in `--tmp_path` which is `./tmp` by default. Be careful with the `--keep_tmp_files` argument when playing with `--extraction_fps` as it may mess up the frames you extracted before in the same folder.
 
 ### Credits
-1. [An implementation of PWC-Net in PyTorch](https://github.com/sniklaus/pytorch-pwc)
-2. [A port of I3D weights from TensorFlow to PyTorch](https://github.com/hassony2/kinetics_i3d_pytorch)
-3. The I3D paper: [Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset](https://arxiv.org/abs/1705.07750).
+1. [An implementation of PWC-Net in PyTorch](https://github.com/sniklaus/pytorch-pwc/tree/f6138900578214ab4e3daef6743b88f7824293be)
+2. The [Official RAFT implementation (esp. `./demo.py`)](https://github.com/princeton-vl/RAFT/tree/25eb2ac723c36865c636c9d1f497af8023981868).
+3. [A port of I3D weights from TensorFlow to PyTorch](https://github.com/hassony2/kinetics_i3d_pytorch)
+4. The I3D paper: [Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset](https://arxiv.org/abs/1705.07750).
 
 ### License
-The wrapping code is MIT and the port of I3D weights from TensorFlow to PyTorch. However, PWC Net has a different [License](https://github.com/sniklaus/pytorch-pwc) (Last time I checked it was _GPL-3.0_).
+The wrapping code is MIT and the port of I3D weights from TensorFlow to PyTorch. However, PWC Net (default flow extractor) has [GPL-3.0](https://github.com/sniklaus/pytorch-pwc/blob/f6138900578214ab4e3daef6743b88f7824293be/LICENSE) and RAFT [BSD 3-Clause](https://github.com/princeton-vl/RAFT/blob/25eb2ac723c36865c636c9d1f497af8023981868/LICENSE).
 
 ## R(2+1)D (RGB-only)
 The extraction of an [18-layer R(2+1)D (RGB-only)](https://arxiv.org/abs/1711.11248) network is borrowed from [torchvision models](https://pytorch.org/docs/1.5.0/torchvision/models.html#resnet-2-1-d). Similar to [I3D](#i3d), R(2+1)D is pre-trained on [Kinetics 400](https://deepmind.com/research/open-source/kinetics). The features are extracted from the pre-classification layer of the net. Therefore, it outputs a tensor with 512-d features for each stack. By default, [according to torchvision docs](https://pytorch.org/docs/1.5.0/torchvision/models.html#video-classification), it expects to input a stack of 16 RGB frames (`112x112`), which spans 0.64 seconds of the video recorded at 25 fps. Specify `--step_size` and `--stack_size` to change the default behavior. In the default case, the features will be of size `Tv x 512` where `Tv = duration / 0.64`. The augmentations are similar to the proposed in [torchvision training scripts](https://github.com/pytorch/vision/blob/1aef87d01eec2c0989458387fa04baebcc86ea7b/references/video_classification/train.py#L154-L159).
@@ -91,15 +110,19 @@ Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
 ```bash
 # it will create a new conda environment called 'torch_zoo' on your machine
 conda env create -f conda_env_torch_zoo.yml
-conda activate torch_zoo
 ```
 
 ### Example
+Start by activating the environment
+```bash
+conda activate torch_zoo
+```
 
+It will extract R(2+1)d features for sample videos using 0th and 2nd devices in parallel. The features are going to be extracted with the default parameters.
 ```bash
 python main.py --feature_type r21d_rgb --device_ids 0 2 --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
 ```
-See `python main.py --help` for more arguments and [I3D Examples](#examples).
+See [I3D Examples](#examples). Note, that R(2+1)d only supports RGB stream.
 
 ### Credits
 1. The [TorchVision implementation](https://pytorch.org/docs/1.5.0/torchvision/models.html#video-classification).
@@ -121,10 +144,14 @@ Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
 ```bash
 # it will create a new conda environment called 'torch_zoo' on your machine
 conda env create -f conda_env_torch_zoo.yml
-conda activate torch_zoo
 ```
 
 ### Examples
+Start by activating the environment
+```bash
+conda activate torch_zoo
+```
+
 It is pretty much the same procedure as with other features.
 ```bash
 python main.py --feature_type resnet50 --device_ids 0 2 --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
@@ -152,15 +179,20 @@ The wrapping code is under MIT, yet, it utilizes `torchvision` library which is 
 The optical flow frames have the same size as the video input or as specified by the resize arguments. We additionally output timesteps in ms for each feature and fps of the video.
 
 ### Set up the Environment for RAFT
-Setup `conda` environment. Requirements for RAFT are similar to the torchvision zoo, which use `conda_env_torch_zoo.yml`
+Setup `conda` environment. Requirements for RAFT are similar to the torchvision zoo, which uses `conda_env_torch_zoo.yml`
 ```bash
 # it will create a new conda environment called 'torch_zoo' on your machine
 conda env create -f conda_env_torch_zoo.yml
-conda activate torch_zoo
 ```
 
 ### Examples
-A minimal working example
+Start by activating the environment
+```bash
+conda activate torch_zoo
+```
+
+A minimal working example:
+it will extract RAFT optical flow frames for sample videos using 0th and 2nd devices in parallel.
 ```bash
 python main.py --feature_type raft --device_ids 0 2 --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
 ```
@@ -194,6 +226,31 @@ python main.py --feature_type raft --device_ids 0 --show_pred --extraction_fps 5
 ### License
 The wrapping code is under MIT, but the RAFT implementation complies with [BSD 3-Clause](https://github.com/princeton-vl/RAFT/blob/25eb2ac723c36865c636c9d1f497af8023981868/LICENSE).
 
+## PWC-Net (Optical Flow, frame-wise)
+[PWC-Net: CNNs for Optical Flow Using Pyramid, Warping, and Cost Volume](https://arxiv.org/abs/1709.02371) frames are extracted for every consecutive pair of frames in a video. PWC-Net is pre-trained on [Sintel Flow dataset](http://sintel.is.tue.mpg.de/). The implementation follows [sniklaus/pytorch-pwc@f61389005](https://github.com/sniklaus/pytorch-pwc/tree/f6138900578214ab4e3daef6743b88f7824293be).
+
+
+### Set up the Environment for PWC
+Setup `conda` environment. `conda_env_pwc.yml`
+```bash
+# it will create a new conda environment called 'pwc' on your machine
+conda env create -f conda_env_torch_pwc.yml
+```
+
+### Examples
+Start by activating the environment
+```bash
+conda activate pwc
+```
+
+Please see the examples for `RAFT` optical flow frame extraction. Make sure to replace `--feature_type` argument to `pwc`.
+
+### Credits
+1. The [PWC-Net paper](https://arxiv.org/abs/1709.02371) and [official implementation](https://github.com/NVlabs/PWC-Net).
+2. The [PyTorch implementation used in this repo](https://github.com/sniklaus/pytorch-pwc/tree/f6138900578214ab4e3daef6743b88f7824293be).
+
+### License
+The wrapping code is under MIT, but PWC Net has [GPL-3.0](https://github.com/sniklaus/pytorch-pwc/blob/f6138900578214ab4e3daef6743b88f7824293be/LICENSE)
 
 ## VGGish
 
