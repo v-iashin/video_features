@@ -10,7 +10,7 @@ from torchvision.models.video import r2plus1d_18
 from torchvision.transforms import Compose
 from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
-                         form_slices, show_predictions_on_dataset)
+                         form_slices, reencode_video_with_diff_fps, show_predictions_on_dataset)
 
 PRE_CENTRAL_CROP_SIZE = (128, 171)
 KINETICS_MEAN = [0.43216, 0.394666, 0.37645]
@@ -94,6 +94,10 @@ class ExtractR21D(torch.nn.Module):
         Returns:
             Dict[str, np.ndarray] -- the dict with numpy feature
         '''
+        # take the video, change fps and save to the tmp folder
+        if self.extraction_fps is not None:
+            video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
+
         # read a video
         rgb, audio, info = read_video(video_path, pts_unit='sec')
         # prepare data (first -- transform, then -- unsqueeze)
@@ -101,14 +105,12 @@ class ExtractR21D(torch.nn.Module):
         rgb = rgb.unsqueeze(0)
         # slice the
         slices = form_slices(rgb.size(2), self.stack_size, self.step_size)
-        # r21d_feats = torch.zeros((len(slices), feature_size), device=device)
+
         vid_feats = []
 
         for stack_idx, (start_idx, end_idx) in enumerate(slices):
             # inference
             with torch.no_grad():
-                # vid_feats[stack_idx] = model(rgb[:, :, start_idx:end_idx, :, :].to(device))
-                # print(vid_feats[stack_idx].shape)
                 output = model(rgb[:, :, start_idx:end_idx, :, :].to(device))
                 vid_feats.extend(output.tolist())
 

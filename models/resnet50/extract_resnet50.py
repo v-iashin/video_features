@@ -1,5 +1,4 @@
 import os
-import pathlib
 from typing import Dict, Union
 
 import cv2
@@ -9,6 +8,7 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
+                         reencode_video_with_diff_fps,
                          show_predictions_on_dataset)
 
 # import traceback
@@ -28,7 +28,6 @@ class ExtractResNet50(torch.nn.Module):
         self.path_list = form_list_from_user_input(args)
         self.batch_size = args.batch_size
         self.central_crop_size = CENTER_CROP_SIZE
-        # todo fix the extraction such that is will resample features according to this value
         self.extraction_fps = args.extraction_fps
         self.transforms = transforms.Compose([
             transforms.ToPILImage(),
@@ -101,6 +100,10 @@ class ExtractResNet50(torch.nn.Module):
                     logits = classifier(batch_feats)
                     show_predictions_on_dataset(logits, 'imagenet')
 
+        # take the video, change fps and save to the tmp folder
+        if self.extraction_fps is not None:
+            video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
+
         # read a video
         cap = cv2.VideoCapture(video_path)
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -108,8 +111,17 @@ class ExtractResNet50(torch.nn.Module):
         batch = []
         vid_feats = []
 
+        # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
+        # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
+        # this case
+        first_frame = True
         while cap.isOpened():
             frame_exists, rgb = cap.read()
+
+            if first_frame:
+                first_frame = False
+                if frame_exists is False:
+                    continue
 
             if frame_exists:
                 timestamps_ms.append(cap.get(cv2.CAP_PROP_POS_MSEC))
@@ -129,6 +141,10 @@ class ExtractResNet50(torch.nn.Module):
                     _run_on_a_batch(vid_feats, batch, model, classifier, device)
                 cap.release()
                 break
+
+        # removes the video with different fps if it was created to preserve disk space
+        if (self.extraction_fps is not None) and (not self.keep_tmp_files):
+            os.remove(video_path)
 
         features_with_meta = {
             self.feature_type: np.array(vid_feats),
