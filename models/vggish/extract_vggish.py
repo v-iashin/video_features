@@ -35,7 +35,7 @@ class ExtractVGGish(torch.nn.Module):
         self.path_list = form_list_from_user_input(args)
         self.vggish_model_path = VGGISH_MODEL_PATH
         self.vggish_pca_path = VGGISH_PCA_PATH
-        self.keep_audio_files = args.keep_tmp_files  # naming problem, yes. :TODO
+        self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
         self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
         self.output_path = os.path.join(args.output_path, self.feature_type)
@@ -104,7 +104,7 @@ class ExtractVGGish(torch.nn.Module):
         [vggish_stack] = tf_session.run([embedding_tensor], feed_dict={features_tensor: examples_batch})
 
         # removes the folder with audio files created during the process
-        if not self.keep_audio_files:
+        if not self.keep_tmp_files:
             if video_path.endswith('.mp4'):
                 os.remove(audio_wav_path)
                 os.remove(audio_aac_path)

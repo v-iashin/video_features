@@ -1,11 +1,11 @@
 ''' (v-iashin):
-    Credits: https://github.com/sniklaus/pytorch-pwc
+    Credits: https://github.com/sniklaus/pytorch-pwc/f6138900578214ab4e3daef6743b88f7824293be
     This is just a wrapper for `run.py` from `pytorch_pwc` repo.
     No refactoring if not stated in comments.
     I need to rewrite it a bit as I cannot import `run.py` without CLI arguments
     but I want to use it for debugging
 '''
-import models.i3d.pwc_src.correlation as correlation
+import models.pwc.pwc_src.correlation as correlation
 
 import numpy
 import math
@@ -210,7 +210,7 @@ class Refiner(torch.nn.Module):
         return self.moduleMain(tensorInput)
 
 class PWCNet(torch.nn.Module):
-    def __init__(self, pretrain_path):
+    def __init__(self):
         super(PWCNet, self).__init__()
 
         self.moduleExtractor = Extractor()
@@ -222,11 +222,9 @@ class PWCNet(torch.nn.Module):
         self.moduleSix = Decoder(6)
 
         self.moduleRefiner = Refiner()
-        self.load_state_dict(torch.load(pretrain_path))
 
-        self.eval()
-
-    def forward(self, tensorFirst, tensorSecond, device):
+    def forward(self, tensorFirst, tensorSecond):
+        device = tensorFirst.device
 
         # (v-iashin) [2, 1, 0] transforms RGB to BGR -- replicates the [::-1] behaviour in this case
         tensorFirst = tensorFirst[:, [2, 1, 0], :, :] / 255

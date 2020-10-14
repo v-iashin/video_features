@@ -1,30 +1,31 @@
 import os
 # import traceback
 from typing import Dict, Union
-import cv2
 
+import cv2
 import numpy as np
 import torch
-from models.i3d.pwc_src.pwc_net import PWCNet
 from models.i3d.i3d_src.i3d_net import I3D
-from models.i3d.transforms.transforms import (Clamp, PILToTensor, PermuteAndUnsqueeze,
-                                              ResizeImproved, ScaleTo1_1,
-                                              TensorCenterCrop,
+from models.i3d.transforms.transforms import (Clamp, PermuteAndUnsqueeze,
+                                              PILToTensor, ResizeImproved,
+                                              ScaleTo1_1, TensorCenterCrop,
                                               ToFloat, ToUInt8)
+from models.raft.raft_src.raft import InputPadder
 from torchvision import transforms
 from tqdm import tqdm
+
 from utils.utils import (action_on_extraction, form_list_from_user_input,
                          reencode_video_with_diff_fps,
                          show_predictions_on_dataset)
 
-PWC_PATH = './models/i3d/checkpoints/pwc_net_sintel.pt'
+PWC_MODEL_PATH = './models/pwc/checkpoints/pwc_net_sintel.pt'
+RAFT_MODEL_PATH = './models/raft/checkpoints/raft-sintel.pth'
 I3D_RGB_PATH = './models/i3d/checkpoints/i3d_rgb.pt'
 I3D_FLOW_PATH = './models/i3d/checkpoints/i3d_flow.pt'
 PRE_CENTRAL_CROP_MIN_SIDE_SIZE = 256
 CENTRAL_CROP_MIN_SIDE_SIZE = 224
 DEFAULT_I3D_STEP_SIZE = 64
 DEFAULT_I3D_STACK_SIZE = 64
-I3D_FEATURE_TYPE = 'separately_rgb_flow'
 I3D_CLASSES_NUM = 400
 
 class ExtractI3D(torch.nn.Module):
@@ -37,7 +38,8 @@ class ExtractI3D(torch.nn.Module):
         else:
             self.streams = args.streams
         self.path_list = form_list_from_user_input(args)
-        self.pwc_path = PWC_PATH
+        self.flow_type = args.flow_type
+        self.flow_model_paths = {'pwc': PWC_MODEL_PATH, 'raft': RAFT_MODEL_PATH}
         self.i3d_weights_paths = {'rgb': I3D_RGB_PATH, 'flow': I3D_FLOW_PATH}
         self.min_side_size = PRE_CENTRAL_CROP_MIN_SIDE_SIZE
         self.central_crop_size = CENTRAL_CROP_MIN_SIDE_SIZE
@@ -83,7 +85,20 @@ class ExtractI3D(torch.nn.Module):
         '''
         device = indices.device
 
-        flow_xtr_model = PWCNet(self.pwc_path).to(device)
+        if self.flow_type == 'pwc':
+            from models.pwc.pwc_src.pwc_net import PWCNet
+            flow_xtr_model = PWCNet()
+        elif self.flow_type == 'raft':
+            from models.raft.raft_src.raft import RAFT
+            flow_xtr_model = RAFT()
+            flow_xtr_model = torch.nn.DataParallel(flow_xtr_model, device_ids=[device])
+        else:
+            raise NotImplementedError
+
+        flow_xtr_model.load_state_dict(torch.load(self.flow_model_paths[self.flow_type], map_location=device))
+        flow_xtr_model = flow_xtr_model.to(device)
+        flow_xtr_model.eval()
+
         models = {}
         for stream in self.streams:
             models[stream] = I3D(num_classes=self.i3d_classes_num, modality=stream).to(device).eval()
@@ -121,7 +136,7 @@ class ExtractI3D(torch.nn.Module):
         Returns:
             Dict[str, Union[torch.nn.Module, str]] -- dict with i3d features and their type
         '''
-        def _run_on_a_stack(feats_dict, rgb_stack, models, device, stack_counter):
+        def _run_on_a_stack(feats_dict, rgb_stack, models, device, stack_counter, padder=None):
             rgb_stack = torch.cat(rgb_stack).to(device)
 
             for stream in self.streams:
@@ -131,7 +146,12 @@ class ExtractI3D(torch.nn.Module):
                     # we also use `end_idx-1` for stream == 'rgb' case: just to make sure the feature length
                     # is same regardless of whether only rgb is used or flow
                     if stream == 'flow':
-                        stream_slice = flow_xtr_model(rgb_stack[:-1], rgb_stack[1:], device)
+                        if self.flow_type == 'raft':
+                            stream_slice = flow_xtr_model(padder.pad(rgb_stack)[:-1], padder.pad(rgb_stack)[1:])
+                        elif self.flow_type == 'pwc':
+                            stream_slice = flow_xtr_model(rgb_stack[:-1], rgb_stack[1:])
+                        else:
+                            raise NotImplementedError
                     elif stream == 'rgb':
                         stream_slice = rgb_stack[:-1]
                     else:
@@ -162,6 +182,7 @@ class ExtractI3D(torch.nn.Module):
         # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
         # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
         # this case
+        padder = None
         first_frame = True
         stack_counter = 0
         while cap.isOpened():
@@ -178,11 +199,14 @@ class ExtractI3D(torch.nn.Module):
                 rgb = self.resize_transforms(rgb)
                 rgb = rgb.unsqueeze(0)
 
+                if self.flow_type == 'raft' and padder is None:
+                    padder = InputPadder(rgb.shape)
+
                 stack.append(rgb)
 
                 # - 1 is used because we need B+1 frames to calculate B frames
                 if len(stack) - 1 == self.stack_size:
-                    _run_on_a_stack(feats_dict, stack, models, device, stack_counter)
+                    _run_on_a_stack(feats_dict, stack, models, device, stack_counter, padder)
                     # leaving the elements if step_size < stack_size so they will not be loaded again
                     # if step_size == stack_size one element is left because the flow between the last element
                     # in the prev list and the first element in the current list

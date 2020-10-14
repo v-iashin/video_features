@@ -3,27 +3,26 @@ import os
 from typing import Dict, Union
 
 import cv2
-import models.raft.raft_src.utils.flow_viz as flow_viz
+import models.pwc.pwc_src.utils.flow_viz as flow_viz
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-from models.raft.raft_src.raft import RAFT, InputPadder
-from models.raft.transforms.transforms import (ResizeImproved, ToFloat,
-                                               ToTensorWithoutScaling)
+from models.pwc.pwc_src.pwc_net import PWCNet
+from models.pwc.transforms.transforms import (PILToTensor, ResizeImproved,
+                                              ToFloat, ToTensorWithoutScaling)
 from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
                          reencode_video_with_diff_fps)
 
-# RAFT_MODEL_PATH = './models/raft/checkpoints/raft-kitti.pth'
-RAFT_MODEL_PATH = './models/raft/checkpoints/raft-sintel.pth'
+PWC_MODEL_PATH = './models/pwc/checkpoints/pwc_net_sintel.pt'
 
-class ExtractRAFT(torch.nn.Module):
+class ExtractPWC(torch.nn.Module):
 
     def __init__(self, args):
-        super(ExtractRAFT, self).__init__()
+        super(ExtractPWC, self).__init__()
         self.feature_type = args.feature_type
         self.path_list = form_list_from_user_input(args)
-        self.model_path = RAFT_MODEL_PATH
+        self.model_path = PWC_MODEL_PATH
         self.batch_size = args.batch_size
         self.extraction_fps = args.extraction_fps
         self.resize_to_smaller_edge = args.resize_to_smaller_edge
@@ -32,7 +31,7 @@ class ExtractRAFT(torch.nn.Module):
             self.transforms = transforms.Compose([
                 transforms.ToPILImage(),
                 ResizeImproved(self.side_size, self.resize_to_smaller_edge),
-                transforms.PILToTensor(),
+                PILToTensor(),
                 ToFloat(),
             ])
         else:
@@ -55,9 +54,9 @@ class ExtractRAFT(torch.nn.Module):
         device = indices.device
 
         # load the model
-        model = RAFT()
-        model = torch.nn.DataParallel(model, device_ids=[device])
+        model = PWCNet()
         model.load_state_dict(torch.load(self.model_path, map_location=device))
+        model = model.to(device)
         model.eval()
 
         for idx in indices:
@@ -91,14 +90,13 @@ class ExtractRAFT(torch.nn.Module):
         Returns:
             Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
         '''
-        def _run_on_a_batch(flow_frames, batch, model, device, padder):
+        def _run_on_a_batch(flow_frames, batch, model, device):
             batch = torch.cat(batch).to(device)
-            batch = padder.pad(batch)
 
             with torch.no_grad():
                 flow = model(batch[:-1], batch[1:])
                 # upadding only before saving because np.concat will not work if the img is unpadded
-                flow_frames.extend(padder.unpad(flow).tolist())
+                flow_frames.extend(flow.tolist())
                 # show optical flow along with rgb frames
                 if self.show_pred:
                     self.show_flow_for_every_pair_of_frames(flow, batch)
@@ -117,8 +115,6 @@ class ExtractRAFT(torch.nn.Module):
         # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
         # this case
         first_frame = True
-        # we use None to check if we are just started to extract frames
-        padder = None
         while cap.isOpened():
             frame_exists, rgb = cap.read()
 
@@ -134,19 +130,16 @@ class ExtractRAFT(torch.nn.Module):
                 rgb = self.transforms(rgb)
                 rgb = rgb.unsqueeze(0)
 
-                if padder is None:
-                    padder = InputPadder(rgb.shape)
-
                 batch.append(rgb)
 
                 # - 1 is used because we need B+1 frames to calculate B frames
                 if len(batch) - 1 == self.batch_size:
-                    _run_on_a_batch(flow_frames, batch, model, device, padder)
+                    _run_on_a_batch(flow_frames, batch, model, device)
                     # leaving the last element to calculate flow between it and the first element
                     batch = [batch[-1]]
             else:
                 if len(batch) > 1:
-                    _run_on_a_batch(flow_frames, batch, model, device, padder)
+                    _run_on_a_batch(flow_frames, batch, model, device)
                 cap.release()
                 break
 
