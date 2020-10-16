@@ -66,10 +66,12 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
             fname = f'{pathlib.Path(video_path).stem}_{key}.npy'
             # construct the paths to save the features
             fpath = os.path.join(output_path, fname)
+            if len(value) == 0:
+                print(f'Warning: the value is empty for {key} @ {fpath}')
             # save the info behind the each key
             np.save(fpath, value)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f'on_extraction: {on_extraction} is not implemented')
 
 def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
     '''print(form_slices(100, 15, 15) - example'''
