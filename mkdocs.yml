@@ -1,0 +1,8 @@
+site_name: Video Features Documentation
+theme:
+  name: material
+  palette:
+    primary: red
+repo_url: https://github.com/v-iashin/video_features
+markdown_extensions:
+  - attr_list
