@@ -30,7 +30,22 @@ python main.py \
     --device_ids 0 2 \
     --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
 ```
-See `python main.py --help` for more arguments and [I3D Examples](i3d.md).
+
+The video paths can be specified as a `.txt` file with paths
+```bash
+python main.py \
+    --feature_type vggish \
+    --device_ids 0 2 \
+    --file_with_video_paths ./sample/sample_video_paths.txt
+```
+The features can be saved as numpy arrays by specifying `--on_extraction save_numpy`. By default, it will create a folder `./output` and will store features there (you can change the output folder using `--output_path`)
+```bash
+python main.py \
+    --feature_type vggish \
+    --device_ids 0 2 \
+    --on_extraction save_numpy \
+    --file_with_video_paths ./sample/sample_video_paths.txt
+```
 
 ---
 
