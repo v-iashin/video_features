@@ -100,6 +100,9 @@ def sanity_check(args: argparse.Namespace):
     if args.feature_type == 'r21d_rgb':
         message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
         assert args.extraction_fps is None, message
+    if args.feature_type == 'i3d':
+        message = f'I3D model does not support inputs shorter than 10 timestamps. You have: {args.stack_size}'
+        assert args.stack_size >= 10, message
     if args.feature_type in ['resnet50', 'r21d_rgb']:
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
