@@ -102,7 +102,8 @@ def sanity_check(args: argparse.Namespace):
         assert args.extraction_fps is None, message
     if args.feature_type == 'i3d':
         message = f'I3D model does not support inputs shorter than 10 timestamps. You have: {args.stack_size}'
-        assert args.stack_size >= 10, message
+        if args.stack_size is not None:
+            assert args.stack_size >= 10, message
     if args.feature_type in ['resnet50', 'r21d_rgb']:
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
