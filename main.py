@@ -60,7 +60,7 @@ if __name__ == "__main__":
                         help='folder to store the temporary files used for extraction (frames or aud files)')
     parser.add_argument('--keep_tmp_files', dest='keep_tmp_files', action='store_true', default=False,
                         help='to keep temp files after feature extraction. (works only for vggish and i3d)')
-    parser.add_argument('--on_extraction', default='print', choices=['print', 'save_numpy'],
+    parser.add_argument('--on_extraction', default='print', choices=['print', 'save_numpy', 'save_pickle'],
                         help='what to do once the stack is extracted')
     parser.add_argument('--output_path', default='./output', help='where to store results if saved')
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # some printing
-    if args.on_extraction == 'save_numpy':
+    if args.on_extraction in ['save_numpy', 'save_pickle']:
         print(f'Saving features to {args.output_path}')
     if args.keep_tmp_files:
         print(f'Keeping temp files in {args.tmp_path}')

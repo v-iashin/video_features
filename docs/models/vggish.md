@@ -38,7 +38,7 @@ python main.py \
     --device_ids 0 2 \
     --file_with_video_paths ./sample/sample_video_paths.txt
 ```
-The features can be saved as numpy arrays by specifying `--on_extraction save_numpy`. By default, it will create a folder `./output` and will store features there (you can change the output folder using `--output_path`)
+The features can be saved as numpy arrays by specifying `--on_extraction save_numpy` or `save_pickle`. By default, it will create a folder `./output` and will store features there (you can change the output folder using `--output_path`)
 ```bash
 python main.py \
     --feature_type vggish \

@@ -3,6 +3,7 @@ import os
 import pathlib
 import subprocess
 from typing import Dict
+import pickle
 
 import numpy as np
 import torch
@@ -47,10 +48,11 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
 
     Args:
         feats_dict (Dict[str, np.ndarray]): A dict with features and possibly some meta. Key will be used as
-                                            suffixes to the saved files if `save_numpy` is used.
+                                            suffixes to the saved files if `save_numpy` or `save_pickle` is
+                                            used.
         video_path (str): A path to the video.
         on_extraction (str): What to do with the features on extraction.
-        output_path (str): Where to save the features if `save_numpy` is used.
+        output_path (str): Where to save the features if `save_numpy` or `save_pickle` is used.
     '''
     # since the features are enclosed in a dict with another meta information we will iterate on kv
     for key, value in feats_dict.items():
@@ -70,6 +72,17 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
                 print(f'Warning: the value is empty for {key} @ {fpath}')
             # save the info behind the each key
             np.save(fpath, value)
+        elif on_extraction == 'save_pickle':
+            # make dir if doesn't exist
+            os.makedirs(output_path, exist_ok=True)
+            # extract file name and change the extention
+            fname = f'{pathlib.Path(video_path).stem}_{key}.pkl'
+            # construct the paths to save the features
+            fpath = os.path.join(output_path, fname)
+            if key != 'fps' and len(value) == 0:
+                print(f'Warning: the value is empty for {key} @ {fpath}')
+            # save the info behind the each key
+            pickle.dump(value, open(fpath, 'wb'))
         else:
             raise NotImplementedError(f'on_extraction: {on_extraction} is not implemented')
 
