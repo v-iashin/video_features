@@ -64,7 +64,7 @@ if __name__ == "__main__":
                         help='what to do once the stack is extracted')
     parser.add_argument('--output_path', default='./output', help='where to store results if saved')
 
-    parser.add_argument('--extraction_fps', type=int, help='Do not specify for original video fps')
+    parser.add_argument('--extraction_fps', type=float, help='For original video fps, leave unspecified')
     parser.add_argument('--stack_size', type=int, help='Feature time span in fps')
     parser.add_argument('--step_size', type=int, help='Feature step size in fps')
     parser.add_argument('--streams', nargs='+', choices=['flow', 'rgb'],
