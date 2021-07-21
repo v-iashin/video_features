@@ -66,7 +66,7 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
             fname = f'{pathlib.Path(video_path).stem}_{key}.npy'
             # construct the paths to save the features
             fpath = os.path.join(output_path, fname)
-            if len(value) == 0:
+            if key != 'fps' and len(value) == 0:
                 print(f'Warning: the value is empty for {key} @ {fpath}')
             # save the info behind the each key
             np.save(fpath, value)
