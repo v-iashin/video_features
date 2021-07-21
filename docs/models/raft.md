@@ -34,7 +34,7 @@ python main.py \
 ```
 Note, if your videos are quite long, have large dimensions and fps, watch your RAM as the frames are stored in the memory until they are saved. Please see other examples how can you overcome this problem.
 
-If you would like to save the frames, use `--on_extraction save_numpy` – by default, the frames are saved in `./output/` or where `--output_path` specifies. In the case of RAFT, besides frames, it also saves timestamps in ms and the original fps of the video into the same folder with features.
+If you would like to save the frames, use `--on_extraction save_numpy` (or `save_pickle`) – by default, the frames are saved in `./output/` or where `--output_path` specifies. In the case of RAFT, besides frames, it also saves timestamps in ms and the original fps of the video into the same folder with features.
 ```bash
 python main.py \
     --feature_type raft \
