@@ -161,13 +161,13 @@ def which_ffmpeg() -> str:
     return ffmpeg_path
 
 
-def reencode_video_with_diff_fps(video_path: str, tmp_path: str, extraction_fps: int) -> str:
+def reencode_video_with_diff_fps(video_path: str, tmp_path: str, extraction_fps: float) -> str:
     '''Reencodes the video given the path and saves it to the tmp_path folder.
 
     Args:
         video_path (str): original video
         tmp_path (str): the folder where tmp files are stored (will be appended with a proper filename).
-        extraction_fps (int): target fps value
+        extraction_fps (float): target fps value
 
     Returns:
         str: The path where the tmp file is stored. To be used to load the video from
