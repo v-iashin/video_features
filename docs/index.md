@@ -27,4 +27,4 @@ Optical Flow
 
 Image Recognition
 
-- [ResNet-50 (ImageNet)](models/resnet.md)
+- [ResNet-18,34,50,101,152 (ImageNet)](models/resnet.md)

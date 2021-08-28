@@ -20,10 +20,10 @@ TRAIN_MEAN = [0.485, 0.456, 0.406]
 TRAIN_STD = [0.229, 0.224, 0.225]
 
 
-class ExtractResNet50(torch.nn.Module):
+class ExtractResNet(torch.nn.Module):
 
     def __init__(self, args):
-        super(ExtractResNet50, self).__init__()
+        super(ExtractResNet, self).__init__()
         self.feature_type = args.feature_type
         self.path_list = form_list_from_user_input(args)
         self.batch_size = args.batch_size
@@ -51,7 +51,20 @@ class ExtractResNet50(torch.nn.Module):
         '''
         device = indices.device
 
-        model = models.resnet50(pretrained=True).to(device)
+        if self.feature_type == 'resnet18':
+            model = models.resnet18
+        elif self.feature_type == 'resnet34':
+            model = models.resnet34
+        elif self.feature_type == 'resnet50':
+            model = models.resnet50
+        elif self.feature_type == 'resnet101':
+            model = models.resnet101
+        elif self.feature_type == 'resnet152':
+            model = models.resnet152
+        else:
+            raise NotImplementedError
+
+        model = model(pretrained=True).to(device)
         model.eval()
         # save the pre-trained classifier for show_preds and replace it in the net with identity
         model_class = model.fc
