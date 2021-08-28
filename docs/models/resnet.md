@@ -4,11 +4,16 @@
   <img src="../../_assets/resnet.png" width="300" />
 </figure>
 
-The [ResNet-50](https://arxiv.org/abs/1512.03385) features are extracted at each frame of the provided video. The ResNet-50 is pre-trained on the 1k ImageNet dataset. We extract features from the pre-classification layer. The implementation is based on the [torchvision models](https://pytorch.org/docs/1.6.0/torchvision/models.html#classification). The extracted features are going to be of size `num_frames x 2048`. We additionally output timesteps in ms for each feature and fps of the video. We use the standard set of augmentations.
+The [ResNet](https://arxiv.org/abs/1512.03385) features are extracted at each frame of the provided video.
+The ResNet is pre-trained on the 1k ImageNet dataset.
+We extract features from the pre-classification layer.
+The implementation is based on the [torchvision models](https://pytorch.org/docs/1.6.0/torchvision/models.html#classification).
+The extracted features are going to be of size `num_frames x 2048`.
+We additionally output timesteps in ms for each feature and fps of the video. We use the standard set of augmentations.
 
 ---
 
-## Set up the Environment for ResNet-50
+## Set up the Environment for ResNet
 Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
 ```bash
 # it will create a new conda environment called 'torch_zoo' on your machine
@@ -23,7 +28,7 @@ Start by activating the environment
 conda activate torch_zoo
 ```
 
-It is pretty much the same procedure as with other features.
+It is pretty much the same procedure as with other features. The example is provided for the ResNet-50 flavour, but we also support ResNet-18,34,101,152.
 ```bash
 python main.py \
     --feature_type resnet50 \
