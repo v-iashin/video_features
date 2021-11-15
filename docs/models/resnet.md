@@ -1,4 +1,4 @@
-# ResNet-50
+# ResNet
 
 <figure>
   <img src="../../_assets/resnet.png" width="300" />

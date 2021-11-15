@@ -6,7 +6,7 @@ import numpy
 import torch
 import argparse
 
-from utils.utils import form_list_from_user_input, fix_tensorflow_gpu_allocation, sanity_check
+from utils.utils import form_list_from_user_input, sanity_check
 
 def parallel_feature_extraction(args):
     '''Distributes the feature extraction in embarasingly-parallel fashion. Specifically,
@@ -20,7 +20,6 @@ def parallel_feature_extraction(args):
         extractor = ExtractR21D(args)
     elif args.feature_type == 'vggish':
         from models.vggish.extract_vggish import ExtractVGGish  # defined here to avoid import errors
-        fix_tensorflow_gpu_allocation(args)
         extractor = ExtractVGGish(args)
     elif args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
         from models.resnet.extract_resnet import ExtractResNet

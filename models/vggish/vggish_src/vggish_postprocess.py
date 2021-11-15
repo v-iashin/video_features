@@ -16,7 +16,6 @@
 """Post-process embeddings from VGGish."""
 
 import numpy as np
-
 from models.vggish.vggish_src import vggish_params
 
 
