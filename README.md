@@ -60,5 +60,4 @@ Here is a few things I have in mind:
 
 - [ ] PyTorch DDP support (for multi-node extraction)
 - [ ] Refactor the code base with OOP in mind – now the code is a bit redundant for each feature
-- [ ] Config support (e.g. with `OmegaConf`)
 - [ ] More models, of course

@@ -16,7 +16,7 @@ Sound Recognition
 
 Optical Flow
 
-- [RAFT (FlyingChairs, FlyingThings3D, Sintel)](https://v-iashin.github.io/video_features/models/raft)
+- [RAFT (FlyingChairs, FlyingThings3D, Sintel, KITTI)](https://v-iashin.github.io/video_features/models/raft)
 - [PWC-Net (Sintel)](https://v-iashin.github.io/video_features/models/pwc/)
 
 
