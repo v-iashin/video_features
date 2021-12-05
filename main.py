@@ -54,7 +54,7 @@ if __name__ == "__main__":
     cfg_yml = OmegaConf.load(build_cfg_path(cfg_cli.feature_type))
     # the latter arguments are prioritized
     cfg = OmegaConf.merge(cfg_yml, cfg_cli)
-    OmegaConf.set_readonly(cfg, True)
+    # OmegaConf.set_readonly(cfg, True)
     print(OmegaConf.to_yaml(cfg))
     # some printing
     if cfg.on_extraction in ['save_numpy', 'save_pickle']:

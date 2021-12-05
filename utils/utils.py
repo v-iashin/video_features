@@ -1,13 +1,14 @@
 import argparse
 import os
-from pathlib import Path
-import subprocess
-from typing import Dict
 import pickle
+import subprocess
+from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import torch
 import torch.nn.functional as F
+from omegaconf.listconfig import ListConfig
 
 IMAGENET_CLASS_PATH = './utils/IN_label_map.txt'
 KINETICS_CLASS_PATH = './utils/K400_label_map.txt'
@@ -132,14 +133,18 @@ def form_list_from_user_input(args: argparse.Namespace) -> list:
     Returns:
         list: list with paths
     '''
-    if args.file_with_video_paths is not None:
+    if args.file_with_video_paths is None:
+        assert args.video_paths is not None, '`video_paths` or `file_with_video_paths` must be specified'
+        path_list = args.video_paths
+        # ListConfig does not support indexing with tensor scalars, e.g. tensor(1, device='cuda:0')
+        if isinstance(args.video_paths, ListConfig):
+            path_list = list(path_list)
+    else:
         with open(args.file_with_video_paths) as rfile:
             # remove carriage return
             path_list = [line.replace('\n', '') for line in rfile.readlines()]
             # remove empty lines
             path_list = [path for path in path_list if len(path) > 0]
-    else:
-        path_list = args.video_paths
 
     # sanity check: prints paths which do not exist
     for path in path_list:
