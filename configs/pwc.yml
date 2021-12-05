@@ -1,8 +1,8 @@
 # Model
 feature_type: 'pwc'
 extraction_fps: null # For original video fps, leave unspecified as "null" (None)
-side_size: null # resize the frame resolution: min(W, H) = side_size, e.g. 256
-resize_to_smaller_edge: true # if side_size is not "null", the *smaller* side in (H, W) will be resized to the `side_size`
+side_size: null # if resized to the smaller edge, min(W, H) = side_size, if to the larger: max(W, H), if "null" (None) no resize is performed
+resize_to_smaller_edge: true # if false, the larger edge will be used to be resized to `side_size`
 
 # Extraction Parameters
 batch_size: 1 # increase the extraction speed with batching

@@ -155,14 +155,14 @@ class ExtractPWC(torch.nn.Module):
 
         return features_with_meta
 
-    def show_flow_for_every_pair_of_frames(self, flow_up: torch.Tensor, batch: torch.Tensor):
+    def show_flow_for_every_pair_of_frames(self, out: torch.Tensor, batch: torch.Tensor):
         '''Shows the resulting flow as well as the first frame
 
         Args:
-            flow_up (torch.Tensor): the output of the RAFT
+            out (torch.Tensor): the output of the model
             batch (torch.Tensor): the stack of rgb inputs
         '''
-        for idx, flow in enumerate(flow_up):
+        for idx, flow in enumerate(out):
             img = batch[idx].permute(1, 2, 0).cpu().numpy()
             flow = flow.permute(1, 2, 0).cpu().numpy()
             flow = flow_viz.flow_to_image(flow)
