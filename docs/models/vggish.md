@@ -17,34 +17,39 @@ Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
 ```bash
 # it will create a new conda environment called 'torch_zoo' on your machine
 conda env create -f conda_env_torch_zoo.yml
-conda activate torch_zoo
 ```
 
 ---
 
+## Minimal Working Example
+
+```bash
+# Activate the environment
+conda activate torch_zoo
+
+# extract features from "./sample/v_GGSY1Qvo990.mp4" video
+python main.py \
+    feature_type=vggish \
+    video_paths="[./sample/v_GGSY1Qvo990.mp4]"
+```
+---
+
 ## Example
 
+The video paths can be specified as a `.txt` file with paths.
 ```bash
 python main.py \
-    --feature_type vggish \
-    --device_ids 0 2 \
-    --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
-```
-
-The video paths can be specified as a `.txt` file with paths
-```bash
-python main.py \
-    --feature_type vggish \
-    --device_ids 0 2 \
-    --file_with_video_paths ./sample/sample_video_paths.txt
+    feature_type=vggish \
+    device_ids="[0, 2]" \
+    file_with_video_paths=./sample/sample_video_paths.txt
 ```
 The features can be saved as numpy arrays by specifying `--on_extraction save_numpy` or `save_pickle`. By default, it will create a folder `./output` and will store features there (you can change the output folder using `--output_path`)
 ```bash
 python main.py \
-    --feature_type vggish \
-    --device_ids 0 2 \
-    --on_extraction save_numpy \
-    --file_with_video_paths ./sample/sample_video_paths.txt
+    feature_type=vggish \
+    device_ids="[0, 2]" \
+    on_extraction=save_numpy \
+    video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
 
 ---
@@ -52,11 +57,10 @@ python main.py \
 ## Difference between Tensorflow and PyTorch implementations
 
 ```
-python main.py \               
-    --feature_type vggish \
-    --device_ids 0 1 \
-    --on_extraction save_numpy \
-    --file_with_video_paths ./sample/sample_video_paths.txt
+python main.py \
+    feature_type=vggish \
+    on_extraction=save_numpy \
+    file_with_video_paths=./sample/sample_video_paths.txt
 
 TF (./sample/v_GGSY1Qvo990.mp4):
 [[0.         0.04247099 0.09079538 ... 0.         0.18485409 0.        ]

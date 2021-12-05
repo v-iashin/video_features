@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
+  - antlr-python-runtime=4.9.3=pyhd8ed1ab_1
   - av=8.0.2=py38he20a9df_1
   - blas=1.0=mkl
   - bzip2=1.0.8=h516909a_3
@@ -48,6 +49,7 @@ dependencies:
   - numpy=1.19.1=py38hbc911f0_0
   - numpy-base=1.19.1=py38hfa32c7d_0
   - olefile=0.46=py_0
+  - omegaconf=2.1.1=py38h578d9bd_1
   - openh264=2.1.1=h8b12597_0
   - openssl=1.1.1h=h516909a_0
   - pillow=7.2.0=py38hb39fc2d_0
@@ -57,6 +59,7 @@ dependencies:
   - python=3.8.5=h7579374_1
   - python_abi=3.8=1_cp38
   - pytorch=1.6.0=py3.8_cuda10.2.89_cudnn7.6.5_0
+  - pyyaml=5.3.1=py38h8df0ef7_1
   - readline=8.0=h7b6447c_0
   - resampy=0.2.2=py_0
   - scipy=1.5.2=py38h0b6359f_0
@@ -67,9 +70,11 @@ dependencies:
   - tk=8.6.10=hbc83047_0
   - torchvision=0.7.0=py38_cu102
   - tqdm=4.49.0=py_0
+  - typing_extensions=4.0.1=pyha770c72_0
   - wheel=0.35.1=py_0
   - x264=1!152.20180806=h14c3975_0
   - xz=5.2.5=h7b6447c_0
+  - yaml=0.2.5=h516909a_0
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.5=h9ceee32_0
   - pip:

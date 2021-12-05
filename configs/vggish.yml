@@ -1,0 +1,16 @@
+# Model
+feature_type: 'vggish'
+
+# Extraction Parameters
+device_ids: [0]  # list of device ids. Use [0, 2] to employ the 0th and 2nd devices.
+on_extraction: 'print'  # what to do once the features are extracted. Can be ['print', 'save_numpy', 'save_pickle']
+output_path: './output' # where to store results if saved
+tmp_path: './tmp' # folder to store the temporary files used for extraction (frames or aud files)
+keep_tmp_files: false # to keep temp files after feature extraction.
+show_pred: false # to show preds of a model, i.e. on a pre-train dataset for each feature (Kinetics 400)
+
+# config
+config: null
+
+# Video paths
+file_with_video_paths: null # if the list of videos is large, you might put them in a txt file, use this argument to specify the path
