@@ -1,6 +1,7 @@
 # Model
 feature_type: 'resnet50'
 batch_size: 1 # Batchsize (only frame-wise extractors are supported)
+extraction_fps: null # For original video fps, leave unspecified "null" (None)
 
 # Extraction Parameters
 device_ids: [0]  # list of device ids. Use [0, 2] to employ the 0th and 2nd devices.
