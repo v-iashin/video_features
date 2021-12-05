@@ -2,7 +2,7 @@
   <img src="_assets/base.png" width="300" />
 </figure>
 
-`video_features` allows you to extract features from raw videos in parallel with multiple GPUs. 
+`video_features` allows you to extract features from raw videos in parallel with multiple GPUs.
 It supports several extractors that capture visual appearance, optical flow, and audio features.
 
 Action Recognition

@@ -1,6 +1,6 @@
 import argparse
 import os
-import pathlib
+from pathlib import Path
 import subprocess
 from typing import Dict
 import pickle
@@ -65,7 +65,7 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
             # make dir if doesn't exist
             os.makedirs(output_path, exist_ok=True)
             # extract file name and change the extention
-            fname = f'{pathlib.Path(video_path).stem}_{key}.npy'
+            fname = f'{Path(video_path).stem}_{key}.npy'
             # construct the paths to save the features
             fpath = os.path.join(output_path, fname)
             if key != 'fps' and len(value) == 0:
@@ -76,7 +76,7 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
             # make dir if doesn't exist
             os.makedirs(output_path, exist_ok=True)
             # extract file name and change the extention
-            fname = f'{pathlib.Path(video_path).stem}_{key}.pkl'
+            fname = f'{Path(video_path).stem}_{key}.pkl'
             # construct the paths to save the features
             fpath = os.path.join(output_path, fname)
             if key != 'fps' and len(value) == 0:
@@ -178,7 +178,7 @@ def reencode_video_with_diff_fps(video_path: str, tmp_path: str, extraction_fps:
     os.makedirs(tmp_path, exist_ok=True)
 
     # form the path to tmp directory
-    new_path = os.path.join(tmp_path, f'{pathlib.Path(video_path).stem}_new_fps.mp4')
+    new_path = os.path.join(tmp_path, f'{Path(video_path).stem}_new_fps.mp4')
     cmd = f'{which_ffmpeg()} -hide_banner -loglevel panic '
     cmd += f'-y -i {video_path} -filter:v fps=fps={extraction_fps} {new_path}'
     subprocess.call(cmd.split())
@@ -216,3 +216,20 @@ def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:
     subprocess.call(aac_to_wav.split())
 
     return audio_wav_path, audio_aac_path
+
+
+def build_cfg_path(feature_type: str) -> os.PathLike:
+    '''Makes a path to the default config file for each feature family.
+
+    Args:
+        feature_type (str): the type (e.g. 'vggish')
+
+    Returns:
+        os.PathLike: the path to the default config for the type
+    '''
+    path_base = Path('./configs')
+    if feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
+        path = path_base / 'resnet.yml'
+    else:
+        path = path_base / f'{feature_type}.yml'
+    return path

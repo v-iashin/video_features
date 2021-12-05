@@ -37,9 +37,9 @@ class ExtractResNet(torch.nn.Module):
             transforms.Normalize(mean=TRAIN_MEAN, std=TRAIN_STD)
         ])
         self.show_pred = args.show_pred
+        # not used, create an issue if you would like to save the frames
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
-        # not used, create an issue if you would like to save the frames
         self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
         self.output_path = os.path.join(args.output_path, self.feature_type)
         self.progress = tqdm(total=len(self.path_list))

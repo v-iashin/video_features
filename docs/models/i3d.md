@@ -74,7 +74,8 @@ You can change the output folder using `--output_path` argument.
 Also, you may want to try to change I3D window and step sizes
 ```bash
 python main.py \
-    --feature_type i3d --device_ids 0 2 \
+    --feature_type i3d \
+    --device_ids 0 2 \
     --stack_size 24 \
     --step_size 24 \
     --file_with_video_paths ./sample/sample_video_paths.txt
