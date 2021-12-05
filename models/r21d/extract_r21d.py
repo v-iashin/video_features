@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 import models.r21d.transforms.rgb_transforms as T
 import numpy as np
@@ -53,17 +53,12 @@ class ExtractR21D(torch.nn.Module):
             indices {torch.LongTensor} -- indices to self.path_list
         '''
         device = indices.device
-
-        model = r2plus1d_18(pretrained=True).to(device)
-        model.eval()
-        # save the pre-trained classifier for show_preds and replace it in the net with identity
-        model_class = model.fc
-        model.fc = torch.nn.Identity()
+        model, class_head = self.load_model(device)
 
         for idx in indices:
             # when error occurs might fail silently when run from torch data parallel
             try:
-                feats_dict = self.extract(device, model, model_class, self.path_list[idx])
+                feats_dict = self.extract(device, model, class_head, self.path_list[idx])
                 action_on_extraction(feats_dict, self.path_list[idx], self.output_path, self.on_extraction)
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
@@ -125,3 +120,23 @@ class ExtractR21D(torch.nn.Module):
         }
 
         return feats_dict
+
+    def load_model(self, device: torch.device) -> Tuple[torch.nn.Module]:
+        '''Defines the models, loads checkpoints, sends them to the device.
+
+        Args:
+            device (torch.device): The device
+
+        Raises:
+            NotImplementedError: if flow type is not implemented.
+
+        Returns:
+            Tuple[torch.nn.Module]: the model with identity head, the original classifier
+        '''
+        model = r2plus1d_18(pretrained=True)
+        model = model.to(device)
+        model.eval()
+        # save the pre-trained classifier for show_preds and replace it in the net with identity
+        class_head = model.fc
+        model.fc = torch.nn.Identity()
+        return model, class_head
