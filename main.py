@@ -4,9 +4,9 @@
 # (see https://github.com/pytorch/pytorch/issues/37377)
 import numpy
 import torch
-import argparse
+from omegaconf import OmegaConf
 
-from utils.utils import form_list_from_user_input, sanity_check
+from utils.utils import build_cfg_path, form_list_from_user_input, sanity_check
 
 def parallel_feature_extraction(args):
     '''Distributes the feature extraction in embarasingly-parallel fashion. Specifically,
@@ -15,7 +15,7 @@ def parallel_feature_extraction(args):
     if args.feature_type == 'i3d':
         from models.i3d.extract_i3d import ExtractI3D  # defined here to avoid import errors
         extractor = ExtractI3D(args)
-    elif args.feature_type == 'r21d_rgb':
+    elif args.feature_type == 'r21d':
         from models.r21d.extract_r21d import ExtractR21D  # defined here to avoid import errors
         extractor = ExtractR21D(args)
     elif args.feature_type == 'vggish':
@@ -49,47 +49,18 @@ def parallel_feature_extraction(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Extract Features')
-    parser.add_argument('--feature_type', required=True,
-                        choices=['i3d', 'vggish', 'r21d_rgb', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-                                 'resnet152', 'raft', 'pwc'])
-    parser.add_argument('--video_paths', nargs='+', help='space-separated paths to videos')
-    parser.add_argument('--file_with_video_paths', help='.txt file where each line is a path')
-    parser.add_argument('--device_ids', type=int, nargs='+', help='space-separated device ids')
-    parser.add_argument('--tmp_path', default='./tmp',
-                        help='folder to store the temporary files used for extraction (frames or aud files)')
-    parser.add_argument('--keep_tmp_files', dest='keep_tmp_files', action='store_true', default=False,
-                        help='to keep temp files after feature extraction. (works only for vggish and i3d)')
-    parser.add_argument('--on_extraction', default='print', choices=['print', 'save_numpy', 'save_pickle'],
-                        help='what to do once the stack is extracted')
-    parser.add_argument('--output_path', default='./output', help='where to store results if saved')
-
-    parser.add_argument('--extraction_fps', type=float, help='For original video fps, leave unspecified')
-    parser.add_argument('--stack_size', type=int, help='Feature time span in fps')
-    parser.add_argument('--step_size', type=int, help='Feature step size in fps')
-    parser.add_argument('--streams', nargs='+', choices=['flow', 'rgb'],
-                        help='Streams to use for feature extraction. Both used if not specified')
-    parser.add_argument('--flow_type', choices=['raft', 'pwc'], default='pwc',
-                        help='Flow to use in I3D. PWC is faster while RAFT is more accurate.')
-    parser.add_argument('--batch_size', type=int, default=1,
-                        help='Batchsize (only frame-wise extractors are supported)')
-    parser.add_argument('--resize_to_larger_edge', dest='resize_to_smaller_edge', action='store_false',
-                        default=True, help='The larger side will be resized to this number maintaining the'
-                        + 'aspect ratio. By default, uses the smaller side (as Resize in torchvision).')
-    parser.add_argument('--side_size', type=int,
-                        help='If specified, the input images will be resized to this value in RAFT.')
-    parser.add_argument(
-        '--show_pred', dest='show_pred', action='store_true', default=False,
-        help='to show preds of a model, i.e. on a pre-train dataset (imagenet or kinetics) for each feature'
-    )
-
-    args = parser.parse_args()
-
+    cfg_cli = OmegaConf.from_cli()
+    print(cfg_cli)
+    cfg_yml = OmegaConf.load(build_cfg_path(cfg_cli.feature_type))
+    # the latter arguments are prioritized
+    cfg = OmegaConf.merge(cfg_yml, cfg_cli)
+    # OmegaConf.set_readonly(cfg, True)
+    print(OmegaConf.to_yaml(cfg))
     # some printing
-    if args.on_extraction in ['save_numpy', 'save_pickle']:
-        print(f'Saving features to {args.output_path}')
-    if args.keep_tmp_files:
-        print(f'Keeping temp files in {args.tmp_path}')
+    if cfg.on_extraction in ['save_numpy', 'save_pickle']:
+        print(f'Saving features to {cfg.output_path}')
+    if cfg.keep_tmp_files:
+        print(f'Keeping temp files in {cfg.tmp_path}')
 
-    sanity_check(args)
-    parallel_feature_extraction(args)
+    sanity_check(cfg)
+    parallel_feature_extraction(cfg)

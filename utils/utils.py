@@ -1,13 +1,14 @@
 import argparse
 import os
-import pathlib
-import subprocess
-from typing import Dict
 import pickle
+import subprocess
+from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import torch
 import torch.nn.functional as F
+from omegaconf.listconfig import ListConfig
 
 IMAGENET_CLASS_PATH = './utils/IN_label_map.txt'
 KINETICS_CLASS_PATH = './utils/K400_label_map.txt'
@@ -65,7 +66,7 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
             # make dir if doesn't exist
             os.makedirs(output_path, exist_ok=True)
             # extract file name and change the extention
-            fname = f'{pathlib.Path(video_path).stem}_{key}.npy'
+            fname = f'{Path(video_path).stem}_{key}.npy'
             # construct the paths to save the features
             fpath = os.path.join(output_path, fname)
             if key != 'fps' and len(value) == 0:
@@ -76,7 +77,7 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
             # make dir if doesn't exist
             os.makedirs(output_path, exist_ok=True)
             # extract file name and change the extention
-            fname = f'{pathlib.Path(video_path).stem}_{key}.pkl'
+            fname = f'{Path(video_path).stem}_{key}.pkl'
             # construct the paths to save the features
             fpath = os.path.join(output_path, fname)
             if key != 'fps' and len(value) == 0:
@@ -110,14 +111,14 @@ def sanity_check(args: argparse.Namespace):
         args.device_ids = [args.device_ids[0]]
         if args.feature_type == 'vggish':
             print('Showing class predictions is not implemented for VGGish')
-    if args.feature_type == 'r21d_rgb':
+    if args.feature_type == 'r21d':
         message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
         assert args.extraction_fps is None, message
     if args.feature_type == 'i3d':
         message = f'I3D model does not support inputs shorter than 10 timestamps. You have: {args.stack_size}'
         if args.stack_size is not None:
             assert args.stack_size >= 10, message
-    if args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'r21d_rgb']:
+    if args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'r21d']:
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
 
@@ -132,14 +133,18 @@ def form_list_from_user_input(args: argparse.Namespace) -> list:
     Returns:
         list: list with paths
     '''
-    if args.file_with_video_paths is not None:
+    if args.file_with_video_paths is None:
+        assert args.video_paths is not None, '`video_paths` or `file_with_video_paths` must be specified'
+        path_list = args.video_paths
+        # ListConfig does not support indexing with tensor scalars, e.g. tensor(1, device='cuda:0')
+        if isinstance(args.video_paths, ListConfig):
+            path_list = list(path_list)
+    else:
         with open(args.file_with_video_paths) as rfile:
             # remove carriage return
             path_list = [line.replace('\n', '') for line in rfile.readlines()]
             # remove empty lines
             path_list = [path for path in path_list if len(path) > 0]
-    else:
-        path_list = args.video_paths
 
     # sanity check: prints paths which do not exist
     for path in path_list:
@@ -178,7 +183,7 @@ def reencode_video_with_diff_fps(video_path: str, tmp_path: str, extraction_fps:
     os.makedirs(tmp_path, exist_ok=True)
 
     # form the path to tmp directory
-    new_path = os.path.join(tmp_path, f'{pathlib.Path(video_path).stem}_new_fps.mp4')
+    new_path = os.path.join(tmp_path, f'{Path(video_path).stem}_new_fps.mp4')
     cmd = f'{which_ffmpeg()} -hide_banner -loglevel panic '
     cmd += f'-y -i {video_path} -filter:v fps=fps={extraction_fps} {new_path}'
     subprocess.call(cmd.split())
@@ -216,3 +221,20 @@ def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:
     subprocess.call(aac_to_wav.split())
 
     return audio_wav_path, audio_aac_path
+
+
+def build_cfg_path(feature_type: str) -> os.PathLike:
+    '''Makes a path to the default config file for each feature family.
+
+    Args:
+        feature_type (str): the type (e.g. 'vggish')
+
+    Returns:
+        os.PathLike: the path to the default config for the type
+    '''
+    path_base = Path('./configs')
+    if feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
+        path = path_base / 'resnet.yml'
+    else:
+        path = path_base / f'{feature_type}.yml'
+    return path

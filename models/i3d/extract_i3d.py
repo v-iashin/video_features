@@ -36,7 +36,7 @@ class ExtractI3D(torch.nn.Module):
         if args.streams is None:
             self.streams = ['rgb', 'flow']
         else:
-            self.streams = args.streams
+            self.streams = [args.streams]
         self.path_list = form_list_from_user_input(args)
         self.flow_type = args.flow_type
         self.flow_model_paths = {'pwc': PWC_MODEL_PATH, 'raft': RAFT_MODEL_PATH}

@@ -22,6 +22,8 @@ class ExtractVGGish(torch.nn.Module):
         self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
         self.output_path = os.path.join(args.output_path, self.feature_type)
         self.progress = tqdm(total=len(self.path_list))
+        if args.show_pred:
+            raise NotImplementedError
 
     def forward(self, indices: torch.LongTensor):
         '''
@@ -50,9 +52,9 @@ class ExtractVGGish(torch.nn.Module):
             # update tqdm progress bar
             self.progress.update()
 
-    def extract(self, 
-                device: torch.device, 
-                model: torch.nn.Module, 
+    def extract(self,
+                device: torch.device,
+                model: torch.nn.Module,
                 video_path: Union[str, None] = None) -> Dict[str, np.ndarray]:
         '''The extraction call. Made to clean the forward call a bit.
 
