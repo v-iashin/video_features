@@ -36,6 +36,8 @@ python main.py \
     show_pred=true
 ```
 
+---
+
 ## Examples
 Activate the environment
 ```bash
@@ -82,7 +84,7 @@ The features can be saved as numpy arrays by specifying `--on_extraction save_nu
 python main.py \
     feature_type=i3d \
     device_ids="[0, 2]" \
-    on_extraction=save_pickle \
+    on_extraction=save_numpy \
     file_with_video_paths=./sample/sample_video_paths.txt
 ```
 You can change the output folder using `--output_path` argument.

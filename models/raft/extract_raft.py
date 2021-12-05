@@ -14,8 +14,10 @@ from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
                          reencode_video_with_diff_fps)
 
-# RAFT_MODEL_PATH = './models/raft/checkpoints/raft-kitti.pth'
-RAFT_MODEL_PATH = './models/raft/checkpoints/raft-sintel.pth'
+RAFT_MODEL_PATH = {
+    'sintel': './models/raft/checkpoints/raft-sintel.pth',
+    'kitti': './models/raft/checkpoints/raft-kitti.pth',
+}
 
 class ExtractRAFT(torch.nn.Module):
 
@@ -23,7 +25,7 @@ class ExtractRAFT(torch.nn.Module):
         super(ExtractRAFT, self).__init__()
         self.feature_type = args.feature_type
         self.path_list = form_list_from_user_input(args)
-        self.model_path = RAFT_MODEL_PATH
+        self.model_path = RAFT_MODEL_PATH[args.finetuned_on]
         self.batch_size = args.batch_size
         self.extraction_fps = args.extraction_fps
         self.resize_to_smaller_edge = args.resize_to_smaller_edge
