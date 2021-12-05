@@ -4,7 +4,7 @@
   <img  src="https://github.com/v-iashin/v-iashin.github.io/raw/master/images/video_features/vid_feats.gif" width="300" />
 </figure>
 
-`video_features` allows you to extract features from raw videos in parallel with multiple GPUs. 
+`video_features` allows you to extract features from raw videos in parallel with multiple GPUs.
 It supports several extractors that capture visual appearance, optical flow, and audio features.
 See more details in [Documentation](https://v-iashin.github.io/video_features/).
 
@@ -19,11 +19,10 @@ conda activate torch_zoo
 
 # extract r(2+1)d features for the sample videos
 python main.py \
-    --feature_type r21d_rgb \
-    --device_ids 0 \
-    --video_paths ./sample/v_ZNVhz7ctTq0.mp4 ./sample/v_GGSY1Qvo990.mp4
+    feature_type=r21d \
+    video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 
-# use `--device_ids 0 2` to run on 0th and 2nd devices in parallel
+# use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel
 ```
 
 ## Supported models
@@ -39,7 +38,7 @@ Sound Recognition
 
 Optical Flow
 
-- [RAFT (FlyingChairs, FlyingThings3D, Sintel)](https://v-iashin.github.io/video_features/models/raft)
+- [RAFT (FlyingChairs, FlyingThings3D, Sintel, KITTI)](https://v-iashin.github.io/video_features/models/raft)
 - [PWC-Net (Sintel)](https://v-iashin.github.io/video_features/models/pwc)
 
 Image Recognition
@@ -49,14 +48,14 @@ Image Recognition
 ## Used for
 
 * [SpecVQGAN](https://arxiv.org/abs/2110.08791) branch `specvqgan`
-* [BMT](https://arxiv.org/abs/2005.08271) branch `bmt` 
+* [BMT](https://arxiv.org/abs/2005.08271) branch `bmt`
 * [MDVC](https://arxiv.org/abs/2003.07758) branch `mdvc`
 
 Please, let me know if you found this repo useful for your projects or papers.
 
 ## Ideas for Contributions
 
-I would be happy to consider your ideas and PRs. 
+I would be happy to consider your ideas and PRs.
 Here is a few things I have in mind:
 
 - [ ] PyTorch DDP support (for multi-node extraction)

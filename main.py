@@ -15,7 +15,7 @@ def parallel_feature_extraction(args):
     if args.feature_type == 'i3d':
         from models.i3d.extract_i3d import ExtractI3D  # defined here to avoid import errors
         extractor = ExtractI3D(args)
-    elif args.feature_type == 'r21d_rgb':
+    elif args.feature_type == 'r21d':
         from models.r21d.extract_r21d import ExtractR21D  # defined here to avoid import errors
         extractor = ExtractR21D(args)
     elif args.feature_type == 'vggish':

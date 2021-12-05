@@ -111,14 +111,14 @@ def sanity_check(args: argparse.Namespace):
         args.device_ids = [args.device_ids[0]]
         if args.feature_type == 'vggish':
             print('Showing class predictions is not implemented for VGGish')
-    if args.feature_type == 'r21d_rgb':
+    if args.feature_type == 'r21d':
         message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
         assert args.extraction_fps is None, message
     if args.feature_type == 'i3d':
         message = f'I3D model does not support inputs shorter than 10 timestamps. You have: {args.stack_size}'
         if args.stack_size is not None:
             assert args.stack_size >= 10, message
-    if args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'r21d_rgb']:
+    if args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'r21d']:
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
 
