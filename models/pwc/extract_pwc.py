@@ -52,12 +52,7 @@ class ExtractPWC(torch.nn.Module):
             indices {torch.LongTensor} -- indices to self.path_list
         '''
         device = indices.device
-
-        # load the model
-        model = PWCNet()
-        model.load_state_dict(torch.load(self.model_path, map_location=device))
-        model = model.to(device)
-        model.eval()
+        model = self.load_model(device)
 
         for idx in indices:
             # when error occurs might fail silently when run from torch data parallel
@@ -169,3 +164,18 @@ class ExtractPWC(torch.nn.Module):
             img_flow = np.concatenate([img, flow], axis=0)
             cv2.imshow('Press any key to see the next frame...', img_flow[:, :, [2, 1, 0]] / 255.0)
             cv2.waitKey()
+
+    def load_model(self, device: torch.device) -> torch.nn.Module:
+        '''Defines the models, loads checkpoints, sends them to the device.
+
+        Args:
+            device (torch.device): The device
+
+        Returns:
+            torch.nn.Module: flow extraction module.
+        '''
+        model = PWCNet()
+        model.load_state_dict(torch.load(self.model_path, map_location='cpu'))
+        model = model.to(device)
+        model.eval()
+        return model
