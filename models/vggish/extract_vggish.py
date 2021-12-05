@@ -31,10 +31,7 @@ class ExtractVGGish(torch.nn.Module):
             indices {torch.LongTensor} -- indices to self.path_list
         '''
         device = indices.device
-
-        model = VGGish()
-        model = model.eval()
-        model = model.to(device)
+        model = self.load_model(device)
 
         for idx in indices:
             # when error occurs might fail silently when run from torch data parallel
@@ -93,3 +90,17 @@ class ExtractVGGish(torch.nn.Module):
         feats_dict = {self.feature_type: vggish_stack}
 
         return feats_dict
+
+    def load_model(self, device: torch.device) -> torch.nn.Module:
+        '''Defines the models, loads checkpoints, sends them to the device.
+
+        Args:
+            device (torch.device)
+
+        Returns:
+            torch.nn.Module: the model
+        '''
+        model = VGGish()
+        model = model.to(device)
+        model.eval()
+        return model

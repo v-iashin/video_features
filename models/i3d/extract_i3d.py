@@ -1,6 +1,6 @@
 import os
 # import traceback
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 import cv2
 import numpy as np
@@ -10,10 +10,9 @@ from models.i3d.transforms.transforms import (Clamp, PermuteAndUnsqueeze,
                                               PILToTensor, ResizeImproved,
                                               ScaleTo1_1, TensorCenterCrop,
                                               ToFloat, ToUInt8)
-from models.raft.raft_src.raft import InputPadder
+from models.raft.raft_src.raft import RAFT, InputPadder
 from torchvision import transforms
 from tqdm import tqdm
-
 from utils.utils import (action_on_extraction, form_list_from_user_input,
                          reencode_video_with_diff_fps,
                          show_predictions_on_dataset)
@@ -84,25 +83,7 @@ class ExtractI3D(torch.nn.Module):
             indices {torch.LongTensor} -- indices to self.path_list
         '''
         device = indices.device
-
-        if self.flow_type == 'pwc':
-            from models.pwc.pwc_src.pwc_net import PWCNet
-            flow_xtr_model = PWCNet()
-        elif self.flow_type == 'raft':
-            from models.raft.raft_src.raft import RAFT
-            flow_xtr_model = RAFT()
-            flow_xtr_model = torch.nn.DataParallel(flow_xtr_model, device_ids=[device])
-        else:
-            raise NotImplementedError
-
-        flow_xtr_model.load_state_dict(torch.load(self.flow_model_paths[self.flow_type], map_location=device))
-        flow_xtr_model = flow_xtr_model.to(device)
-        flow_xtr_model.eval()
-
-        models = {}
-        for stream in self.streams:
-            models[stream] = I3D(num_classes=self.i3d_classes_num, modality=stream).to(device).eval()
-            models[stream].load_state_dict(torch.load(self.i3d_weights_paths[stream]))
+        flow_xtr_model, models = self.load_model(device)
 
         for idx in indices:
             # when error occurs might fail silently when run from torch data parallel
@@ -119,8 +100,11 @@ class ExtractI3D(torch.nn.Module):
             # update tqdm progress bar
             self.progress.update()
 
-    def extract(self, device: torch.device, flow_xtr_model: torch.nn.Module,
-                models: Dict[str, torch.nn.Module], video_path: Union[str, None] = None
+    def extract(self,
+                device: torch.device,
+                flow_xtr_model: torch.nn.Module,
+                models: Dict[str, torch.nn.Module],
+                video_path: Union[str, None] = None
                 ) -> Dict[str, Union[torch.nn.Module, str]]:
         '''The extraction call. Made to clean the forward call a bit.
 
@@ -229,3 +213,40 @@ class ExtractI3D(torch.nn.Module):
         feats_dict['timestamps_ms'] = np.array(timestamps_ms)
 
         return feats_dict
+
+    def load_model(self, device: torch.device) -> Tuple[torch.nn.Module, Dict[str, torch.nn.Module]]:
+        '''Defines the models, loads checkpoints, sends them to the device.
+
+        Args:
+            device (torch.device): The device
+
+        Raises:
+            NotImplementedError: if flow type is not implemented.
+
+        Returns:
+            Tuple[torch.nn.Module, Dict[str, torch.nn.Module]]: flow extraction module and the model.
+        '''
+        # Flow extraction module
+        if self.flow_type == 'pwc':
+            from models.pwc.pwc_src.pwc_net import PWCNet
+            flow_xtr_model = PWCNet()
+        elif self.flow_type == 'raft':
+            flow_xtr_model = RAFT()
+            flow_xtr_model = torch.nn.DataParallel(flow_xtr_model, device_ids=[device])
+        else:
+            raise NotImplementedError
+
+        flow_xtr_model.load_state_dict(torch.load(self.flow_model_paths[self.flow_type], map_location='cpu'))
+        flow_xtr_model = flow_xtr_model.to(device)
+        flow_xtr_model.eval()
+
+        # Feature extraction models (rgb and flow streams)
+        i3d_stream_models = {}
+        for stream in self.streams:
+            i3d_stream_model = I3D(num_classes=self.i3d_classes_num, modality=stream)
+            i3d_stream_model.load_state_dict(torch.load(self.i3d_weights_paths[stream], map_location='cpu'))
+            i3d_stream_model = i3d_stream_model.to(device)
+            i3d_stream_model.eval()
+            i3d_stream_models[stream] = i3d_stream_model
+
+        return flow_xtr_model, i3d_stream_models

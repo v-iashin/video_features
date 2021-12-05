@@ -16,12 +16,25 @@ conda env create -f conda_env_torch_pwc.yml
 
 ---
 
-## Examples
-Start by activating the environment
+## Minimal Working Example
+
 ```bash
+# Activate the environment
 conda activate pwc
+
+# extract optical flow from "./sample/v_GGSY1Qvo990.mp4" using one GPU and show the flow for each frame
+python main.py \
+    feature_type=pwc \
+    show_pred=true \
+    video_paths="[./sample/v_GGSY1Qvo990.mp4]"
+
+# if `show_pred=true`, the window with predictions will appear, use any key to show the next frame.
+# To use `show_pred=true`, a screen must be attached to the machine or X11 forwarding is enabled.
 ```
 
+---
+
+## Examples
 Please see the examples for [`RAFT`](raft.md) optical flow frame extraction. Make sure to replace `--feature_type` argument to `pwc`.
 
 ---
