@@ -23,15 +23,18 @@ conda env create -f conda_env_torch_zoo.yml
 
 ## Minimal Working Example
 
+Activate the environment
 ```bash
-# Activate the environment
 conda activate torch_zoo
+```
 
-# extract features from "./sample/v_GGSY1Qvo990.mp4" video
+and extract features from the `./sample/v_GGSY1Qvo990.mp4` video
+```bash
 python main.py \
     feature_type=vggish \
     video_paths="[./sample/v_GGSY1Qvo990.mp4]"
 ```
+
 ---
 
 ## Example

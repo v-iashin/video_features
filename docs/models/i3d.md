@@ -23,13 +23,14 @@ conda env create -f conda_env_torch_zoo.yml
 
 ## Minimal Working Example
 
+Activate the environment
 ```bash
-# Activate the environment
 conda activate pwc
-# if you would like to use RAFT as optical flow extractor use:
-# conda activate torch_zoo
+```
+if you would like to use RAFT as optical flow extractor use `torch_zoo` instead of `pwc`:
 
-# extract features from "./sample/v_ZNVhz7ctTq0.mp4" video and show the predicted classes
+and extract features from `./sample/v_ZNVhz7ctTq0.mp4` video and show the predicted classes
+```bash
 python main.py \
     feature_type=i3d \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4]" \

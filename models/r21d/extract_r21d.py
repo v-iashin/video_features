@@ -98,7 +98,7 @@ class ExtractR21D(torch.nn.Module):
         # prepare data (first -- transform, then -- unsqueeze)
         rgb = self.transforms(rgb)
         rgb = rgb.unsqueeze(0)
-        # slice the
+        # slice the stack of frames
         slices = form_slices(rgb.size(2), self.stack_size, self.step_size)
 
         vid_feats = []
