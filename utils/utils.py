@@ -3,9 +3,10 @@ import os
 import pickle
 import subprocess
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 import numpy as np
+from omegaconf.dictconfig import DictConfig
 import torch
 import torch.nn.functional as F
 from omegaconf.listconfig import ListConfig
@@ -99,12 +100,13 @@ def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
     return slices
 
 
-def sanity_check(args: argparse.Namespace):
+def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     '''Checks the prased user arguments.
 
     Args:
-        args (argparse.Namespace): Parsed user arguments
+        args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
     '''
+    assert args.file_with_video_paths or args.video_paths, '`video_paths` or `file_with_video_paths` must be specified'
     assert os.path.relpath(args.output_path) != os.path.relpath(args.tmp_path), 'The same path for out & tmp'
     if args.show_pred:
         print('You want to see predictions. So, I will use only the first GPU from the list you specified.')
@@ -134,7 +136,6 @@ def form_list_from_user_input(args: argparse.Namespace) -> list:
         list: list with paths
     '''
     if args.file_with_video_paths is None:
-        assert args.video_paths is not None, '`video_paths` or `file_with_video_paths` must be specified'
         path_list = args.video_paths
         # ListConfig does not support indexing with tensor scalars, e.g. tensor(1, device='cuda:0')
         if isinstance(args.video_paths, ListConfig):
