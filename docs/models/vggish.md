@@ -23,6 +23,8 @@ conda env create -f conda_env_torch_zoo.yml
 
 ## Minimal Working Example
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1r_8OnmwXKwmH0n4RxBfuICVBgpbJt_Fs?usp=sharing)
+
 Activate the environment
 ```bash
 conda activate torch_zoo
