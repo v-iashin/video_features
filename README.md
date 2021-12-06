@@ -10,6 +10,8 @@ See more details in [Documentation](https://v-iashin.github.io/video_features/).
 
 ## Quick Start
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1csJgkVQ3E2qOyVlcOM-ACHGgPBBKwE2Y?usp=sharing)
+
 ```bash
 # install environment
 conda env create -f conda_env_torch_zoo.yml
