@@ -24,15 +24,17 @@ conda env create -f conda_env_torch_zoo.yml
 
 ## Minimal Working Example
 
+Activate the environment
 ```bash
-# Activate the environment
 conda activate torch_zoo
+```
 
-# extract features from "./sample/v_GGSY1Qvo990.mp4" video and show the predicted classes
+and extract features at 1 fps from `./sample/v_GGSY1Qvo990.mp4` video and show the predicted classes
+```bash
 python main.py \
     feature_type=resnet101 \
-    video_paths="[./sample/v_GGSY1Qvo990.mp4]" \
     extraction_fps=1 \
+    video_paths="[./sample/v_GGSY1Qvo990.mp4]" \
     show_pred=true
 ```
 

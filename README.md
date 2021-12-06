@@ -20,6 +20,7 @@ conda activate torch_zoo
 # extract r(2+1)d features for the sample videos
 python main.py \
     feature_type=r21d \
+    device_ids="[0]" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 
 # use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel
@@ -45,7 +46,7 @@ Image Recognition
 
 - [ResNet-18,34,50,101,152 (ImageNet)](https://v-iashin.github.io/video_features/models/resnet)
 
-## Used for
+## Used in
 
 * [SpecVQGAN](https://arxiv.org/abs/2110.08791) branch `specvqgan`
 * [BMT](https://arxiv.org/abs/2005.08271) branch `bmt`

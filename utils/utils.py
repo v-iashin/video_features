@@ -113,9 +113,9 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         args.device_ids = [args.device_ids[0]]
         if args.feature_type == 'vggish':
             print('Showing class predictions is not implemented for VGGish')
-    if args.feature_type == 'r21d':
-        message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
-        assert args.extraction_fps is None, message
+    # if args.feature_type == 'r21d':
+    #     message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
+    #     assert args.extraction_fps is None, message
     if args.feature_type == 'i3d':
         message = f'I3D model does not support inputs shorter than 10 timestamps. You have: {args.stack_size}'
         if args.stack_size is not None:
@@ -125,12 +125,12 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
             print('If you want to keep frames while extracting features, please create an issue')
 
 
-def form_list_from_user_input(args: argparse.Namespace) -> list:
+def form_list_from_user_input(args: Union[argparse.Namespace, DictConfig]) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
     transforms the user input into a list of paths.
 
     Args:
-        args (argparse.Namespace): Parsed user arguments
+        args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
 
     Returns:
         list: list with paths
