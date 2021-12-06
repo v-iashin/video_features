@@ -2,7 +2,7 @@
 feature_type: 'i3d'
 stack_size: 64 # Feature time span in fps
 step_size: 64 # Feature step size in fps
-streams: null # Streams to use for feature extraction. Both used if left as "null" (None)
+streams: null # Streams to use for feature extraction (e.g. 'rgb' or 'flow'). Both used if left as "null" (None)
 flow_type: 'pwc' # Flow to use in I3D. 'pwc' (PWCNet) is faster while 'raft' (RAFT) is more accurate.
 extraction_fps: null # For original video fps, leave as "null" (None)
 
