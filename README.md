@@ -1,20 +1,23 @@
+
+<div align="center">
+
 # Video Features
 
-<figure align="center">
-  <img  src="https://github.com/v-iashin/v-iashin.github.io/raw/master/images/video_features/vid_feats.gif" width="300" />
-</figure>
+<img  src="https://github.com/v-iashin/v-iashin.github.io/raw/master/images/video_features/vid_feats.gif" width="300" />
 
 `video_features` allows you to extract features from raw videos in parallel with multiple GPUs.
 It supports several extractors that capture visual appearance, optical flow, and audio features.
 See more details in [Documentation](https://v-iashin.github.io/video_features/).
+</div>
 
 ## Quick Start
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1csJgkVQ3E2qOyVlcOM-ACHGgPBBKwE2Y?usp=sharing)
 
 ```bash
-# clone the repo
+# clone the repo and change the working directory
 git clone https://github.com/v-iashin/video_features.git
+cd video_features
 
 # install environment
 conda env create -f conda_env_torch_zoo.yml
