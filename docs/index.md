@@ -11,6 +11,9 @@ It supports several extractors that capture visual appearance, optical flow, and
 
 
 ```bash
+# clone the repo
+git clone https://github.com/v-iashin/video_features.git
+
 # install environment
 conda env create -f conda_env_torch_zoo.yml
 

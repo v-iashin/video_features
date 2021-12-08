@@ -13,6 +13,9 @@ See more details in [Documentation](https://v-iashin.github.io/video_features/).
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1csJgkVQ3E2qOyVlcOM-ACHGgPBBKwE2Y?usp=sharing)
 
 ```bash
+# clone the repo
+git clone https://github.com/v-iashin/video_features.git
+
 # install environment
 conda env create -f conda_env_torch_zoo.yml
 
@@ -61,6 +64,7 @@ Please, let me know if you found this repo useful for your projects or papers.
 I would be happy to consider your ideas and PRs.
 Here is a few things I have in mind:
 
+- [ ] Docker image supporting all models
 - [ ] PyTorch DDP support (for multi-node extraction)
 - [ ] Refactor the code base with OOP in mind – now the code is a bit redundant for each feature
 - [ ] More models, of course
