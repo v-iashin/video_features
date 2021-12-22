@@ -7,6 +7,16 @@ The _Inflated 3D ([I3D](https://arxiv.org/abs/1705.07750))_ features are extract
 
 Please note, this implementation uses either [PWC-Net](https://arxiv.org/abs/1709.02371) (the default) and [RAFT](https://arxiv.org/abs/2003.12039) optical flow extraction instead of the TV-L1 algorithm, which was used in the original I3D paper as it hampers speed. Yet, it might possibly lead to worse peformance. Our tests show that the performance is reasonable. You may test it yourself by providing `--show_pred` flag.
 
+!!! warning "CUDA 11 and GPUs like RTX 3090 and newer"
+
+    PWC optical flow back-end is not supported on CUDA 11 and, therefore, GPUs like **RTX 3090** and newer.
+    RGB-only model should still work.
+    For details please check this [issue #13](https://github.com/v-iashin/video_features/issues/13)
+    If you were able to fix it, please share your workaround.
+    Feel free to use `flow_type=raft` [RAFT](raft.md) during extraction.
+
+---
+
 ---
 
 ## Set up the Environment for I3D
