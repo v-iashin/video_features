@@ -8,7 +8,7 @@
 import models.pwc.pwc_src.correlation as correlation
 
 import numpy
-import math
+import math, re
 import torch
 
 # (v-iashin) adding these two for reproducibility
@@ -18,7 +18,8 @@ torch.manual_seed(0)
 numpy.random.seed(0)
 #
 
-assert(int(str('').join(torch.__version__.split('.')[0:3])) >= 41) # requires at least pytorch version 0.4.1
+torch_version = re.sub('\+cu\d+', '', torch.__version__)
+assert(int(str('').join(torch_version.split('.')[0:3])) >= 41) # requires at least pytorch version 0.4.1
 
 def Backward(tensorInput, tensorFlow, device):
 
