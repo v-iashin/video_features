@@ -16,9 +16,11 @@ PRE_CENTRAL_CROP_SIZE = (128, 171)
 KINETICS_MEAN = [0.43216, 0.394666, 0.37645]
 KINETICS_STD = [0.22803, 0.22145, 0.216989]
 R21D_MODEL_LIST = [
-    {'model_name': 'default', 'repo': None, 'stack_size': 16 },
-    {'model_name': 'r2plus1d_34_32_kinetics', 'repo': 'moabitcoin/ig65m-pytorch', 'stack_size': 32 , 'num_classes': 400},
-    {'model_name': 'r2plus1d_34_32_ig65m', 'repo': 'moabitcoin/ig65m-pytorch', 'stack_size': 32 , 'num_classes': 359}
+    {'model_name': 'default', 'repo': None, 'stack_size': 16 , 'step_size': 16, 'dataset': 'kinetics'},
+    {'model_name': 'r2plus1d_34_32_kinetics', 'repo': 'moabitcoin/ig65m-pytorch',
+        'stack_size': 32 , 'step_size': 32, 'num_classes': 400, 'dataset': 'kinetics'},
+    {'model_name': 'r2plus1d_34_8_kinetics', 'repo': 'moabitcoin/ig65m-pytorch',
+        'stack_size': 8 , 'step_size': 8, 'num_classes': 400, 'dataset': 'kinetics'}
 ]
 CENTRAL_CROP_MIN_SIDE_SIZE = 112
 
@@ -119,8 +121,9 @@ class ExtractR21D(torch.nn.Module):
                 # show predicitons on kinetics dataset (might be useful for debugging)
                 if self.show_pred:
                     logits = classifier(output)
+                    dataset_name = self.model_def['dataset']
                     print(f'{video_path} @ frames ({start_idx}, {end_idx})')
-                    show_predictions_on_dataset(logits, 'kinetics')
+                    show_predictions_on_dataset(logits, dataset_name)
 
         feats_dict = {
             self.feature_type: np.array(vid_feats),
