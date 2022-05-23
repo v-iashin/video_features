@@ -1,7 +1,8 @@
 # Model
 feature_type: 'r21d'
-stack_size: 16 # Feature time span in fps
-step_size: 16 # Feature step size in fps
+model_name: 'r2plus1d_18_16_kinetics'
+stack_size: null # Feature time span in fps
+step_size: null # Feature step size in fps
 extraction_fps: null # For original video fps, leave unspecified "null" (None)
 
 # Extraction Parameters
