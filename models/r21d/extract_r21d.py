@@ -39,7 +39,7 @@ class ExtractR21D(torch.nn.Module):
         self.step_size = args.step_size
         self.stack_size = args.stack_size
         if self.step_size is None:
-            self.step_size = self.model_def['stack_size']
+            self.step_size = self.model_def['step_size']
         if self.stack_size is None:
             self.stack_size = self.model_def['stack_size']
         self.transforms = Compose([
