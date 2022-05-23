@@ -15,13 +15,14 @@ from utils.utils import (action_on_extraction, form_list_from_user_input,
 PRE_CENTRAL_CROP_SIZE = (128, 171)
 KINETICS_MEAN = [0.43216, 0.394666, 0.37645]
 KINETICS_STD = [0.22803, 0.22145, 0.216989]
-R21D_MODEL_LIST = [
-    {'model_name': 'default', 'repo': None, 'stack_size': 16 , 'step_size': 16, 'dataset': 'kinetics'},
-    {'model_name': 'r2plus1d_34_32_kinetics', 'repo': 'moabitcoin/ig65m-pytorch',
+R21D_MODEL_DICT = {
+    'r2plus1d_18_16_kinetics': {'repo': None,
+        'stack_size': 16 , 'step_size': 16, 'num_classes': 400, 'dataset': 'kinetics'},
+    'r2plus1d_34_32_kinetics': {'repo': 'moabitcoin/ig65m-pytorch',
         'stack_size': 32 , 'step_size': 32, 'num_classes': 400, 'dataset': 'kinetics'},
-    {'model_name': 'r2plus1d_34_8_kinetics', 'repo': 'moabitcoin/ig65m-pytorch',
+    'r2plus1d_34_8_kinetics': {'repo': 'moabitcoin/ig65m-pytorch',
         'stack_size': 8 , 'step_size': 8, 'num_classes': 400, 'dataset': 'kinetics'}
-]
+}
 CENTRAL_CROP_MIN_SIDE_SIZE = 112
 
 class ExtractR21D(torch.nn.Module):
@@ -29,10 +30,8 @@ class ExtractR21D(torch.nn.Module):
     def __init__(self, args):
         super(ExtractR21D, self).__init__()
         self.feature_type = args.feature_type
-        # select R21D model
-        valid_model_names = [m['model_name'] for m in R21D_MODEL_LIST]
-        assert args.model_name in valid_model_names, f'model_name: {args.model_name} not a valid model: {valid_model_names}'
-        self.model_def = [m for m in R21D_MODEL_LIST if m['model_name']==args.model_name][0]
+        self.model_name = args.model_name
+        self.model_def = R21D_MODEL_DICT[self.model_name]
         self.path_list = form_list_from_user_input(args)
         self.central_crop_min_side_size = CENTRAL_CROP_MIN_SIDE_SIZE
         self.extraction_fps = args.extraction_fps
@@ -143,12 +142,14 @@ class ExtractR21D(torch.nn.Module):
         Returns:
             Tuple[torch.nn.Module]: the model with identity head, the original classifier
         '''
-        model = torch.hub.load(
-                    self.model_def['repo'],
-                    model = self.model_def['model_name'],
-                    num_classes = self.model_def['num_classes'],
-                    pretrained = True
-                    ) if self.model_def['repo'] else r2plus1d_18(pretrained = True)
+        if self.model_name == 'r2plus1d_18_16_kinetics':
+            model = r2plus1d_18(pretrained = True)
+        else:
+            model = torch.hub.load( self.model_def['repo'],
+                        model = self.model_name,
+                        num_classes = self.model_def['num_classes'],
+                        pretrained = True
+                        )
         model = model.to(device)
         model.eval()
         # save the pre-trained classifier for show_preds and replace it in the net with identity
