@@ -21,11 +21,11 @@ R21D_MODEL_CFG = {
         'repo': None,
         'stack_size': 16, 'step_size': 16, 'num_classes': 400, 'dataset': 'kinetics'
     },
-    'r2plus1d_34_32_kinetics': {
+    'r2plus1d_34_32_ig65m_ft_kinetics': {
         'repo': 'moabitcoin/ig65m-pytorch',
         'stack_size': 32, 'step_size': 32, 'num_classes': 400, 'dataset': 'kinetics'
     },
-    'r2plus1d_34_8_kinetics': {
+    'r2plus1d_34_8_ig65m_ft_kinetics': {
         'repo': 'moabitcoin/ig65m-pytorch',
         'stack_size': 8, 'step_size': 8, 'num_classes': 400, 'dataset': 'kinetics'
     },
