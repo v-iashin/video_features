@@ -39,7 +39,7 @@ python main.py \
 Action Recognition
 
 - [I3D-Net RGB + Flow (Kinetics 400)](https://v-iashin.github.io/video_features/models/i3d)
-- [R(2+1)d RGB (Kinetics 400)](https://v-iashin.github.io/video_features/models/r21d)
+- [R(2+1)d RGB (IG-65M, Kinetics 400)](https://v-iashin.github.io/video_features/models/r21d)
 
 Sound Recognition
 
