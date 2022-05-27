@@ -16,23 +16,37 @@ PRE_CENTRAL_CROP_SIZE = (128, 171)
 KINETICS_MEAN = [0.43216, 0.394666, 0.37645]
 KINETICS_STD = [0.22803, 0.22145, 0.216989]
 CENTRAL_CROP_MIN_SIDE_SIZE = 112
-DEFAULT_R21D_STEP_SIZE = 16
-DEFAULT_R21D_STACK_SIZE = 16
+R21D_MODEL_CFG = {
+    'r2plus1d_18_16_kinetics': {
+        'repo': None,
+        'stack_size': 16, 'step_size': 16, 'num_classes': 400, 'dataset': 'kinetics'
+    },
+    'r2plus1d_34_32_ig65m_ft_kinetics': {
+        'repo': 'moabitcoin/ig65m-pytorch',
+        'stack_size': 32, 'step_size': 32, 'num_classes': 400, 'dataset': 'kinetics'
+    },
+    'r2plus1d_34_8_ig65m_ft_kinetics': {
+        'repo': 'moabitcoin/ig65m-pytorch',
+        'stack_size': 8, 'step_size': 8, 'num_classes': 400, 'dataset': 'kinetics'
+    },
+}
 
 class ExtractR21D(torch.nn.Module):
 
     def __init__(self, args):
         super(ExtractR21D, self).__init__()
         self.feature_type = args.feature_type
+        self.model_name = args.model_name
+        self.model_def = R21D_MODEL_CFG[self.model_name]
         self.path_list = form_list_from_user_input(args)
         self.central_crop_min_side_size = CENTRAL_CROP_MIN_SIDE_SIZE
         self.extraction_fps = args.extraction_fps
         self.step_size = args.step_size
         self.stack_size = args.stack_size
         if self.step_size is None:
-            self.step_size = DEFAULT_R21D_STEP_SIZE
+            self.step_size = self.model_def['step_size']
         if self.stack_size is None:
-            self.stack_size = DEFAULT_R21D_STACK_SIZE
+            self.stack_size = self.model_def['stack_size']
         self.transforms = Compose([
             T.ToFloatTensorInZeroOne(),
             T.Resize(PRE_CENTRAL_CROP_SIZE),
@@ -96,7 +110,7 @@ class ExtractR21D(torch.nn.Module):
         # read a video
         rgb, audio, info = read_video(video_path, pts_unit='sec')
         # prepare data (first -- transform, then -- unsqueeze)
-        rgb = self.transforms(rgb)
+        rgb = self.transforms(rgb) # could run out of memory here
         rgb = rgb.unsqueeze(0)
         # slice the stack of frames
         slices = form_slices(rgb.size(2), self.stack_size, self.step_size)
@@ -112,8 +126,9 @@ class ExtractR21D(torch.nn.Module):
                 # show predicitons on kinetics dataset (might be useful for debugging)
                 if self.show_pred:
                     logits = classifier(output)
+                    dataset_name = self.model_def['dataset']
                     print(f'{video_path} @ frames ({start_idx}, {end_idx})')
-                    show_predictions_on_dataset(logits, 'kinetics')
+                    show_predictions_on_dataset(logits, dataset_name)
 
         feats_dict = {
             self.feature_type: np.array(vid_feats),
@@ -133,7 +148,15 @@ class ExtractR21D(torch.nn.Module):
         Returns:
             Tuple[torch.nn.Module]: the model with identity head, the original classifier
         '''
-        model = r2plus1d_18(pretrained=True)
+        if self.model_name == 'r2plus1d_18_16_kinetics':
+            model = r2plus1d_18(pretrained=True)
+        else:
+            model = torch.hub.load(
+                self.model_def['repo'],
+                model=self.model_name,
+                num_classes=self.model_def['num_classes'],
+                pretrained=True,
+            )
         model = model.to(device)
         model.eval()
         # save the pre-trained classifier for show_preds and replace it in the net with identity
