@@ -22,11 +22,11 @@ R21D_MODEL_CFG = {
         'stack_size': 16, 'step_size': 16, 'num_classes': 400, 'dataset': 'kinetics'
     },
     'r2plus1d_34_32_ig65m_ft_kinetics': {
-        'repo': 'moabitcoin/ig65m-pytorch',
+        'repo': 'moabitcoin/ig65m-pytorch', 'model_name_in_repo': 'r2plus1d_34_32_kinetics',
         'stack_size': 32, 'step_size': 32, 'num_classes': 400, 'dataset': 'kinetics'
     },
     'r2plus1d_34_8_ig65m_ft_kinetics': {
-        'repo': 'moabitcoin/ig65m-pytorch',
+        'repo': 'moabitcoin/ig65m-pytorch', 'model_name_in_repo': 'r2plus1d_34_8_kinetics',
         'stack_size': 8, 'step_size': 8, 'num_classes': 400, 'dataset': 'kinetics'
     },
 }
@@ -153,7 +153,7 @@ class ExtractR21D(torch.nn.Module):
         else:
             model = torch.hub.load(
                 self.model_def['repo'],
-                model=self.model_name,
+                model=self.model_def['model_name_in_repo'],
                 num_classes=self.model_def['num_classes'],
                 pretrained=True,
             )
