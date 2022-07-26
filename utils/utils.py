@@ -4,6 +4,7 @@ import pickle
 import subprocess
 from pathlib import Path
 from typing import Dict, Union
+import platform
 
 import numpy as np
 from omegaconf.dictconfig import DictConfig
@@ -162,8 +163,13 @@ def which_ffmpeg() -> str:
     Returns:
         str -- path to the library
     '''
-    result = subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    ffmpeg_path = result.stdout.decode('utf-8').replace('\n', '')
+    # Determine the platform on which the program is running
+    if platform.system().lower() == 'windows':
+        result = subprocess.run(['where', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        ffmpeg_path = result.stdout.decode('utf-8').replace('\r\n', '')
+    else:
+        result = subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        ffmpeg_path = result.stdout.decode('utf-8').replace('\n', '')
     return ffmpeg_path
 
 
