@@ -6,3 +6,4 @@ theme:
 repo_url: https://github.com/v-iashin/video_features
 markdown_extensions:
   - admonition
+  - mdx_truly_sane_lists
