@@ -2,7 +2,6 @@
 <figure>
   <img src="../../_assets/pwc.png" width="300" />
 </figure>
-
 [PWC-Net: CNNs for Optical Flow Using Pyramid, Warping, and Cost Volume](https://arxiv.org/abs/1709.02371) frames are extracted for every consecutive pair of frames in a video. PWC-Net is pre-trained on [Sintel Flow dataset](http://sintel.is.tue.mpg.de/). The implementation follows [sniklaus/pytorch-pwc@f61389005](https://github.com/sniklaus/pytorch-pwc/tree/f6138900578214ab4e3daef6743b88f7824293be).
 
 !!! warning "CUDA 11 and GPUs like RTX 3090 and newer"
@@ -11,6 +10,11 @@
     For details please check this [issue #13](https://github.com/v-iashin/video_features/issues/13)
     If you were able to fix it, please share your workaround.
     If you need an optical flow extractor, you are recommended to use [RAFT](raft.md).
+
+!!! warning "The PWC-Net does NOT support using CPU currently"
+
+    The PWC-Net uses `cupy` module, which makes it difficult to turn to a version that does not use the GPU. However, if you have solution, you may submit a PR.
+
 
 ---
 

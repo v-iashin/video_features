@@ -32,6 +32,12 @@ python main.py \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 
 # use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel
+
+# you may also use cpu to debug, but it will be slow.
+python main.py \
+    feature_type=r21d \
+    cpu=true \
+    video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
 
 ## Supported models

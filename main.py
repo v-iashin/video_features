@@ -48,6 +48,41 @@ def parallel_feature_extraction(args):
     extractor.progress.close()
 
 
+def cpu_feature_extraction(args):
+    """
+    Just for debugging. Using the CPU can make the process extremely slow.
+
+    """
+    if args.feature_type == 'i3d':
+        if args.flow_type == 'pwc':
+            raise AssertionError("PWC does NOT support using CPU")
+        from models.i3d.extract_i3d import ExtractI3D  # defined here to avoid import errors
+        extractor = ExtractI3D(args)
+    elif args.feature_type == 'r21d':
+        from models.r21d.extract_r21d import ExtractR21D  # defined here to avoid import errors
+        extractor = ExtractR21D(args)
+    elif args.feature_type == 'vggish':
+        from models.vggish.extract_vggish import ExtractVGGish  # defined here to avoid import errors
+        extractor = ExtractVGGish(args)
+    elif args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
+        from models.resnet.extract_resnet import ExtractResNet
+        extractor = ExtractResNet(args)
+    elif args.feature_type == 'raft':
+        from models.raft.extract_raft import ExtractRAFT
+        extractor = ExtractRAFT(args)
+    elif args.feature_type == 'pwc':
+        raise AssertionError("PWC does NOT support using CPU")
+        # from models.pwc.extract_pwc import ExtractPWC
+        # extractor = ExtractPWC(args)
+    else:
+        raise NotADirectoryError
+
+    video_paths = form_list_from_user_input(args)
+    indices = torch.arange(len(video_paths))
+    extractor(indices)
+    extractor.progress.close()
+
+
 if __name__ == "__main__":
     cfg_cli = OmegaConf.from_cli()
     print(cfg_cli)
@@ -63,4 +98,7 @@ if __name__ == "__main__":
         print(f'Keeping temp files in {cfg.tmp_path}')
 
     sanity_check(cfg)
-    parallel_feature_extraction(cfg)
+    if cfg.cpu:
+        cpu_feature_extraction(cfg)
+    else:
+        parallel_feature_extraction(cfg)
