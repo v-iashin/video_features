@@ -102,7 +102,7 @@ def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
 
 
 def sanity_check(args: Union[argparse.Namespace, DictConfig]):
-    '''Checks the prased user arguments.
+    '''Checks user arguments.
 
     Args:
         args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
@@ -124,6 +124,8 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     if args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'r21d']:
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
+    if args.feature_type == 'pwc' or (args.feature_type == 'i3d' and args.flow_type == 'pwc'):
+        assert not args.cpu, 'PWC does NOT support using CPU'
 
 
 def form_list_from_user_input(args: Union[argparse.Namespace, DictConfig]) -> list:

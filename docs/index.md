@@ -27,7 +27,8 @@ python main.py \
     device_ids="[0]" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 
-# use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel or add `cpu=true` to use CPU
+# use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel
+# or add `cpu=true` to use CPU
 ```
 
 # Supported Models
@@ -49,3 +50,8 @@ Optical Flow
 Image Recognition
 
 - [ResNet-18,34,50,101,152 (ImageNet)](https://v-iashin.github.io/video_features/models/resnet)
+
+# Acknowledgements
+
+- [@Kamino666](https://github.com/Kamino666): added Windows and CPU support
+- [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.
