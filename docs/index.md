@@ -27,7 +27,8 @@ python main.py \
     device_ids="[0]" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 
-# use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel or add `cpu=true` to use CPU
+# use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel
+# or add `cpu=true` to use CPU
 ```
 
 # Supported Models
