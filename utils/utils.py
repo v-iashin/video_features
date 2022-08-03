@@ -245,3 +245,11 @@ def build_cfg_path(feature_type: str) -> os.PathLike:
     else:
         path = path_base / f'{feature_type}.yml'
     return path
+
+
+def gpu_state_to_cpu(state_dict):
+    new_state_dict = {}
+    for k, v in state_dict.items():
+        if k.startswith('module'):
+            new_state_dict[k.replace("module.", "")] = v
+    return new_state_dict

@@ -15,7 +15,8 @@ from torchvision import transforms
 from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
                          reencode_video_with_diff_fps,
-                         show_predictions_on_dataset)
+                         show_predictions_on_dataset,
+                         gpu_state_to_cpu)
 
 PWC_MODEL_PATH = './models/pwc/checkpoints/pwc_net_sintel.pt'
 RAFT_MODEL_PATH = './models/raft/checkpoints/raft-sintel.pth'
@@ -32,6 +33,7 @@ class ExtractI3D(torch.nn.Module):
     def __init__(self, args):
         super(ExtractI3D, self).__init__()
         self.feature_type = args.feature_type
+        self.cpu = args.cpu
         if args.streams is None:
             self.streams = ['rgb', 'flow']
         else:
@@ -232,11 +234,16 @@ class ExtractI3D(torch.nn.Module):
             flow_xtr_model = PWCNet()
         elif self.flow_type == 'raft':
             flow_xtr_model = RAFT()
-            flow_xtr_model = torch.nn.DataParallel(flow_xtr_model, device_ids=[device])
+            if not self.cpu:
+                flow_xtr_model = torch.nn.DataParallel(flow_xtr_model, device_ids=[device])
         else:
             raise NotImplementedError
 
-        flow_xtr_model.load_state_dict(torch.load(self.flow_model_paths[self.flow_type], map_location='cpu'))
+        # preprocess state dict
+        state_dict = torch.load(self.flow_model_paths[self.flow_type], map_location='cpu')
+        if self.cpu is True:
+            state_dict = gpu_state_to_cpu(state_dict)
+        flow_xtr_model.load_state_dict(state_dict)
         flow_xtr_model = flow_xtr_model.to(device)
         flow_xtr_model.eval()
 
