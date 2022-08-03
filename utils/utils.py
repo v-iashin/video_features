@@ -244,6 +244,9 @@ def build_cfg_path(feature_type: str) -> os.PathLike:
     path_base = Path('./configs')
     if feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
         path = path_base / 'resnet.yml'
+    elif feature_type in ['CLIP-ViT-B-32', 'CLIP-ViT-B-16', 'CLIP-RN50x16', 'CLIP-RN50x4',
+                          'CLIP-RN101', 'CLIP-RN50', 'CLIP-custom']:
+        path = path_base / 'clip.yml'
     else:
         path = path_base / f'{feature_type}.yml'
     return path

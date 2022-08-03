@@ -30,6 +30,10 @@ def parallel_feature_extraction(args):
     elif args.feature_type == 'pwc':
         from models.pwc.extract_pwc import ExtractPWC
         extractor = ExtractPWC(args)
+    elif args.feature_type in ['CLIP-ViT-B-32', 'CLIP-ViT-B-16', 'CLIP-RN50x16', 'CLIP-RN50x4',
+                               'CLIP-RN101', 'CLIP-RN50', 'CLIP-custom']:
+        from models.clip.extract_clip import ExtractCLIP
+        extractor = ExtractCLIP(args)
     else:
         raise NotADirectoryError
 
