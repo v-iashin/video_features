@@ -15,6 +15,10 @@ Please note, this implementation uses either [PWC-Net](https://arxiv.org/abs/170
     If you were able to fix it, please share your workaround.
     Feel free to use `flow_type=raft` [RAFT](raft.md) during extraction.
 
+!!! warning "The PWC-Net does NOT support using CPU currently"
+
+    The PWC-Net uses `cupy` module, which makes it difficult to turn to a version that does not use the GPU. However, if you have solution, you may submit a PR.
+
 ---
 
 ---
@@ -82,6 +86,7 @@ python main.py \
 ```
 
 To extract optical flow frames using RAFT approach, specify `--flow_type raft`. Note that using RAFT will make the extraction slower than with PWC-Net yet visual inspection of extracted flow frames suggests that RAFT has a better quality of the estimated flow
+
 ```bash
 # make sure to activate the correct environment (`torch_zoo`)
 # conda activate torch_zoo
