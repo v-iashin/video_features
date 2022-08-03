@@ -71,3 +71,8 @@ Here is a few things I have in mind:
 - [ ] PyTorch DDP support (for multi-node extraction)
 - [ ] Refactor the code base with OOP in mind – now the code is a bit redundant for each feature
 - [ ] More models, of course
+
+## Acknowledgements
+
+- [@Kamino666](https://github.com/Kamino666): added Windows and CPU support
+- [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.

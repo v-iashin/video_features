@@ -49,3 +49,8 @@ Optical Flow
 Image Recognition
 
 - [ResNet-18,34,50,101,152 (ImageNet)](https://v-iashin.github.io/video_features/models/resnet)
+
+# Acknowledgements
+
+- [@Kamino666](https://github.com/Kamino666): added Windows and CPU support
+- [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.
