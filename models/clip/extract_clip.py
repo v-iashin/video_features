@@ -8,8 +8,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
-                         reencode_video_with_diff_fps,
-                         show_predictions_on_dataset)
+                         reencode_video_with_diff_fps)
 
 try:
     import clip
@@ -76,7 +75,6 @@ class ExtractCLIP(torch.nn.Module):
             batch = torch.cat(batch).to(device)
 
             with torch.no_grad():
-                # batch = preprocess(batch)
                 batch_feats = model.encode_image(batch)
                 vid_feats.extend(batch_feats.tolist())
                 # show predicitons on imagenet dataset (might be useful for debugging)
@@ -148,7 +146,7 @@ class ExtractCLIP(torch.nn.Module):
             NotImplementedError: if flow type is not implemented.
 
         Returns:
-            Tuple[torch.nn.Module, Callable]: the model and transform
+            Tuple[torch.nn.Module, Callable]: the model and the transform function
         '''
         # ['RN50', 'RN101', 'RN50x4', 'RN50x16', 'ViT-B/32', 'ViT-B/16']
         if self.feature_type == 'CLIP-ViT-B-32':
@@ -164,6 +162,9 @@ class ExtractCLIP(torch.nn.Module):
         elif self.feature_type == 'CLIP-RN50':
             model, preprocess = clip.load("RN50", device=device)
         elif self.feature_type == 'CLIP-custom':
+            # Reserved methods for using custom weights
+            # *There is a bug in original repo when loading not-jit weights,
+            # *and ignore it for now.
             model_path = os.path.join(pathlib.Path(__file__).parent, 'checkpoints', 'CLIP-custom.pth')
             if not os.path.exists(model_path):
                 raise FileNotFoundError(f"{model_path}")
