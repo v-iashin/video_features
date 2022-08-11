@@ -31,7 +31,7 @@ class ExtractCLIP(torch.nn.Module):
         self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
         self.show_pred = args.show_pred
-        self.pred_texts = list(args.pred_texts) if isinstance(args.pred_texts, ListConfig) else [str(args.pred_texts)]
+        self.pred_texts = list(args.pred_texts)
 
     def forward(self, indices: torch.LongTensor):
         '''

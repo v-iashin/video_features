@@ -12,7 +12,7 @@ output_path: './output' # where to store results if saved
 tmp_path: './tmp' # folder to store the temporary files used for extraction (frames or aud files)
 keep_tmp_files: false # to keep temp files after feature extraction.
 show_pred: false # to show preds of a model, i.e. on a pre-train dataset for each feature (Kinetics 400)
-pred_texts: null # provide a list containing multiple sentences. the pred result is the similarity between video and sentence
+pred_texts: null # provide a list containing multiple sentences. The probability that each frame of the video corresponds to all the sentences you provide will be output
 
 # config
 config: null
