@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 import torch
 from tqdm import tqdm
-from omegaconf.listconfig import ListConfig
 from utils.utils import (action_on_extraction, form_list_from_user_input,
                          reencode_video_with_diff_fps)
 
@@ -31,7 +30,7 @@ class ExtractCLIP(torch.nn.Module):
         self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
         self.show_pred = args.show_pred
-        self.pred_texts = list(args.pred_texts)
+        self.pred_texts = list(args.pred_texts) if self.show_pred is True else None
 
     def forward(self, indices: torch.LongTensor):
         '''
