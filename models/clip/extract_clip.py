@@ -10,11 +10,13 @@ from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
                          reencode_video_with_diff_fps)
 
-try:
-    import clip
-except ModuleNotFoundError:
-    raise ModuleNotFoundError("CLIP module not found\n RUN pip install git+https://github.com/openai/CLIP.git")
+# try:
+#     import clip
+# except ModuleNotFoundError:
+#     raise ModuleNotFoundError("CLIP module not found\n RUN pip install git+https://github.com/openai/CLIP.git")
 # import traceback
+# import models.clip.clip_src as clip
+from . import clip_src as clip
 
 
 class ExtractCLIP(torch.nn.Module):
