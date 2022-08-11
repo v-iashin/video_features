@@ -24,14 +24,15 @@ class ExtractCLIP(torch.nn.Module):
     def __init__(self, args):
         super(ExtractCLIP, self).__init__()
         self.feature_type = args.feature_type
+        self.model_name = args.model_name
         self.path_list = form_list_from_user_input(args)
         self.batch_size = args.batch_size
         self.extraction_fps = args.extraction_fps
         # not used, create an issue if you would like to save the frames
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
-        self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
-        self.output_path = os.path.join(args.output_path, self.feature_type)
+        self.tmp_path = args.tmp_path
+        self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
 
     def forward(self, indices: torch.LongTensor):
@@ -150,20 +151,9 @@ class ExtractCLIP(torch.nn.Module):
         Returns:
             Tuple[torch.nn.Module, Callable]: the model and the transform function
         '''
-        # ['RN50', 'RN101', 'RN50x4', 'RN50x16', 'ViT-B/32', 'ViT-B/16']
-        if self.feature_type == 'CLIP-ViT-B-32':
-            model, preprocess = clip.load("ViT-B/32", device=device)
-        elif self.feature_type == 'CLIP-ViT-B-16':
-            model, preprocess = clip.load("ViT-B/16", device=device)
-        elif self.feature_type == 'CLIP-RN50x16':
-            model, preprocess = clip.load("RN50x16", device=device)
-        elif self.feature_type == 'CLIP-RN50x4':
-            model, preprocess = clip.load("RN50x4", device=device)
-        elif self.feature_type == 'CLIP-RN101':
-            model, preprocess = clip.load("RN101", device=device)
-        elif self.feature_type == 'CLIP-RN50':
-            model, preprocess = clip.load("RN50", device=device)
-        elif self.feature_type == 'CLIP-custom':
+        if self.model_name in clip.available_models():
+            model, preprocess = clip.load(self.model_name, device=device)
+        elif self.model_name == 'custom':
             # Reserved methods for using custom weights
             # *There is a bug in original repo when loading not-jit weights,
             # *and ignore it for now.
@@ -172,6 +162,29 @@ class ExtractCLIP(torch.nn.Module):
                 raise FileNotFoundError(f"{model_path}")
             model, preprocess = clip.load(model_path, device=device)
         else:
-            raise NotImplementedError(self.feature_type)
+            raise NotImplementedError(f"Model {self.model_name} not found")
+        # ['RN50', 'RN101', 'RN50x4', 'RN50x16', 'ViT-B/32', 'ViT-B/16']
+        # if self.feature_type == 'CLIP-ViT-B-32':
+        #     model, preprocess = clip.load("ViT-B/32", device=device)
+        # elif self.feature_type == 'CLIP-ViT-B-16':
+        #     model, preprocess = clip.load("ViT-B/16", device=device)
+        # elif self.feature_type == 'CLIP-RN50x16':
+        #     model, preprocess = clip.load("RN50x16", device=device)
+        # elif self.feature_type == 'CLIP-RN50x4':
+        #     model, preprocess = clip.load("RN50x4", device=device)
+        # elif self.feature_type == 'CLIP-RN101':
+        #     model, preprocess = clip.load("RN101", device=device)
+        # elif self.feature_type == 'CLIP-RN50':
+        #     model, preprocess = clip.load("RN50", device=device)
+        # elif self.feature_type == 'CLIP-custom':
+        #     # Reserved methods for using custom weights
+        #     # *There is a bug in original repo when loading not-jit weights,
+        #     # *and ignore it for now.
+        #     model_path = os.path.join(pathlib.Path(__file__).parent, 'checkpoints', 'CLIP-custom.pth')
+        #     if not os.path.exists(model_path):
+        #         raise FileNotFoundError(f"{model_path}")
+        #     model, preprocess = clip.load(model_path, device=device)
+        # else:
+        #     raise NotImplementedError(self.feature_type)
         model.eval()
         return model, preprocess

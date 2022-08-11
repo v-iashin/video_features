@@ -25,6 +25,7 @@ class ExtractResNet(torch.nn.Module):
     def __init__(self, args):
         super(ExtractResNet, self).__init__()
         self.feature_type = args.feature_type
+        self.model_name = args.model_name
         self.path_list = form_list_from_user_input(args)
         self.batch_size = args.batch_size
         self.central_crop_size = CENTER_CROP_SIZE
@@ -40,8 +41,8 @@ class ExtractResNet(torch.nn.Module):
         # not used, create an issue if you would like to save the frames
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
-        self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
-        self.output_path = os.path.join(args.output_path, self.feature_type)
+        self.tmp_path = args.tmp_path
+        self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
 
     def forward(self, indices: torch.LongTensor):
@@ -149,7 +150,7 @@ class ExtractResNet(torch.nn.Module):
 
         return features_with_meta
 
-    def load_model(self, device: torch.device) -> Tuple[torch.nn.Module]:
+    def load_model(self, device: torch.device) -> Tuple[torch.nn.Module, torch.nn.Module]:
         '''Defines the models, loads checkpoints, sends them to the device.
 
         Args:
@@ -161,18 +162,10 @@ class ExtractResNet(torch.nn.Module):
         Returns:
             Tuple[torch.nn.Module]: the model with identity head, the original classifier
         '''
-        if self.feature_type == 'resnet18':
-            model = models.resnet18
-        elif self.feature_type == 'resnet34':
-            model = models.resnet34
-        elif self.feature_type == 'resnet50':
-            model = models.resnet50
-        elif self.feature_type == 'resnet101':
-            model = models.resnet101
-        elif self.feature_type == 'resnet152':
-            model = models.resnet152
-        else:
-            raise NotImplementedError
+        try:
+            model = getattr(models, self.model_name)
+        except AttributeError:
+            raise NotImplementedError(f'Model {self.model_name} not found.')
 
         model = model(pretrained=True)
         model = model.to(device)

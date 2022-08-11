@@ -6,7 +6,7 @@ import numpy
 import torch
 from omegaconf import OmegaConf
 
-from utils.utils import build_cfg_path, form_list_from_user_input, sanity_check
+from utils.utils import build_cfg_path, form_list_from_user_input, sanity_check, on_after_sanity_check
 
 def parallel_feature_extraction(args):
     '''Distributes the feature extraction in embarasingly-parallel fashion. Specifically,
@@ -21,7 +21,7 @@ def parallel_feature_extraction(args):
     elif args.feature_type == 'vggish':
         from models.vggish.extract_vggish import ExtractVGGish  # defined here to avoid import errors
         extractor = ExtractVGGish(args)
-    elif args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
+    elif args.feature_type == 'resnet':
         from models.resnet.extract_resnet import ExtractResNet
         extractor = ExtractResNet(args)
     elif args.feature_type == 'raft':
@@ -30,8 +30,7 @@ def parallel_feature_extraction(args):
     elif args.feature_type == 'pwc':
         from models.pwc.extract_pwc import ExtractPWC
         extractor = ExtractPWC(args)
-    elif args.feature_type in ['CLIP-ViT-B-32', 'CLIP-ViT-B-16', 'CLIP-RN50x16', 'CLIP-RN50x4',
-                               'CLIP-RN101', 'CLIP-RN50', 'CLIP-custom']:
+    elif args.feature_type == 'clip':
         from models.clip.extract_clip import ExtractCLIP
         extractor = ExtractCLIP(args)
     else:
@@ -73,4 +72,5 @@ if __name__ == "__main__":
         print(f'Keeping temp files in {cfg.tmp_path}')
 
     sanity_check(cfg)
+    on_after_sanity_check(cfg)
     parallel_feature_extraction(cfg)

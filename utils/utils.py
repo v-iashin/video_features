@@ -258,3 +258,20 @@ def gpu_state_to_cpu(state_dict):
         if k.startswith('module'):
             new_state_dict[k.replace("module.", "")] = v
     return new_state_dict
+
+
+def on_after_sanity_check(args: Union[argparse.Namespace, DictConfig]):
+    # preprocess paths
+    subs = [args.feature_type]
+    if hasattr(args, 'model_name'):
+        subs.append(args.model_name)
+        # may add `finetuned_on` item
+    real_output_path = args.output_path
+    real_tmp_path = args.tmp_path
+    for p in subs:
+        # some model use `/` e.g. ViT-B/16
+        real_output_path = os.path.join(real_output_path, p.replace("/", "_"))
+        real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
+    args.output_path = real_output_path
+    args.tmp_path = real_tmp_path
+

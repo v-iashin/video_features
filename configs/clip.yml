@@ -1,5 +1,6 @@
 # Model
-feature_type: 'CLIP-ViT-B-32'
+feature_type: 'clip'
+model_name: 'ViT-B/32'
 batch_size: 1 # Batchsize (only frame-wise extractors are supported)
 extraction_fps: null # For original video fps, leave unspecified "null" (None)
 
