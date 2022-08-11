@@ -7,16 +7,12 @@ import cv2
 import numpy as np
 import torch
 from tqdm import tqdm
+from omegaconf.listconfig import ListConfig
 from utils.utils import (action_on_extraction, form_list_from_user_input,
                          reencode_video_with_diff_fps)
 
-# try:
-#     import clip
-# except ModuleNotFoundError:
-#     raise ModuleNotFoundError("CLIP module not found\n RUN pip install git+https://github.com/openai/CLIP.git")
-# import traceback
-# import models.clip.clip_src as clip
 from . import clip_src as clip
+# import traceback
 
 
 class ExtractCLIP(torch.nn.Module):
@@ -34,6 +30,8 @@ class ExtractCLIP(torch.nn.Module):
         self.tmp_path = args.tmp_path
         self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
+        self.show_pred = args.show_pred
+        self.pred_texts = list(args.pred_texts) if isinstance(args.pred_texts, ListConfig) else [str(args.pred_texts)]
 
     def forward(self, indices: torch.LongTensor):
         '''
@@ -42,16 +40,26 @@ class ExtractCLIP(torch.nn.Module):
         '''
         device = indices.device
         model, preprocess = self.load_model(device)
+        if self.show_pred is True:
+            text_features = self._get_text_embedding(model, device)
 
         for idx in indices:
             # when error occurs might fail silently when run from torch data parallel
             try:
                 feats_dict = self.extract(device, model, preprocess, self.path_list[idx])
                 action_on_extraction(feats_dict, self.path_list[idx], self.output_path, self.on_extraction)
+                if self.show_pred is True:
+                    video_features = feats_dict[self.feature_type]  # T,512
+                    probs = self._cal_probs(model, device, video_features, text_features)  # T, N
+                    # print result
+                    print(f"Video #{idx}: " + " | ".join(self.pred_texts))
+                    for i in range(len(probs)):
+                        print(f"frame {i}: {probs[i].tolist()}")
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
                 # prints only the last line of an error. Use `traceback.print_exc()` for the whole traceback
+                # traceback.print_exc()
                 print(e)
                 print(f'Extraction failed at: {self.path_list[idx]} with error (↑). Continuing extraction')
 
@@ -74,6 +82,7 @@ class ExtractCLIP(torch.nn.Module):
         Returns:
             Dict[str, np.ndarray]: 'features_nme', 'fps', 'timestamps_ms'
         '''
+
         def _run_on_a_batch(vid_feats, batch, model, device):
             batch = torch.cat(batch).to(device)
 
@@ -163,28 +172,28 @@ class ExtractCLIP(torch.nn.Module):
             model, preprocess = clip.load(model_path, device=device)
         else:
             raise NotImplementedError(f"Model {self.model_name} not found")
-        # ['RN50', 'RN101', 'RN50x4', 'RN50x16', 'ViT-B/32', 'ViT-B/16']
-        # if self.feature_type == 'CLIP-ViT-B-32':
-        #     model, preprocess = clip.load("ViT-B/32", device=device)
-        # elif self.feature_type == 'CLIP-ViT-B-16':
-        #     model, preprocess = clip.load("ViT-B/16", device=device)
-        # elif self.feature_type == 'CLIP-RN50x16':
-        #     model, preprocess = clip.load("RN50x16", device=device)
-        # elif self.feature_type == 'CLIP-RN50x4':
-        #     model, preprocess = clip.load("RN50x4", device=device)
-        # elif self.feature_type == 'CLIP-RN101':
-        #     model, preprocess = clip.load("RN101", device=device)
-        # elif self.feature_type == 'CLIP-RN50':
-        #     model, preprocess = clip.load("RN50", device=device)
-        # elif self.feature_type == 'CLIP-custom':
-        #     # Reserved methods for using custom weights
-        #     # *There is a bug in original repo when loading not-jit weights,
-        #     # *and ignore it for now.
-        #     model_path = os.path.join(pathlib.Path(__file__).parent, 'checkpoints', 'CLIP-custom.pth')
-        #     if not os.path.exists(model_path):
-        #         raise FileNotFoundError(f"{model_path}")
-        #     model, preprocess = clip.load(model_path, device=device)
-        # else:
-        #     raise NotImplementedError(self.feature_type)
         model.eval()
         return model, preprocess
+
+    @torch.no_grad()
+    def _get_text_embedding(self, model: torch.nn.Module, device):
+        text = clip.tokenize(self.pred_texts).to(device)
+        text_features = model.encode_text(text)
+        return text_features
+
+    @torch.no_grad()
+    def _cal_probs(self, model: torch.nn.Module, device, video_feats, text_feats):
+        # video_feats:T, 512  text_feats:N, 512
+        video_feats = torch.tensor(video_feats, device=device, dtype=torch.double)
+        text_feats = text_feats.to(dtype=torch.double)
+
+        # normalized features
+        video_feats = video_feats / video_feats.norm(dim=1, keepdim=True)
+        text_feats = text_feats / text_feats.norm(dim=1, keepdim=True)
+
+        # cosine similarity as logits
+        logit_scale = model.logit_scale.exp().to(dtype=video_feats.dtype)
+        # print(video_feats.dtype, text_feats.dtype, logit_scale.dtype)
+        logits_per_image = logit_scale * video_feats @ text_feats.t()
+        probs = logits_per_image.softmax(dim=-1).cpu().numpy()  # T, N
+        return probs
