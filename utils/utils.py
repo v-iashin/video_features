@@ -115,9 +115,6 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
             args.device_ids = [args.device_ids[0]]
         if args.feature_type == 'vggish':
             print('Showing class predictions is not implemented for VGGish')
-        if args.feature_type == 'clip':
-            if args.pred_texts is None:
-                raise AssertionError(f"`pred_texts` cannot be null when `show_pred` is true for CLIP.")
     # if args.feature_type == 'r21d':
     #     message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
     #     assert args.extraction_fps is None, message

@@ -98,8 +98,8 @@ python main.py \
     model_name="ViT-B/32" \
     device_ids="[0, 2]" \
     extraction_fps=1 \
-    pred_texts="['a dog smiles', 'a woman is lifting']" \
     show_pred="true" \
+    pred_texts="['a dog smiles', 'a woman is lifting']" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
 You will get the output for each frame like:
@@ -125,12 +125,15 @@ You will get the output for each frame like:
 ...
 ```
 
+You may also leave `pred_texts` unspecified or `null` (None) if you wish to apply CLIP for zero-shot prediction
+on Kinetics 400.
+
 ---
 
 ## Credits
 1. The [OpenAI CLIP implementation](https://github.com/openai/CLIP).
 2. The [CLIP paper](https://arxiv.org/abs/2103.00020)
-3. Thanks to [@ohjho](https://github.com/ohjho) who added support of this model
+3. Thanks to [@ohjho](https://github.com/ohjho) who adapted this model for `video_features`
 
 ---
 
