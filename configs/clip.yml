@@ -1,6 +1,6 @@
 # Model
-feature_type: 'resnet'
-model_name: 'resnet50'
+feature_type: 'clip'
+model_name: 'ViT-B/32'
 batch_size: 1 # Batchsize (only frame-wise extractors are supported)
 extraction_fps: null # For original video fps, leave unspecified "null" (None)
 
@@ -12,6 +12,7 @@ output_path: './output' # where to store results if saved
 tmp_path: './tmp' # folder to store the temporary files used for extraction (frames or aud files)
 keep_tmp_files: false # to keep temp files after feature extraction.
 show_pred: false # to show preds of a model, i.e. on a pre-train dataset for each feature (Kinetics 400)
+pred_texts: null # provide a list of multiple sentences.  if `null`, will perform zero-shot on Kinetics 400
 
 # config
 config: null

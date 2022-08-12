@@ -42,8 +42,8 @@ class ExtractPWC(torch.nn.Module):
         self.keep_tmp_files = args.keep_tmp_files
         self.extraction_fps = args.extraction_fps
         self.on_extraction = args.on_extraction
-        self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
-        self.output_path = os.path.join(args.output_path, self.feature_type)
+        self.tmp_path = args.tmp_path
+        self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
 
     def forward(self, indices: torch.LongTensor):

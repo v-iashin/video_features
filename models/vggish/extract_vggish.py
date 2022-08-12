@@ -19,8 +19,8 @@ class ExtractVGGish(torch.nn.Module):
         self.path_list = form_list_from_user_input(args)
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
-        self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
-        self.output_path = os.path.join(args.output_path, self.feature_type)
+        self.tmp_path = args.tmp_path
+        self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
         if args.show_pred:
             raise NotImplementedError
