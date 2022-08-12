@@ -3,7 +3,7 @@ import os
 import pickle
 import subprocess
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 import platform
 
 import numpy as np
@@ -16,7 +16,7 @@ IMAGENET_CLASS_PATH = './utils/IN_label_map.txt'
 KINETICS_CLASS_PATH = './utils/K400_label_map.txt'
 
 
-def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: str):
+def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, List]):
     '''Prints out predictions for each feature
 
     Args:
@@ -24,13 +24,13 @@ def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: str):
         dataset (str): which dataset to use to show the predictions on. In ('imagenet', 'kinetics')
     '''
     if dataset == 'kinetics':
-        path_to_class_list = KINETICS_CLASS_PATH
+        dataset_classes = [x.strip() for x in open(KINETICS_CLASS_PATH)]
     elif dataset == 'imagenet':
-        path_to_class_list = IMAGENET_CLASS_PATH
+        dataset_classes = [x.strip() for x in open(IMAGENET_CLASS_PATH)]
+    elif isinstance(dataset, list):
+        dataset_classes = dataset
     else:
         raise NotImplementedError
-
-    dataset_classes = [x.strip() for x in open(path_to_class_list)]
 
     # Show predictions
     softmaxes = F.softmax(logits, dim=-1)
@@ -110,10 +110,14 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     assert args.file_with_video_paths or args.video_paths, '`video_paths` or `file_with_video_paths` must be specified'
     assert os.path.relpath(args.output_path) != os.path.relpath(args.tmp_path), 'The same path for out & tmp'
     if args.show_pred:
-        print('You want to see predictions. So, I will use only the first GPU from the list you specified.')
-        args.device_ids = [args.device_ids[0]]
+        if args.cpu is False:
+            print('You want to see predictions. So, I will use only the first GPU from the list you specified.')
+            args.device_ids = [args.device_ids[0]]
         if args.feature_type == 'vggish':
             print('Showing class predictions is not implemented for VGGish')
+        if args.feature_type == 'clip':
+            if args.pred_texts is None:
+                raise AssertionError(f"`pred_texts` cannot be null when `show_pred` is true for CLIP.")
     # if args.feature_type == 'r21d':
     #     message = 'torchvision.read_video only supports extraction at orig fps. Remove this argument.'
     #     assert args.extraction_fps is None, message
@@ -244,6 +248,9 @@ def build_cfg_path(feature_type: str) -> os.PathLike:
     path_base = Path('./configs')
     if feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']:
         path = path_base / 'resnet.yml'
+    elif feature_type in ['CLIP-ViT-B-32', 'CLIP-ViT-B-16', 'CLIP-RN50x16', 'CLIP-RN50x4',
+                          'CLIP-RN101', 'CLIP-RN50', 'CLIP-custom']:
+        path = path_base / 'clip.yml'
     else:
         path = path_base / f'{feature_type}.yml'
     return path
@@ -255,3 +262,19 @@ def gpu_state_to_cpu(state_dict):
         if k.startswith('module'):
             new_state_dict[k.replace("module.", "")] = v
     return new_state_dict
+
+
+def on_after_sanity_check(args: Union[argparse.Namespace, DictConfig]):
+    # preprocess paths
+    subs = [args.feature_type]
+    if hasattr(args, 'model_name'):
+        subs.append(args.model_name)
+        # may add `finetuned_on` item
+    real_output_path = args.output_path
+    real_tmp_path = args.tmp_path
+    for p in subs:
+        # some model use `/` e.g. ViT-B/16
+        real_output_path = os.path.join(real_output_path, p.replace("/", "_"))
+        real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
+    args.output_path = real_output_path
+    args.tmp_path = real_tmp_path
