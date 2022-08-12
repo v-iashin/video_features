@@ -133,7 +133,7 @@ on Kinetics 400.
 ## Credits
 1. The [OpenAI CLIP implementation](https://github.com/openai/CLIP).
 2. The [CLIP paper](https://arxiv.org/abs/2103.00020)
-3. Thanks to [@ohjho](https://github.com/ohjho) who adapted this model for `video_features`
+3. Thanks to [@Kamino666](https://github.com/Kamino666) who adapted this model for `video_features`
 
 ---
 
