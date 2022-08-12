@@ -1,49 +1,36 @@
 import os
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, Callable
+import pathlib
 
+from PIL import Image
 import cv2
 import numpy as np
 import torch
-import torchvision.models as models
-import torchvision.transforms as transforms
 from tqdm import tqdm
 from utils.utils import (action_on_extraction, form_list_from_user_input,
-                         reencode_video_with_diff_fps,
-                         show_predictions_on_dataset)
+                         reencode_video_with_diff_fps)
 
+from . import clip_src as clip
 # import traceback
 
 
-RESIZE_SIZE = 256
-CENTER_CROP_SIZE = 224
-TRAIN_MEAN = [0.485, 0.456, 0.406]
-TRAIN_STD = [0.229, 0.224, 0.225]
-
-
-class ExtractResNet(torch.nn.Module):
+class ExtractCLIP(torch.nn.Module):
 
     def __init__(self, args):
-        super(ExtractResNet, self).__init__()
+        super(ExtractCLIP, self).__init__()
         self.feature_type = args.feature_type
         self.model_name = args.model_name
         self.path_list = form_list_from_user_input(args)
         self.batch_size = args.batch_size
-        self.central_crop_size = CENTER_CROP_SIZE
         self.extraction_fps = args.extraction_fps
-        self.transforms = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize(RESIZE_SIZE),
-            transforms.CenterCrop(CENTER_CROP_SIZE),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=TRAIN_MEAN, std=TRAIN_STD)
-        ])
-        self.show_pred = args.show_pred
         # not used, create an issue if you would like to save the frames
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
         self.tmp_path = args.tmp_path
         self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
+        self.show_pred = args.show_pred
+        self.pred_texts = list(args.pred_texts) if self.show_pred is True else None
 
     def forward(self, indices: torch.LongTensor):
         '''
@@ -51,32 +38,41 @@ class ExtractResNet(torch.nn.Module):
             indices {torch.LongTensor} -- indices to self.path_list
         '''
         device = indices.device
-        model, class_head = self.load_model(device)
+        model, preprocess = self.load_model(device)
+        if self.show_pred is True:
+            text_features = self._get_text_embedding(model, device)
 
         for idx in indices:
             # when error occurs might fail silently when run from torch data parallel
             try:
-                feats_dict = self.extract(device, model, class_head, self.path_list[idx])
+                feats_dict = self.extract(device, model, preprocess, self.path_list[idx])
                 action_on_extraction(feats_dict, self.path_list[idx], self.output_path, self.on_extraction)
+                if self.show_pred is True:
+                    video_features = feats_dict[self.feature_type]  # T,512
+                    probs = self._cal_probs(model, device, video_features, text_features)  # T, N
+                    # print result
+                    print(f"Video #{idx}: " + " | ".join(self.pred_texts))
+                    for i in range(len(probs)):
+                        print(f"frame {i}: {probs[i].tolist()}")
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
                 # prints only the last line of an error. Use `traceback.print_exc()` for the whole traceback
+                # traceback.print_exc()
                 print(e)
                 print(f'Extraction failed at: {self.path_list[idx]} with error (↑). Continuing extraction')
 
             # update tqdm progress bar
             self.progress.update()
 
-    def extract(self, device: torch.device, model: torch.nn.Module, classifier: torch.nn.Module,
+    def extract(self, device: torch.device, model: torch.nn.Module, preprocess: Callable,
                 video_path: Union[str, None] = None) -> Dict[str, np.ndarray]:
         '''The extraction call. Made to clean the forward call a bit.
 
         Arguments:
             device {torch.device}
             model {torch.nn.Module}
-            classifier {torch.nn.Module} -- pre-trained classification layer, will be used if
-                                            show_pred is True
+            preprocess {Callable} -- function to preprocess images
 
         Keyword Arguments:
             video_path {Union[str, None]} -- if you would like to use import it and use it as
@@ -85,16 +81,17 @@ class ExtractResNet(torch.nn.Module):
         Returns:
             Dict[str, np.ndarray]: 'features_nme', 'fps', 'timestamps_ms'
         '''
-        def _run_on_a_batch(vid_feats, batch, model, classifier, device):
+
+        def _run_on_a_batch(vid_feats, batch, model, device):
             batch = torch.cat(batch).to(device)
 
             with torch.no_grad():
-                batch_feats = model(batch)
+                batch_feats = model.encode_image(batch)
                 vid_feats.extend(batch_feats.tolist())
                 # show predicitons on imagenet dataset (might be useful for debugging)
-                if self.show_pred:
-                    logits = classifier(batch_feats)
-                    show_predictions_on_dataset(logits, 'imagenet')
+                # if self.show_pred:
+                #     logits = classifier(batch_feats)
+                #     show_predictions_on_dataset(logits, 'imagenet')
 
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
@@ -123,18 +120,18 @@ class ExtractResNet(torch.nn.Module):
                 timestamps_ms.append(cap.get(cv2.CAP_PROP_POS_MSEC))
                 # prepare data (first -- transform, then -- unsqueeze)
                 rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-                rgb = self.transforms(rgb)
+                rgb = preprocess(Image.fromarray(rgb))
                 rgb = rgb.unsqueeze(0)
                 batch.append(rgb)
                 # when batch is formed to inference
                 if len(batch) == self.batch_size:
-                    _run_on_a_batch(vid_feats, batch, model, classifier, device)
+                    _run_on_a_batch(vid_feats, batch, model, device)
                     # clean up the batch list
                     batch = []
             else:
                 # if the last batch was smaller than the batch size
                 if len(batch) != 0:
-                    _run_on_a_batch(vid_feats, batch, model, classifier, device)
+                    _run_on_a_batch(vid_feats, batch, model, device)
                 cap.release()
                 break
 
@@ -150,7 +147,7 @@ class ExtractResNet(torch.nn.Module):
 
         return features_with_meta
 
-    def load_model(self, device: torch.device) -> Tuple[torch.nn.Module, torch.nn.Module]:
+    def load_model(self, device: torch.device) -> Tuple[torch.nn.Module, Callable]:
         '''Defines the models, loads checkpoints, sends them to the device.
 
         Args:
@@ -160,17 +157,42 @@ class ExtractResNet(torch.nn.Module):
             NotImplementedError: if flow type is not implemented.
 
         Returns:
-            Tuple[torch.nn.Module]: the model with identity head, the original classifier
+            Tuple[torch.nn.Module, Callable]: the model and the transform function
         '''
-        try:
-            model = getattr(models, self.model_name)
-        except AttributeError:
-            raise NotImplementedError(f'Model {self.model_name} not found.')
-
-        model = model(pretrained=True)
-        model = model.to(device)
+        if self.model_name in clip.available_models():
+            model, preprocess = clip.load(self.model_name, device=device)
+        elif self.model_name == 'custom':
+            # Reserved methods for using custom weights
+            # *There is a bug in original repo when loading not-jit weights,
+            # *and ignore it for now.
+            model_path = os.path.join(pathlib.Path(__file__).parent, 'checkpoints', 'CLIP-custom.pth')
+            if not os.path.exists(model_path):
+                raise FileNotFoundError(f"{model_path}")
+            model, preprocess = clip.load(model_path, device=device)
+        else:
+            raise NotImplementedError(f"Model {self.model_name} not found")
         model.eval()
-        # save the pre-trained classifier for show_preds and replace it in the net with identity
-        class_head = model.fc
-        model.fc = torch.nn.Identity()
-        return model, class_head
+        return model, preprocess
+
+    @torch.no_grad()
+    def _get_text_embedding(self, model: torch.nn.Module, device):
+        text = clip.tokenize(self.pred_texts).to(device)
+        text_features = model.encode_text(text)
+        return text_features
+
+    @torch.no_grad()
+    def _cal_probs(self, model: torch.nn.Module, device, video_feats, text_feats):
+        # video_feats:T, 512  text_feats:N, 512
+        video_feats = torch.tensor(video_feats, device=device, dtype=torch.double)
+        text_feats = text_feats.to(dtype=torch.double)
+
+        # normalized features
+        video_feats = video_feats / video_feats.norm(dim=1, keepdim=True)
+        text_feats = text_feats / text_feats.norm(dim=1, keepdim=True)
+
+        # cosine similarity as logits
+        logit_scale = model.logit_scale.exp().to(dtype=video_feats.dtype)
+        # print(video_feats.dtype, text_feats.dtype, logit_scale.dtype)
+        logits_per_image = logit_scale * video_feats @ text_feats.t()
+        probs = logits_per_image.softmax(dim=-1).cpu().numpy()  # T, N
+        return probs

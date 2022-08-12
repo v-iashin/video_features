@@ -75,8 +75,8 @@ class ExtractI3D(torch.nn.Module):
         self.i3d_classes_num = I3D_CLASSES_NUM
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
-        self.tmp_path = os.path.join(args.tmp_path, self.feature_type)
-        self.output_path = os.path.join(args.output_path, self.feature_type)
+        self.tmp_path = args.tmp_path
+        self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
 
     def forward(self, indices: torch.LongTensor):

@@ -55,6 +55,10 @@ Image Recognition
 
 - [ResNet-18,34,50,101,152 (ImageNet)](https://v-iashin.github.io/video_features/models/resnet)
 
+Language-Image Pretraining
+
+- [CLIP](https://v-iashin.github.io/video_features/models/clip)
+
 ## Used in
 
 * [SpecVQGAN](https://arxiv.org/abs/2110.08791) branch `specvqgan`
