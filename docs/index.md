@@ -31,7 +31,7 @@ python main.py \
 # or add `cpu=true` to use CPU
 ```
 
-# Supported Models
+## Supported Models
 
 Action Recognition
 
@@ -55,7 +55,7 @@ Language-Image Pretraining
 
 - [CLIP](https://v-iashin.github.io/video_features/models/clip)
 
-# Acknowledgements
+## Acknowledgements
 
 - [@Kamino666](https://github.com/Kamino666): added CLIP model as well as Windows and CPU support
 - [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.
