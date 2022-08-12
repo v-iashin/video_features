@@ -7,8 +7,8 @@ import cv2
 import numpy as np
 import torch
 from tqdm import tqdm
-from utils.utils import (action_on_extraction, form_list_from_user_input,
-                         reencode_video_with_diff_fps)
+from utils.utils import (KINETICS_CLASS_PATH, action_on_extraction, form_list_from_user_input,
+                         reencode_video_with_diff_fps, show_predictions_on_dataset)
 
 from . import clip_src as clip
 # import traceback
@@ -30,7 +30,15 @@ class ExtractCLIP(torch.nn.Module):
         self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
         self.show_pred = args.show_pred
-        self.pred_texts = list(args.pred_texts) if self.show_pred is True else None
+        if self.show_pred:
+            pred_texts = args.get('pred_texts', None)
+            # if the user didn't specify custom text descriptions, do zero-shot on Kinetics 400
+            if pred_texts is None:
+                self.pred_texts = [f'a photo of {x.strip()}' for x in open(KINETICS_CLASS_PATH)]
+            else:
+                self.pred_texts = list(pred_texts)
+            # .long() is required because torch.nn.Embedding allows only Longs for pytorch 1.7.1
+            self.pred_texts_tok = clip.tokenize(self.pred_texts).long()
 
     def forward(self, indices: torch.LongTensor):
         '''
@@ -39,21 +47,12 @@ class ExtractCLIP(torch.nn.Module):
         '''
         device = indices.device
         model, preprocess = self.load_model(device)
-        if self.show_pred is True:
-            text_features = self._get_text_embedding(model, device)
 
         for idx in indices:
             # when error occurs might fail silently when run from torch data parallel
             try:
                 feats_dict = self.extract(device, model, preprocess, self.path_list[idx])
                 action_on_extraction(feats_dict, self.path_list[idx], self.output_path, self.on_extraction)
-                if self.show_pred is True:
-                    video_features = feats_dict[self.feature_type]  # T,512
-                    probs = self._cal_probs(model, device, video_features, text_features)  # T, N
-                    # print result
-                    print(f"Video #{idx}: " + " | ".join(self.pred_texts))
-                    for i in range(len(probs)):
-                        print(f"frame {i}: {probs[i].tolist()}")
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except Exception as e:
@@ -88,10 +87,13 @@ class ExtractCLIP(torch.nn.Module):
             with torch.no_grad():
                 batch_feats = model.encode_image(batch)
                 vid_feats.extend(batch_feats.tolist())
-                # show predicitons on imagenet dataset (might be useful for debugging)
-                # if self.show_pred:
-                #     logits = classifier(batch_feats)
-                #     show_predictions_on_dataset(logits, 'imagenet')
+                # for each batch we will compute text representation: it is a bit redundant but it only
+                # creates a problem during `show_pred`, i.e. debugging. It is not a big deal
+                if self.show_pred:
+                    # to(device) is called here (instead of __init__) because device is defined in .extract()
+                    text_features = model.encode_text(self.pred_texts_tok.to(device))
+                    logits = self.get_logits(model, device, batch_feats, text_features)  # T, N
+                    show_predictions_on_dataset(logits, self.pred_texts)
 
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
@@ -160,28 +162,24 @@ class ExtractCLIP(torch.nn.Module):
             Tuple[torch.nn.Module, Callable]: the model and the transform function
         '''
         if self.model_name in clip.available_models():
-            model, preprocess = clip.load(self.model_name, device=device)
+            model_path = self.model_name
         elif self.model_name == 'custom':
             # Reserved methods for using custom weights
             # *There is a bug in original repo when loading not-jit weights,
             # *and ignore it for now.
-            model_path = os.path.join(pathlib.Path(__file__).parent, 'checkpoints', 'CLIP-custom.pth')
-            if not os.path.exists(model_path):
-                raise FileNotFoundError(f"{model_path}")
-            model, preprocess = clip.load(model_path, device=device)
+            model_path = pathlib.Path(__file__).parent / 'checkpoints' / 'CLIP-custom.pth'
+            if not model_path.exists():
+                raise FileNotFoundError(f'{model_path}')
         else:
-            raise NotImplementedError(f"Model {self.model_name} not found")
+            raise NotImplementedError(f'Model {self.model_name} not found')
+
+        model, preprocess = clip.load(str(model_path), device=device)
         model.eval()
+
         return model, preprocess
 
     @torch.no_grad()
-    def _get_text_embedding(self, model: torch.nn.Module, device):
-        text = clip.tokenize(self.pred_texts).to(device)
-        text_features = model.encode_text(text)
-        return text_features
-
-    @torch.no_grad()
-    def _cal_probs(self, model: torch.nn.Module, device, video_feats, text_feats):
+    def get_logits(self, model: torch.nn.Module, device, video_feats, text_feats):
         # video_feats:T, 512  text_feats:N, 512
         video_feats = torch.tensor(video_feats, device=device, dtype=torch.double)
         text_feats = text_feats.to(dtype=torch.double)
@@ -194,5 +192,6 @@ class ExtractCLIP(torch.nn.Module):
         logit_scale = model.logit_scale.exp().to(dtype=video_feats.dtype)
         # print(video_feats.dtype, text_feats.dtype, logit_scale.dtype)
         logits_per_image = logit_scale * video_feats @ text_feats.t()
-        probs = logits_per_image.softmax(dim=-1).cpu().numpy()  # T, N
-        return probs
+        # probs = logits_per_image.softmax(dim=-1).cpu().numpy()  # T, N
+        # return probs
+        return logits_per_image.cpu()

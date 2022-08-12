@@ -57,5 +57,5 @@ Language-Image Pretraining
 
 # Acknowledgements
 
-- [@Kamino666](https://github.com/Kamino666): added Windows and CPU support
+- [@Kamino666](https://github.com/Kamino666): added CLIP model as well as Windows and CPU support
 - [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.

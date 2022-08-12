@@ -3,7 +3,7 @@ import os
 import pickle
 import subprocess
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 import platform
 
 import numpy as np
@@ -16,7 +16,7 @@ IMAGENET_CLASS_PATH = './utils/IN_label_map.txt'
 KINETICS_CLASS_PATH = './utils/K400_label_map.txt'
 
 
-def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: str):
+def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, List]):
     '''Prints out predictions for each feature
 
     Args:
@@ -24,13 +24,13 @@ def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: str):
         dataset (str): which dataset to use to show the predictions on. In ('imagenet', 'kinetics')
     '''
     if dataset == 'kinetics':
-        path_to_class_list = KINETICS_CLASS_PATH
+        dataset_classes = [x.strip() for x in open(KINETICS_CLASS_PATH)]
     elif dataset == 'imagenet':
-        path_to_class_list = IMAGENET_CLASS_PATH
+        dataset_classes = [x.strip() for x in open(IMAGENET_CLASS_PATH)]
+    elif isinstance(dataset, list):
+        dataset_classes = dataset
     else:
         raise NotImplementedError
-
-    dataset_classes = [x.strip() for x in open(path_to_class_list)]
 
     # Show predictions
     softmaxes = F.softmax(logits, dim=-1)
@@ -278,4 +278,3 @@ def on_after_sanity_check(args: Union[argparse.Namespace, DictConfig]):
         real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
     args.output_path = real_output_path
     args.tmp_path = real_tmp_path
-
