@@ -42,8 +42,11 @@ def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, L
     class_labels = [[dataset_classes[idx] for idx in i_row] for i_row in top_idx[:, :k]]
 
     for b in range(len(logits)):
+        # header
+        print('  Logits | Prob. | Label ')
         for (logit, smax, cls) in zip(logits_score[b], softmax_score[b], class_labels[b]):
-            print(f'{logit:.3f} {smax:.3f} {cls}')
+            # rows
+            print(f'{logit:8.3f} | {smax:.3f} | {cls}')
         print()
 
 def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_path, on_extraction: str):
