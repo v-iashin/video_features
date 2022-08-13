@@ -181,7 +181,7 @@ class ExtractCLIP(torch.nn.Module):
     @torch.no_grad()
     def get_logits(self, model: torch.nn.Module, device, video_feats, text_feats):
         # video_feats:T, 512  text_feats:N, 512
-        video_feats = torch.tensor(video_feats, device=device, dtype=torch.double)
+        video_feats = video_feats.to(device=device, dtype=torch.double)
         text_feats = text_feats.to(dtype=torch.double)
 
         # normalized features
