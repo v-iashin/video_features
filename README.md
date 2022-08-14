@@ -67,18 +67,6 @@ Language-Image Pretraining
 
 Please, let me know if you found this repo useful for your projects or papers.
 
-## Ideas for Contributions
-
-I would be happy to consider your ideas and PRs.
-Here is a few things I have in mind:
-
-- [ ] switch from multi-gpu to a single GPU process that check if the output
-      file already exists (allows easy scaling on a multi-node cluster with shared disk storage)
-- [ ] Docker image supporting all models
-- [ ] PyTorch DDP support (for multi-node extraction)
-- [ ] Refactor the code base with OOP in mind – now the code is a bit redundant for each feature
-- [ ] More models, of course
-
 ## Acknowledgements
 
 - [@Kamino666](https://github.com/Kamino666): added CLIP model as well as Windows and CPU support
