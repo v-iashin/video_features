@@ -1,3 +1,10 @@
+'''
+    Reference: https://github.com/openai/CLIP/tree/d50d76daa670286dd6cacf3bcd80b5e4823fc8e1
+    Modified by Kamino (@Kamino666):
+      - fix: fix the error when loading custom non-jit weights
+      - change: remove packaging check since our repo meets the requirements
+'''
+
 import hashlib
 import os
 import urllib
