@@ -51,7 +51,7 @@ conda activate torch_zoo
 ```
 
 It is pretty much the same procedure as with other features.
-Here we take `ViT/B-32` as an example, but we also support `ViT-B/16`, `RN50x16`, `RN50x4`, `RN101`, `RN50` and others in [openAI CLIP implementation](https://github.com/openai/CLIP).
+Here we take `ViT/B-32` as an example, but we also support `ViT-B/16`, `RN50x16`, `RN50x4`, `RN101`, `RN50` and others in [OpenAI CLIP implementation](https://github.com/openai/CLIP).
 In addition, if you want to use your weights, you need to copy your weights to `models/clip/checkpoints`, rename it `CLIP-custom.pth` and specify `model_name=custom`.
 ```bash
 python main.py \
@@ -104,24 +104,30 @@ python main.py \
 ```
 You will get the output for each frame like:
 ```
-23.061 0.962 a dog smiles
-19.824 0.038 a woman is lifting
+  Logits | Prob. | Label
+  23.061 | 0.962 | a dog smiles
+  19.824 | 0.038 | a woman is lifting
 
-22.770 0.963 a dog smiles
-19.520 0.037 a woman is lifting
+  Logits | Prob. | Label
+  22.770 | 0.963 | a dog smiles
+  19.520 | 0.037 | a woman is lifting
 
-24.619 0.929 a dog smiles
-22.048 0.071 a woman is lifting
+  Logits | Prob. | Label
+  24.619 | 0.929 | a dog smiles
+  22.048 | 0.071 | a woman is lifting
 ...
 
-30.966 1.000 a woman is lifting
-15.272 0.000 a dog smiles
+  Logits | Prob. | Label
+  30.966 | 1.000 | a woman is lifting
+  15.272 | 0.000 | a dog smiles
 
-32.671 1.000 a woman is lifting
-15.413 0.000 a dog smiles
+  Logits | Prob. | Label
+  32.671 | 1.000 | a woman is lifting
+  15.413 | 0.000 | a dog smiles
 
-32.555 1.000 a woman is lifting
-16.151 0.000 a dog smiles
+  Logits | Prob. | Label
+  32.555 | 1.000 | a woman is lifting
+  16.151 | 0.000 | a dog smiles
 ...
 ```
 
