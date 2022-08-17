@@ -251,11 +251,12 @@ def build_cfg_path(feature_type: str) -> os.PathLike:
     return path
 
 
-def gpu_state_to_cpu(state_dict):
+def dp_state_to_normal(state_dict):
+    '''Converts a torch.DataParallel checkpoint to regular'''
     new_state_dict = {}
     for k, v in state_dict.items():
         if k.startswith('module'):
-            new_state_dict[k.replace("module.", "")] = v
+            new_state_dict[k.replace('module.', '')] = v
     return new_state_dict
 
 
