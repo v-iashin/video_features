@@ -11,7 +11,8 @@ from models.raft.raft_src.raft import RAFT, InputPadder
 from models.raft.transforms.transforms import (ResizeImproved, ToFloat,
                                                ToTensorWithoutScaling)
 from tqdm import tqdm
-from utils.utils import (action_on_extraction, form_list_from_user_input,
+from utils.utils import (action_on_extraction, dp_state_to_normal,
+                         form_list_from_user_input,
                          reencode_video_with_diff_fps)
 
 RAFT_MODEL_PATH = {
@@ -184,7 +185,9 @@ class ExtractRAFT(torch.nn.Module):
             torch.nn.Module: the model
         '''
         model = RAFT()
-        model = torch.nn.DataParallel(model, device_ids=[device])
-        model.load_state_dict(torch.load(self.model_path, map_location=device))
+        state_dict = torch.load(self.model_path, map_location='cpu')
+        state_dict = dp_state_to_normal(state_dict)
+        model.load_state_dict(state_dict)
+        model = model.to(device)
         model.eval()
         return model

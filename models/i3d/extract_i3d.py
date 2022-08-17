@@ -13,10 +13,9 @@ from models.i3d.transforms.transforms import (Clamp, PermuteAndUnsqueeze,
 from models.raft.raft_src.raft import RAFT, InputPadder
 from torchvision import transforms
 from tqdm import tqdm
-from utils.utils import (action_on_extraction, form_list_from_user_input,
+from utils.utils import (action_on_extraction, dp_state_to_normal, form_list_from_user_input,
                          reencode_video_with_diff_fps,
-                         show_predictions_on_dataset,
-                         gpu_state_to_cpu)
+                         show_predictions_on_dataset)
 
 PWC_MODEL_PATH = './models/pwc/checkpoints/pwc_net_sintel.pt'
 RAFT_MODEL_PATH = './models/raft/checkpoints/raft-sintel.pth'
@@ -234,15 +233,12 @@ class ExtractI3D(torch.nn.Module):
             flow_xtr_model = PWCNet()
         elif self.flow_type == 'raft':
             flow_xtr_model = RAFT()
-            if not self.cpu:
-                flow_xtr_model = torch.nn.DataParallel(flow_xtr_model, device_ids=[device])
         else:
             raise NotImplementedError
 
         # preprocess state dict
         state_dict = torch.load(self.flow_model_paths[self.flow_type], map_location='cpu')
-        if self.cpu is True:
-            state_dict = gpu_state_to_cpu(state_dict)
+        state_dict = dp_state_to_normal(state_dict)
         flow_xtr_model.load_state_dict(state_dict)
         flow_xtr_model = flow_xtr_model.to(device)
         flow_xtr_model.eval()
