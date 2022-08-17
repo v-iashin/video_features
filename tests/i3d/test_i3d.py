@@ -24,14 +24,7 @@ TO_MAKE_REF = False
 # we separate them here because pwc is not supported from `torch_zoo` conda environement
 # This checks for the python path and adjusts testing parameters
 signature = 'device, video_path, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref'
-if '/torch_zoo/' in sys.executable:
-    test_params = [
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'raft', None, None, None, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 24, 25, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'raft', None, None, None, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
-    ]
-elif '/pwc/' in sys.executable:
+if '/pwc/' in sys.executable:
     test_params = [
         ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', None, None, None, TO_MAKE_REF),
         ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', 24, 24, 25, TO_MAKE_REF),
@@ -39,7 +32,12 @@ elif '/pwc/' in sys.executable:
         ('cuda', './sample/v_GGSY1Qvo990.mp4', 'flow', 'pwc', None, None, None, TO_MAKE_REF),
     ]
 else:
-    raise Exception(f'Unexpected conda environment/python executable path: {sys.executable}')
+    test_params = [
+        ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'raft', None, None, None, TO_MAKE_REF),
+        ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 24, 25, TO_MAKE_REF),
+        ('cuda', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'raft', None, None, None, TO_MAKE_REF),
+        ('cuda', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
+    ]
 
 @pytest.mark.parametrize(signature, test_params)
 def test(device, video_path, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref):
