@@ -140,7 +140,8 @@ def form_list_from_user_input(args: Union[argparse.Namespace, DictConfig]) -> li
         list: list with paths
     '''
     if args.file_with_video_paths is None:
-        path_list = args.video_paths
+        path_list = [args.video_paths] if isinstance(args.video_paths, str) else list(args.video_paths)
+        # TODO: the following `if` could be redundant
         # ListConfig does not support indexing with tensor scalars, e.g. tensor(1, device='cuda:0')
         if isinstance(args.video_paths, ListConfig):
             path_list = list(path_list)
