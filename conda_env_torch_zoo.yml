@@ -6,6 +6,7 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=main
   - antlr-python-runtime=4.9.3=pyhd8ed1ab_1
+  - attrs=22.1.0=pyh71513ae_1
   - av=8.0.2=py38he20a9df_1
   - backports=1.0=py_2
   - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
@@ -21,6 +22,7 @@ dependencies:
   - gettext=0.19.8.1=h5e8e0c9_1
   - gmp=6.2.0=he1b5a44_2
   - gnutls=3.6.13=h79a8f9a_0
+  - iniconfig=1.1.1=pyh9f0ad1d_0
   - intel-openmp=2020.2=254
   - jpeg=9b=h024ee3a_2
   - lame=3.100=h14c3975_1001
@@ -56,10 +58,15 @@ dependencies:
   - omegaconf=2.1.1=py38h578d9bd_1
   - openh264=2.1.1=h8b12597_0
   - openssl=1.1.1q=h7f8727e_0
+  - packaging=21.3=pyhd8ed1ab_0
   - pillow=7.2.0=py38hb39fc2d_0
   - pip=20.2.2=py38_0
+  - pluggy=1.0.0=py38h578d9bd_3
+  - py=1.11.0=pyh6c4a22f_0
   - pycparser=2.21=pyhd8ed1ab_0
+  - pyparsing=3.0.9=pyhd8ed1ab_0
   - pysoundfile=0.10.3.post1=pyhd3deb0d_0
+  - pytest=7.1.2=py38h578d9bd_0
   - python=3.8.5=h7579374_1
   - python_abi=3.8=1_cp38
   - pytorch=1.7.1=py3.8_cuda11.0.221_cudnn8.0.5_0
@@ -73,6 +80,7 @@ dependencies:
   - sqlite=3.33.0=h62c20be_0
   - tbb=2020.2=hc9558a2_0
   - tk=8.6.10=hbc83047_0
+  - tomli=2.0.1=pyhd8ed1ab_0
   - torchaudio=0.7.2=py38
   - torchvision=0.8.2=py38_cu110
   - tqdm=4.49.0=py_0
