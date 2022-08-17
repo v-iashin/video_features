@@ -21,6 +21,7 @@ toggling `TO_MAKE_REF` to `True` in each file.
 
 To test all models but PWC, run this:
 ```bash
+# conda activate torch_zoo
 pytest --ignore tests/pwc
 ```
 
@@ -38,7 +39,7 @@ Also, remember that running the code with `show_pred` should yield something rea
 
 # How to make a test?
 
-*New test for an old model*
+**New test for an old model**
 Just add another row to the decorator `@pytest.mark.parametrize`.
 Then, comment it and run the old tests and make sure they pass.
 Next, uncomment the new line, toggle `TO_MAKE_REF` to `True`, remove the corresponding `reference` folder,
@@ -46,7 +47,7 @@ run the tests to make new references, and toggle `TO_MAKE_REF` back to `False`.
 Note, the reference files might be >100MB in size making it hard to commit to github.
 
 
-*New model*
+**New model**
 Pick an implemented test from another model that is most similar to the new model and build on top of it.
 Make sure to patch the config for the 'import API tests', otherwise you will get the same output
 every time passing all tests.
