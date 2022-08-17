@@ -6,6 +6,7 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=main
   - antlr-python-runtime=4.9.3=pyhd8ed1ab_1
+  - attrs=22.1.0=pyh71513ae_1
   - autopep8=1.4.4=py_0
   - av=7.0.1=py37hfbe2fac_1
   - backports=1.0=py_2
@@ -28,6 +29,8 @@ dependencies:
   - h5py=2.8.0=py37h989c5e5_3
   - hdf5=1.10.2=hba1933b_1
   - importlib-metadata=1.6.0=py37_0
+  - importlib_metadata=1.5.0=py37_0
+  - iniconfig=1.1.1=pyh9f0ad1d_0
   - intel-openmp=2020.1=217
   - jpeg=9b=h024ee3a_2
   - lame=3.100=h7b6447c_0
@@ -55,11 +58,16 @@ dependencies:
   - omegaconf=2.1.1=py37h89c1867_1
   - openh264=1.8.0=hd408876_0
   - openssl=1.1.1q=h7f8727e_0
+  - packaging=21.3=pyhd8ed1ab_0
   - pillow=6.1.0=py37h34e0f95_0
   - pip=20.0.2=py37_3
+  - pluggy=1.0.0=py37h89c1867_3
+  - py=1.11.0=pyh6c4a22f_0
   - pycodestyle=2.6.0=py_0
   - pycparser=2.20=py_0
   - pyflakes=2.2.0=py_0
+  - pyparsing=3.0.9=pyhd8ed1ab_0
+  - pytest=7.1.2=py37h89c1867_0
   - python=3.7.7=hcff3b4d_5
   - python_abi=3.7=1_cp37m
   - pytorch=1.2.0=py3.7_cuda10.0.130_cudnn7.6.2_0
@@ -72,6 +80,7 @@ dependencies:
   - six=1.14.0=py37_0
   - sqlite=3.31.1=h62c20be_1
   - tk=8.6.8=hbc83047_0
+  - tomli=2.0.1=pyhd8ed1ab_0
   - torchvision=0.4.0=py37_cu100
   - tqdm=4.46.0=py_0
   - typing_extensions=4.0.1=pyha770c72_0
