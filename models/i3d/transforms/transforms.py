@@ -156,7 +156,7 @@ class PILToTensor:
             Tensor: Converted image.
         """
         # handle PIL Image
-        img = torch.as_tensor(np.asarray(pic))
+        img = torch.from_numpy(np.array(pic, copy=True))
         img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
         # put it from HWC to CHW format
         img = img.permute((2, 0, 1))
