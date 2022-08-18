@@ -52,5 +52,7 @@ def test(device, video_path, finetuned_on, batch_size, side_size, resize_to_smal
     # tests
     print(features_out)
     print(features_out.shape)
+    print(features_ref)
+    print(features_ref.shape)
     assert features_out.shape == features_ref.shape
     assert (features_out - features_ref).sum() < 1e-6
