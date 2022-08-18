@@ -1,6 +1,6 @@
 # Tests
 
-This README explains how to run tests for `video_features`
+This README explains how to run tests for `video_features`.
 
 The motivation is, of course, to make sure that nothing breaks after we added some commits to the repo.
 The test might not cover all possible use-cases yet all minimal working examples that we have in the docs
@@ -18,6 +18,9 @@ toggling `TO_MAKE_REF` to `True` in each file.
 
 
 # How to run tests?
+
+You may use the conda environment that was installed locally or
+the [Docker](https://v-iashin.github.io/video_features/meta/docker) container.
 
 To test all models but PWC, run this:
 ```bash

@@ -14,6 +14,7 @@ See more details in [Documentation](https://v-iashin.github.io/video_features/).
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1csJgkVQ3E2qOyVlcOM-ACHGgPBBKwE2Y?usp=sharing)
 
+or run with `conda` locally:
 ```bash
 # clone the repo and change the working directory
 git clone https://github.com/v-iashin/video_features.git
@@ -34,6 +35,12 @@ python main.py \
 # use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel
 # or add `cpu=true` to use CPU
 ```
+
+If you are more comfortable with Docker, there is a
+Docker image with a pre-installed environment that supports all models.
+Check out the
+[Docker support](https://v-iashin.github.io/video_features/meta/docker).
+documentation page.
 
 ## Supported models
 

@@ -31,6 +31,12 @@ python main.py \
 # or add `cpu=true` to use CPU
 ```
 
+If you are more comfortable with Docker, there is a
+Docker image with a pre-installed environment that supports all models.
+Check out the
+[Docker support](https://v-iashin.github.io/video_features/meta/docker).
+documentation page.
+
 ## Supported Models
 
 Action Recognition

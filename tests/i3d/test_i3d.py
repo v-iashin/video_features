@@ -54,9 +54,6 @@ def test(device, video_path, streams, flow_type, stack_size, step_size, extracti
     features = extractor.extract(device, model, class_head, video_path)
     for k in [key for key in features.keys() if key in ['rgb', 'flow']]:
         features_out = features[k]
-        print(k)
-        print(features_out)
-        print(features_out.shape)
         # load/make the reference (make ref will make the reference file which will be used to compare with)
         filename = f'{device}_{Path(video_path).stem}_{streams}_{flow_type}_{stack_size}_{step_size}_{extraction_fps}_{k}.pt'
         ref_path = Path('./tests') / FEATURE_TYPE / 'reference' / filename
@@ -64,5 +61,10 @@ def test(device, video_path, streams, flow_type, stack_size, step_size, extracti
             make_ref(args, video_path, features_out, ref_path)
         features_ref = torch.load(ref_path)['data']
         # tests
+        print(k)
+        print(features_out)
+        print(features_out.shape)
+        print(features_ref)
+        print(features_ref.shape)
         assert features_out.shape == features_ref.shape
         assert (features_out - features_ref).sum() < 1e-6
