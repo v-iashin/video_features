@@ -70,7 +70,7 @@ def test(device, video_path, streams, flow_type, stack_size, step_size, extracti
             # make a cmd (the quotation of arguments might lead to unwanted fails :/)
             cmd = f'{sys.executable} main.py'
             cmd += f' feature_type="{FEATURE_TYPE}"'
-            cmd += f' flow_type="{flow_type}"'
+            cmd += f' flow_type="{flow_type}"' if flow_type else ''
             cmd += ' device_ids=0' if device == 'cuda' else ' cpu="true"'
             cmd += f' stack_size={stack_size}' if stack_size else ''
             cmd += f' step_size={step_size}' if step_size else ''
