@@ -115,7 +115,7 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     assert len(filenames) == len(set(filenames)), 'Non-unique filenames. See video_features/issues/54'
     assert os.path.relpath(args.output_path) != os.path.relpath(args.tmp_path), 'The same path for out & tmp'
     if args.show_pred:
-        if args.cpu is False:
+        if not args.cpu:
             print('You want to see predictions. So, I will use only the first GPU from the list you specified.')
             args.device_ids = [args.device_ids[0]]
         if args.feature_type == 'vggish':
@@ -132,6 +132,8 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
             print('If you want to keep frames while extracting features, please create an issue')
     if args.feature_type == 'pwc' or (args.feature_type == 'i3d' and args.flow_type == 'pwc'):
         assert not args.cpu, 'PWC does NOT support using CPU'
+    if isinstance(args.device_ids, int):
+        args.device_ids = [args.device_ids]
 
 
 def form_list_from_user_input(args: Union[argparse.Namespace, DictConfig]) -> list:
