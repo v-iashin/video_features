@@ -7,6 +7,8 @@ import models.raft.raft_src.utils.flow_viz as flow_viz
 import numpy as np
 import torch
 import torchvision.transforms as transforms
+# strangely this. It is just a modification of torchvision.PILToTensor but does not give a warning
+from models.i3d.transforms.transforms import PILToTensor
 from models.raft.raft_src.raft import RAFT, InputPadder
 from models.raft.transforms.transforms import (ResizeImproved, ToFloat,
                                                ToTensorWithoutScaling)
@@ -35,7 +37,7 @@ class ExtractRAFT(torch.nn.Module):
             self.transforms = transforms.Compose([
                 transforms.ToPILImage(),
                 ResizeImproved(self.side_size, self.resize_to_smaller_edge),
-                transforms.PILToTensor(),
+                PILToTensor(),
                 ToFloat(),
             ])
         else:
