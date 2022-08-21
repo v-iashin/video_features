@@ -43,6 +43,7 @@ class ExtractResNet(torch.nn.Module):
         self.on_extraction = args.on_extraction
         self.tmp_path = args.tmp_path
         self.output_path = args.output_path
+        self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
         self.progress = tqdm(total=len(self.path_list))
 
     def forward(self, indices: torch.LongTensor):

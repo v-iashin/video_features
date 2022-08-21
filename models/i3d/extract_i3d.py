@@ -33,10 +33,7 @@ class ExtractI3D(torch.nn.Module):
         super(ExtractI3D, self).__init__()
         self.feature_type = args.feature_type
         self.cpu = args.cpu
-        if args.streams is None:
-            self.streams = ['rgb', 'flow']
-        else:
-            self.streams = [args.streams]
+        self.streams = ['rgb', 'flow'] if args.streams is None else [args.streams]
         self.path_list = form_list_from_user_input(args)
         self.flow_type = args.flow_type
         self.flow_model_paths = {'pwc': PWC_MODEL_PATH, 'raft': RAFT_MODEL_PATH}
@@ -44,12 +41,8 @@ class ExtractI3D(torch.nn.Module):
         self.min_side_size = PRE_CENTRAL_CROP_MIN_SIDE_SIZE
         self.central_crop_size = CENTRAL_CROP_MIN_SIDE_SIZE
         self.extraction_fps = args.extraction_fps
-        self.step_size = args.step_size
-        self.stack_size = args.stack_size
-        if self.step_size is None:
-            self.step_size = DEFAULT_I3D_STEP_SIZE
-        if self.stack_size is None:
-            self.stack_size = DEFAULT_I3D_STACK_SIZE
+        self.step_size = DEFAULT_I3D_STEP_SIZE if args.step_size is None else args.step_size
+        self.stack_size = DEFAULT_I3D_STACK_SIZE if args.stack_size is None else args.stack_size
         self.resize_transforms = transforms.Compose([
             transforms.ToPILImage(),
             ResizeImproved(self.min_side_size),
@@ -76,6 +69,7 @@ class ExtractI3D(torch.nn.Module):
         self.on_extraction = args.on_extraction
         self.tmp_path = args.tmp_path
         self.output_path = args.output_path
+        self.output_feat_keys = self.streams + ['fps', 'timestamps_ms']
         self.progress = tqdm(total=len(self.path_list))
 
     def forward(self, indices: torch.LongTensor):

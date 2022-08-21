@@ -20,10 +20,11 @@ class ExtractVGGish(torch.nn.Module):
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
         self.tmp_path = args.tmp_path
-        self.output_path = args.output_path
-        self.progress = tqdm(total=len(self.path_list))
         if args.show_pred:
             raise NotImplementedError
+        self.output_feat_keys = [self.feature_type]
+        self.output_path = args.output_path
+        self.progress = tqdm(total=len(self.path_list))
 
     def forward(self, indices: torch.LongTensor):
         '''
