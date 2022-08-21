@@ -278,3 +278,9 @@ def on_after_sanity_check(args: Union[argparse.Namespace, DictConfig]):
         real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
     args.output_path = real_output_path
     args.tmp_path = real_tmp_path
+
+def load_numpy(fpath):
+    return np.load(fpath)
+
+def load_pickle(fpath):
+    return pickle.load(open(fpath, 'rb'))
