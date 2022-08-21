@@ -27,7 +27,6 @@ class ExtractCLIP(torch.nn.Module):
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
         self.tmp_path = args.tmp_path
-        self.output_path = args.output_path
         self.progress = tqdm(total=len(self.path_list))
         self.show_pred = args.show_pred
         if self.show_pred:
@@ -39,6 +38,8 @@ class ExtractCLIP(torch.nn.Module):
                 self.pred_texts = list(pred_texts)
             # .long() is required because torch.nn.Embedding allows only Longs for pytorch 1.7.1
             self.pred_texts_tok = clip.tokenize(self.pred_texts).long()
+        self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
+        self.output_path = args.output_path
 
     def forward(self, indices: torch.LongTensor):
         '''
