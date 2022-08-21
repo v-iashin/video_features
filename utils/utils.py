@@ -49,6 +49,12 @@ def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, L
             print(f'{logit:8.3f} | {smax:.3f} | {cls}')
         print()
 
+def make_path(output_root, video_path, output_key, ext):
+    # extract file name and change the extention
+    fname = f'{Path(video_path).stem}_{output_key}{ext}'
+    # construct the paths to save the features
+    return os.path.join(output_root, fname)
+
 def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_path, on_extraction: str):
     '''What is going to be done with the extracted features.
 
@@ -70,10 +76,7 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
         elif on_extraction == 'save_numpy':
             # make dir if doesn't exist
             os.makedirs(output_path, exist_ok=True)
-            # extract file name and change the extention
-            fname = f'{Path(video_path).stem}_{key}.npy'
-            # construct the paths to save the features
-            fpath = os.path.join(output_path, fname)
+            fpath = make_path(output_path, video_path, key, '.npy')
             if key != 'fps' and len(value) == 0:
                 print(f'Warning: the value is empty for {key} @ {fpath}')
             # save the info behind the each key
@@ -81,10 +84,7 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
         elif on_extraction == 'save_pickle':
             # make dir if doesn't exist
             os.makedirs(output_path, exist_ok=True)
-            # extract file name and change the extention
-            fname = f'{Path(video_path).stem}_{key}.pkl'
-            # construct the paths to save the features
-            fpath = os.path.join(output_path, fname)
+            fpath = make_path(output_path, video_path, key, '.pkl')
             if key != 'fps' and len(value) == 0:
                 print(f'Warning: the value is empty for {key} @ {fpath}')
             # save the info behind the each key
@@ -278,3 +278,9 @@ def on_after_sanity_check(args: Union[argparse.Namespace, DictConfig]):
         real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
     args.output_path = real_output_path
     args.tmp_path = real_tmp_path
+
+def load_numpy(fpath):
+    return np.load(fpath)
+
+def load_pickle(fpath):
+    return pickle.load(open(fpath, 'rb'))
