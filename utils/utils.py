@@ -135,6 +135,21 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     if isinstance(args.device_ids, int):
         args.device_ids = [args.device_ids]
 
+    # patch_output_paths
+    # preprocess paths
+    subs = [args.feature_type]
+    if hasattr(args, 'model_name'):
+        subs.append(args.model_name)
+        # may add `finetuned_on` item
+    real_output_path = args.output_path
+    real_tmp_path = args.tmp_path
+    for p in subs:
+        # some model use `/` e.g. ViT-B/16
+        real_output_path = os.path.join(real_output_path, p.replace("/", "_"))
+        real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
+    args.output_path = real_output_path
+    args.tmp_path = real_tmp_path
+
 
 def form_list_from_user_input(video_paths: Union[str, ListConfig], file_with_video_paths: str = None) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
@@ -162,8 +177,7 @@ def form_list_from_user_input(video_paths: Union[str, ListConfig], file_with_vid
 
     # sanity check: prints paths which do not exist
     for path in path_list:
-        not_exist = not os.path.exists(path)
-        if not_exist:
+        if not Path(path).exists():
             print(f'The path does not exist: {path}')
 
     return path_list
@@ -264,21 +278,6 @@ def dp_state_to_normal(state_dict):
             new_state_dict[k.replace('module.', '')] = v
     return new_state_dict
 
-
-def on_after_sanity_check(args: Union[argparse.Namespace, DictConfig]):
-    # preprocess paths
-    subs = [args.feature_type]
-    if hasattr(args, 'model_name'):
-        subs.append(args.model_name)
-        # may add `finetuned_on` item
-    real_output_path = args.output_path
-    real_tmp_path = args.tmp_path
-    for p in subs:
-        # some model use `/` e.g. ViT-B/16
-        real_output_path = os.path.join(real_output_path, p.replace("/", "_"))
-        real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
-    args.output_path = real_output_path
-    args.tmp_path = real_tmp_path
 
 def load_numpy(fpath):
     return np.load(fpath)
