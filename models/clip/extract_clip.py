@@ -11,8 +11,6 @@ from utils.utils import KINETICS_CLASS_PATH, show_predictions_on_dataset
 
 from . import clip_src as clip
 
-# import traceback
-
 
 class ExtractCLIP(BaseFrameWiseExtractor):
 
