@@ -49,12 +49,8 @@ def get_config(feature_type, **patch_kwargs):
     return config
 
 def get_import_api_feats(extractor, device, video_paths):
-    model = extractor.load_model(device)
-    # TODO
-    if isinstance(model, tuple):
-        feat_out_import = extractor.extract(device, *model, video_paths)
-    else:
-        feat_out_import = extractor.extract(device, model, video_paths)
+    name2module = extractor.load_model(device)
+    feat_out_import = extractor.extract(device, name2module, video_paths)
     return feat_out_import
 
 
