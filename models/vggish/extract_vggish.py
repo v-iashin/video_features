@@ -16,7 +16,7 @@ class ExtractVGGish(torch.nn.Module):
     def __init__(self, args):
         super(ExtractVGGish, self).__init__()
         self.feature_type = args.feature_type
-        self.path_list = form_list_from_user_input(args)
+        self.path_list = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
         self.keep_tmp_files = args.keep_tmp_files
         self.on_extraction = args.on_extraction
         self.tmp_path = args.tmp_path

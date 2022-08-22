@@ -20,7 +20,7 @@ class ExtractCLIP(torch.nn.Module):
         super(ExtractCLIP, self).__init__()
         self.feature_type = args.feature_type
         self.model_name = args.model_name
-        self.path_list = form_list_from_user_input(args)
+        self.path_list = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
         self.batch_size = args.batch_size
         self.extraction_fps = args.extraction_fps
         # not used, create an issue if you would like to save the frames

@@ -26,7 +26,7 @@ class ExtractResNet(torch.nn.Module):
         super(ExtractResNet, self).__init__()
         self.feature_type = args.feature_type
         self.model_name = args.model_name
-        self.path_list = form_list_from_user_input(args)
+        self.path_list = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
         self.batch_size = args.batch_size
         self.central_crop_size = CENTER_CROP_SIZE
         self.extraction_fps = args.extraction_fps

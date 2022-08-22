@@ -34,7 +34,7 @@ class ExtractI3D(torch.nn.Module):
         self.feature_type = args.feature_type
         self.cpu = args.cpu
         self.streams = ['rgb', 'flow'] if args.streams is None else [args.streams]
-        self.path_list = form_list_from_user_input(args)
+        self.path_list = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
         self.flow_type = args.flow_type
         self.flow_model_paths = {'pwc': PWC_MODEL_PATH, 'raft': RAFT_MODEL_PATH}
         self.i3d_weights_paths = {'rgb': I3D_RGB_PATH, 'flow': I3D_FLOW_PATH}

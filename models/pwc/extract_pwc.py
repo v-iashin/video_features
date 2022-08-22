@@ -21,7 +21,7 @@ class ExtractPWC(torch.nn.Module):
     def __init__(self, args):
         super(ExtractPWC, self).__init__()
         self.feature_type = args.feature_type
-        self.path_list = form_list_from_user_input(args)
+        self.path_list = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
         self.model_path = PWC_MODEL_PATH
         self.batch_size = args.batch_size
         self.extraction_fps = args.extraction_fps

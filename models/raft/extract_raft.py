@@ -27,7 +27,7 @@ class ExtractRAFT(torch.nn.Module):
     def __init__(self, args):
         super(ExtractRAFT, self).__init__()
         self.feature_type = args.feature_type
-        self.path_list = form_list_from_user_input(args)
+        self.path_list = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
         self.model_path = RAFT_MODEL_PATH[args.finetuned_on]
         self.batch_size = args.batch_size
         self.extraction_fps = args.extraction_fps

@@ -111,7 +111,7 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
     '''
     assert args.file_with_video_paths or args.video_paths, '`video_paths` or `file_with_video_paths` must be specified'
-    filenames = [Path(p).stem for p in form_list_from_user_input(args)]
+    filenames = [Path(p).stem for p in form_list_from_user_input(args.video_paths, args.file_with_video_paths)]
     assert len(filenames) == len(set(filenames)), 'Non-unique filenames. See video_features/issues/54'
     assert os.path.relpath(args.output_path) != os.path.relpath(args.tmp_path), 'The same path for out & tmp'
     if args.show_pred:
@@ -136,24 +136,25 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         args.device_ids = [args.device_ids]
 
 
-def form_list_from_user_input(args: Union[argparse.Namespace, DictConfig]) -> list:
+def form_list_from_user_input(video_paths: Union[str, ListConfig], file_with_video_paths: str = None) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
     transforms the user input into a list of paths.
 
     Args:
-        args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
+        video_paths (list): a list of video paths
+        file_with_video_paths (str): a path to a file with video files for extraction
 
     Returns:
         list: list with paths
     '''
-    if args.file_with_video_paths is None:
-        path_list = [args.video_paths] if isinstance(args.video_paths, str) else list(args.video_paths)
+    if file_with_video_paths is None:
+        path_list = [video_paths] if isinstance(video_paths, str) else list(video_paths)
         # TODO: the following `if` could be redundant
         # ListConfig does not support indexing with tensor scalars, e.g. tensor(1, device='cuda:0')
-        if isinstance(args.video_paths, ListConfig):
+        if isinstance(video_paths, ListConfig):
             path_list = list(path_list)
     else:
-        with open(args.file_with_video_paths) as rfile:
+        with open(file_with_video_paths) as rfile:
             # remove carriage return
             path_list = [line.replace('\n', '') for line in rfile.readlines()]
             # remove empty lines

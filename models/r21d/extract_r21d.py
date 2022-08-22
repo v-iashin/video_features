@@ -38,7 +38,7 @@ class ExtractR21D(torch.nn.Module):
         self.feature_type = args.feature_type
         self.model_name = args.model_name
         self.model_def = R21D_MODEL_CFG[self.model_name]
-        self.path_list = form_list_from_user_input(args)
+        self.path_list = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
         self.central_crop_min_side_size = CENTRAL_CROP_MIN_SIDE_SIZE
         self.extraction_fps = args.extraction_fps
         self.step_size = args.step_size
