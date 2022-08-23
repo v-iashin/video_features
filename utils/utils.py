@@ -151,13 +151,17 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     args.tmp_path = real_tmp_path
 
 
-def form_list_from_user_input(video_paths: Union[str, ListConfig], file_with_video_paths: str = None) -> list:
+def form_list_from_user_input(
+        video_paths: Union[str, ListConfig, None] = None,
+        file_with_video_paths: str = None
+    ) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
-    transforms the user input into a list of paths.
+       transforms the user input into a list of paths.
 
     Args:
-        video_paths (list): a list of video paths
-        file_with_video_paths (str): a path to a file with video files for extraction
+        video_paths (Union[str, ListConfig, None], optional): a list of video paths. Defaults to None.
+        file_with_video_paths (str, optional): a path to a file with video files for extraction.
+                                               Defaults to None.
 
     Returns:
         list: list with paths
