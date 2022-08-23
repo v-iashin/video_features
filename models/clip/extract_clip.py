@@ -83,6 +83,7 @@ class ExtractCLIP(BaseFrameWiseExtractor):
         return {
             'model': model.encode_image,
             'model.encode_text': model.encode_text,
+            'model.logit_scale': model.logit_scale,
         }
 
     def maybe_show_pred(self, visual_feats: torch.Tensor, name2module, device=None):
@@ -90,19 +91,19 @@ class ExtractCLIP(BaseFrameWiseExtractor):
         # creates a problem during `show_pred`, i.e. debugging. It is not a big deal
         if self.show_pred:
             # to(device) is called here (instead of __init__) because device is defined in .extract()
-            text_features = name2module['model.encode_text'](self.pred_texts_tok.to(device))
+            text_feats = name2module['model.encode_text'](self.pred_texts_tok.to(device))
 
             # visual_feats:T, 512  text_feats:N, 512
             visual_feats = visual_feats.to(device=device, dtype=torch.double)
             text_feats = text_feats.to(dtype=torch.double)
 
             # normalized features
-            video_feats = video_feats / video_feats.norm(dim=1, keepdim=True)
+            visual_feats = visual_feats / visual_feats.norm(dim=1, keepdim=True)
             text_feats = text_feats / text_feats.norm(dim=1, keepdim=True)
 
             # cosine similarity as logits
-            logit_scale = name2module['model'].logit_scale.exp().to(dtype=video_feats.dtype)
-            logits = logit_scale * video_feats @ text_feats.t()
+            logit_scale = name2module['model.logit_scale'].exp().to(dtype=visual_feats.dtype)
+            logits = logit_scale * visual_feats @ text_feats.t()
             logits = logits.cpu()
 
             # probs = logits_per_image.softmax(dim=-1).cpu().numpy()  # T, N
