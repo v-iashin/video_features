@@ -111,7 +111,7 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
     '''
     assert args.file_with_video_paths or args.video_paths, '`video_paths` or `file_with_video_paths` must be specified'
-    filenames = [Path(p).stem for p in form_list_from_user_input(args)]
+    filenames = [Path(p).stem for p in form_list_from_user_input(args.video_paths, args.file_with_video_paths)]
     assert len(filenames) == len(set(filenames)), 'Non-unique filenames. See video_features/issues/54'
     assert os.path.relpath(args.output_path) != os.path.relpath(args.tmp_path), 'The same path for out & tmp'
     if args.show_pred:
@@ -137,25 +137,45 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     if 'batch_size' in args:
         assert args.batch_size is not None, f'Please specify `batch_size`. It is {args.batch_size} now'
 
+    # patch_output_paths
+    # preprocess paths
+    subs = [args.feature_type]
+    if hasattr(args, 'model_name'):
+        subs.append(args.model_name)
+        # may add `finetuned_on` item
+    real_output_path = args.output_path
+    real_tmp_path = args.tmp_path
+    for p in subs:
+        # some model use `/` e.g. ViT-B/16
+        real_output_path = os.path.join(real_output_path, p.replace("/", "_"))
+        real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
+    args.output_path = real_output_path
+    args.tmp_path = real_tmp_path
 
-def form_list_from_user_input(args: Union[argparse.Namespace, DictConfig]) -> list:
+
+def form_list_from_user_input(
+        video_paths: Union[str, ListConfig, None] = None,
+        file_with_video_paths: str = None
+    ) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
-    transforms the user input into a list of paths.
+       transforms the user input into a list of paths.
 
     Args:
-        args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
+        video_paths (Union[str, ListConfig, None], optional): a list of video paths. Defaults to None.
+        file_with_video_paths (str, optional): a path to a file with video files for extraction.
+                                               Defaults to None.
 
     Returns:
         list: list with paths
     '''
-    if args.file_with_video_paths is None:
-        path_list = [args.video_paths] if isinstance(args.video_paths, str) else list(args.video_paths)
+    if file_with_video_paths is None:
+        path_list = [video_paths] if isinstance(video_paths, str) else list(video_paths)
         # TODO: the following `if` could be redundant
         # ListConfig does not support indexing with tensor scalars, e.g. tensor(1, device='cuda:0')
-        if isinstance(args.video_paths, ListConfig):
+        if isinstance(video_paths, ListConfig):
             path_list = list(path_list)
     else:
-        with open(args.file_with_video_paths) as rfile:
+        with open(file_with_video_paths) as rfile:
             # remove carriage return
             path_list = [line.replace('\n', '') for line in rfile.readlines()]
             # remove empty lines
@@ -163,8 +183,7 @@ def form_list_from_user_input(args: Union[argparse.Namespace, DictConfig]) -> li
 
     # sanity check: prints paths which do not exist
     for path in path_list:
-        not_exist = not os.path.exists(path)
-        if not_exist:
+        if not Path(path).exists():
             print(f'The path does not exist: {path}')
 
     return path_list
@@ -265,21 +284,6 @@ def dp_state_to_normal(state_dict):
             new_state_dict[k.replace('module.', '')] = v
     return new_state_dict
 
-
-def on_after_sanity_check(args: Union[argparse.Namespace, DictConfig]):
-    # preprocess paths
-    subs = [args.feature_type]
-    if hasattr(args, 'model_name'):
-        subs.append(args.model_name)
-        # may add `finetuned_on` item
-    real_output_path = args.output_path
-    real_tmp_path = args.tmp_path
-    for p in subs:
-        # some model use `/` e.g. ViT-B/16
-        real_output_path = os.path.join(real_output_path, p.replace("/", "_"))
-        real_tmp_path = os.path.join(real_tmp_path, p.replace("/", "_"))
-    args.output_path = real_output_path
-    args.tmp_path = real_tmp_path
 
 def load_numpy(fpath):
     return np.load(fpath)

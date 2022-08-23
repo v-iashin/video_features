@@ -4,69 +4,48 @@ from typing import Dict, Union
 
 import numpy as np
 import torch
-from tqdm import tqdm
-import traceback
-
-from utils.utils import form_list_from_user_input, extract_wav_from_mp4, action_on_extraction
+from models._base.base_extractor import BaseExtractor
 from models.vggish.vggish_src.vggish_slim import VGGish
+from utils.utils import extract_wav_from_mp4
 
 
-class ExtractVGGish(torch.nn.Module):
+class ExtractVGGish(BaseExtractor):
 
-    def __init__(self, args):
-        super(ExtractVGGish, self).__init__()
-        self.feature_type = args.feature_type
-        self.path_list = form_list_from_user_input(args)
-        self.keep_tmp_files = args.keep_tmp_files
-        self.on_extraction = args.on_extraction
-        self.tmp_path = args.tmp_path
+    def __init__(self, args) -> None:
+        # init the BaseExtractor
+        super().__init__(
+            feature_type=args.feature_type,
+            video_paths=args.video_paths,
+            file_with_video_paths=args.file_with_video_paths,
+            on_extraction=args.on_extraction,
+            tmp_path=args.tmp_path,
+            output_path=args.output_path,
+            keep_tmp_files=args.keep_tmp_files,
+        )
+        # (Re-)Define arguments for this class
         if args.show_pred:
             raise NotImplementedError
         self.output_feat_keys = [self.feature_type]
-        self.output_path = args.output_path
-        self.progress = tqdm(total=len(self.path_list))
 
-    def forward(self, indices: torch.LongTensor):
-        '''
-        Arguments:
-            indices {torch.LongTensor} -- indices to self.path_list
-        '''
-        device = indices.device
-        model = self.load_model(device)
-
-        for idx in indices:
-            # when error occurs might fail silently when run from torch data parallel
-            try:
-                feats_dict = self.extract(device, model, self.path_list[idx])
-                action_on_extraction(feats_dict, self.path_list[idx], self.output_path, self.on_extraction)
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt
-            except Exception as e:
-                # prints only the last line of an error. Use `traceback.print_exc()` for the whole traceback
-                traceback.print_exc()
-                print(e)
-                print(f'Extraction failed at: {self.path_list[idx]} with error (↑). Continuing extraction')
-
-            # update tqdm progress bar
-            self.progress.update()
-
-    def extract(self,
-                device: torch.device,
-                model: torch.nn.Module,
-                video_path: Union[str, None] = None) -> Dict[str, np.ndarray]:
+    @torch.no_grad()
+    def extract(
+        self,
+        device: torch.device,
+        name2module: Dict[str, torch.nn.Module],
+        video_path: Union[str, None] = None
+    ) -> Dict[str, np.ndarray]:
         '''The extraction call. Made to clean the forward call a bit.
 
-        Args:
-            device (torch.device): the device
-            model (torch.nn.Module): the model
-            video_path (Union[str, None], optional): Path to a video. Defaults to None.
+        Arguments:
+            device {torch.device}
+            name2module {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
 
         Keyword Arguments:
             video_path {Union[str, None]} -- if you would like to use import it and use it as
                                              "path -> model"-fashion (default: {None})
 
         Returns:
-            Dict[str, np.ndarray]: extracted VGGish features
+            Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
         '''
         file_ext = pathlib.Path(video_path).suffix
 
@@ -80,7 +59,7 @@ class ExtractVGGish(torch.nn.Module):
             raise NotImplementedError
 
         with torch.no_grad():
-            vggish_stack = model(audio_wav_path, device).cpu().numpy()
+            vggish_stack = name2module['model'](audio_wav_path, device).cpu().numpy()
 
         # removes the folder with audio files created during the process
         if not self.keep_tmp_files:
@@ -99,9 +78,9 @@ class ExtractVGGish(torch.nn.Module):
             device (torch.device)
 
         Returns:
-            torch.nn.Module: the model
+            {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
         '''
         model = VGGish()
         model = model.to(device)
         model.eval()
-        return model
+        return {'model': model}

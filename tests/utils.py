@@ -8,8 +8,7 @@ from typing import List
 import torch
 from omegaconf import OmegaConf
 
-from utils.utils import (build_cfg_path, load_numpy, load_pickle, make_path,
-                         on_after_sanity_check, sanity_check)
+from utils.utils import (build_cfg_path, load_numpy, load_pickle, make_path, sanity_check)
 
 
 def md5sum(path: str):
@@ -47,16 +46,11 @@ def get_config(feature_type, **patch_kwargs):
     for k, v in patch_kwargs.items():
         setattr(config, k, v)
     sanity_check(config)
-    on_after_sanity_check(config)
     return config
 
 def get_import_api_feats(extractor, device, video_paths):
-    model = extractor.load_model(device)
-    # TODO
-    if isinstance(model, tuple):
-        feat_out_import = extractor.extract(device, *model, video_paths)
-    else:
-        feat_out_import = extractor.extract(device, model, video_paths)
+    name2module = extractor.load_model(device)
+    feat_out_import = extractor.extract(device, name2module, video_paths)
     return feat_out_import
 
 
@@ -85,7 +79,7 @@ def get_cmd_api_feats(feature_type: str, file_keys: List[str], device: str, **pa
             # some feature_types do not have model names. Plus, CLIP have `/` in the name
             model_name = patch_kwargs.get('model_name', '').replace('/', '_')
             # TODO: for search: `output_path`
-            # TODO: fix this as it now hard-coded by during extration it is in `on_after_sanity_check`
+            # TODO: fix this as it now hard-coded by during extration it is in `sanity_check()`
             output_root_load = Path(output_root) / feature_type / model_name
 
             # read from the saved file
