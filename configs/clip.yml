@@ -18,4 +18,5 @@ pred_texts: null # provide a list of multiple sentences.  if `null`, will perfor
 config: null
 
 # Video paths
+video_paths: null
 file_with_video_paths: null # if the list of videos is large, you might put them in a txt file, use this argument to specify the path

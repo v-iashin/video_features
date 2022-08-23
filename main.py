@@ -6,7 +6,7 @@ import numpy
 import torch
 from omegaconf import OmegaConf
 
-from utils.utils import build_cfg_path, form_list_from_user_input, sanity_check, on_after_sanity_check
+from utils.utils import build_cfg_path, form_list_from_user_input, sanity_check
 
 def parallel_feature_extraction(args):
     '''Distributes the feature extraction in embarasingly-parallel fashion. Specifically,
@@ -36,7 +36,7 @@ def parallel_feature_extraction(args):
     else:
         raise NotADirectoryError
 
-    video_paths = form_list_from_user_input(args)
+    video_paths = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
     indices = torch.arange(len(video_paths))
 
     # the indices correspond to the positions of the target videos in
@@ -57,7 +57,7 @@ def parallel_feature_extraction(args):
     extractor.progress.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     cfg_cli = OmegaConf.from_cli()
     print(cfg_cli)
     cfg_yml = OmegaConf.load(build_cfg_path(cfg_cli.feature_type))
@@ -72,5 +72,4 @@ if __name__ == "__main__":
         print(f'Keeping temp files in {cfg.tmp_path}')
 
     sanity_check(cfg)
-    on_after_sanity_check(cfg)
     parallel_feature_extraction(cfg)
