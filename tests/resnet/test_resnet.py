@@ -21,7 +21,7 @@ TO_MAKE_REF = False
 
 signature = 'device, video_paths, model_name, batch_size, extraction_fps, to_make_ref'
 test_params = [
-    ('cuda', './sample/v_GGSY1Qvo990.mp4', 'resnet101', None, 1, TO_MAKE_REF),
+    ('cuda', './sample/v_GGSY1Qvo990.mp4', 'resnet101', 1, 1, TO_MAKE_REF),
     ('cuda', './sample/v_GGSY1Qvo990.mp4', 'resnet50', 1, None, TO_MAKE_REF),
     ('cuda', './sample/v_GGSY1Qvo990.mp4', 'resnet34', 64, None, TO_MAKE_REF),
 ]

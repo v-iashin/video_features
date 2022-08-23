@@ -90,6 +90,11 @@ def get_cmd_api_feats(feature_type: str, file_keys: List[str], device: str, **pa
 
     return feat_out_cmd
 
+# TODO: replace it with numpy's or torch's all close
+def all_close(a, b, tol=1e-6) -> bool:
+    '''Determines if tensors/values `a` and `b` are close to each other given a tolerance'''
+    return abs(a - b).sum() < tol
+
 def base_test_script(feature_type: str, Extractor, device: str, to_make_ref: bool, **patch_kwargs):
     args = get_config(feature_type, **patch_kwargs)
     # get the model
@@ -100,10 +105,11 @@ def base_test_script(feature_type: str, Extractor, device: str, to_make_ref: boo
     feat_out_import = get_import_api_feats(extractor, device, patch_kwargs['video_paths'])
     # tests
     for k in output_feat_keys:
+        # TODO: reuse something like all_close function instead
         # compare features saved by pickle and numpy.
-        assert (feat_out_cmd['save_pickle'][k] - feat_out_cmd['save_numpy'][k]).sum() < 1e-6
+        assert all_close(feat_out_cmd['save_pickle'][k], feat_out_cmd['save_numpy'][k])
         # compare cmd API and import API.
-        assert (feat_out_cmd['save_numpy'][k] - feat_out_import[k]).sum() < 1e-6
+        assert all_close(feat_out_cmd['save_numpy'][k], feat_out_import[k])
         # Assuming if it passes these tests, only `feat_out` will be used
         feat_out = feat_out_import[k]
         # load/make the reference (make ref will make the reference file which will be used to compare with)
@@ -116,4 +122,4 @@ def base_test_script(feature_type: str, Extractor, device: str, to_make_ref: boo
         # compare shapes
         assert feat_out.shape == feat_ref.shape
         # compare values
-        assert (feat_out - feat_ref).sum() < 1e-6
+        assert all_close(feat_out, feat_ref)

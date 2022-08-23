@@ -134,6 +134,8 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         assert not args.cpu, 'PWC does NOT support using CPU'
     if isinstance(args.device_ids, int):
         args.device_ids = [args.device_ids]
+    if 'batch_size' in args:
+        assert args.batch_size is not None, f'Please specify `batch_size`. It is {args.batch_size} now'
 
     # patch_output_paths
     # preprocess paths
