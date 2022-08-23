@@ -20,7 +20,7 @@ class ExtractRAFT(BaseOpticalFlowExtractor):
             tmp_path=args.tmp_path,
             output_path=args.output_path,
             keep_tmp_files=args.keep_tmp_files,
-            ckpt_path=DATASET_to_RAFT_CKPT_PATHS['sintel'],
+            ckpt_path=DATASET_to_RAFT_CKPT_PATHS[args.finetuned_on],
             batch_size=args.batch_size,
             resize_to_smaller_edge=args.resize_to_smaller_edge,
             side_size=args.side_size,
