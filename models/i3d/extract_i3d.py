@@ -16,8 +16,6 @@ from models.transforms import (Clamp, PermuteAndUnsqueeze, PILToTensor,
 from utils.utils import (dp_state_to_normal, reencode_video_with_diff_fps,
                          show_predictions_on_dataset)
 
-# import traceback
-
 
 class ExtractI3D(BaseExtractor):
 
@@ -116,7 +114,7 @@ class ExtractI3D(BaseExtractor):
                 feats = models[stream](stream_slice, features=True)  # (B, 1024)
                 # add features to the output dict
                 feats_dict[stream].extend(feats.tolist())
-                self.maybe_show_pred(stream_slice, name2module, stack_counter)
+                self.maybe_show_pred(stream_slice, name2module['model'][stream], stack_counter)
 
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
@@ -223,9 +221,8 @@ class ExtractI3D(BaseExtractor):
             'model': i3d_stream_models,
         }
 
-    def maybe_show_pred(self, stream_slice: torch.Tensor, name2module, stack_counter: int) -> None:
+    def maybe_show_pred(self, stream_slice: torch.Tensor, model: torch.nn.Module, stack_counter: int) -> None:
         if self.show_pred:
-            for stream in self.streams:
-                softmaxes, logits = name2module['model'][stream](stream_slice, features=False)
-                print(f'At stack {stack_counter} ({stream} stream)')
-                show_predictions_on_dataset(logits, 'kinetics')
+            softmaxes, logits = model(stream_slice, features=False)
+            print(f'At stack {stack_counter} ({model.modality} stream)')
+            show_predictions_on_dataset(logits, 'kinetics')
