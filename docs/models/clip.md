@@ -57,7 +57,7 @@ In addition, if you want to use your weights, you need to copy your weights to `
 python main.py \
     feature_type="clip" \
     model_name="ViT-B/32" \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
 If you would like to save the features, use `--on_extraction save_numpy` (or `save_pickle`) – by default, the features are saved in `./output/` or where `--output_path` specifies. In the case of frame-wise features, besides features, it also saves timestamps in ms and the original fps of the video into the same folder with features.
@@ -65,7 +65,7 @@ If you would like to save the features, use `--on_extraction save_numpy` (or `sa
 python main.py \
     feature_type="clip" \
     model_name="ViT-B/32" \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     on_extraction=save_numpy \
     file_with_video_paths=./sample/sample_video_paths.txt
 ```
@@ -74,7 +74,7 @@ We may increase the extraction speed with batching. Therefore, frame-wise featur
 python main.py \
     feature_type="clip" \
     model_name="ViT-B/32" \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     batch_size=128 \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
@@ -83,7 +83,7 @@ If you would like to extract features at a certain fps, add `--extraction_fps` a
 python main.py \
     feature_type="clip" \
     model_name="ViT-B/32" \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     extraction_fps=5 \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
@@ -96,7 +96,7 @@ The probability that each frame corresponds to all the sentences you provide wil
 python main.py \
     feature_type="clip" \
     model_name="ViT-B/32" \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     extraction_fps=1 \
     show_pred="true" \
     pred_texts="['a dog smiles', 'a woman is lifting']" \
