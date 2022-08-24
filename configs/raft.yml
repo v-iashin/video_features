@@ -6,9 +6,8 @@ resize_to_smaller_edge: true # if false, the larger edge will be used to be resi
 finetuned_on: 'sintel' # also 'kitti' is supported
 
 # Extraction Parameters
-cpu: false # using cpu. If cpu=true, `device_ids` has no use
+device: 'cuda:0'  # device as in `torch`, can be 'cpu'
 batch_size: 1 # increase the extraction speed with batching
-device_ids: [0]  # list of device ids. Use [0, 2] to employ the 0th and 2nd devices.
 on_extraction: 'print'  # what to do once the features are extracted. Can be ['print', 'save_numpy', 'save_pickle']
 output_path: './output' # where to store results if saved
 tmp_path: './tmp' # folder to store the temporary files used for extraction (frames or aud files)

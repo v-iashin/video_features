@@ -1,25 +1,30 @@
-# we import unused `numpy` before `torch` because if run from `subprocess.run()`
-# it fails with
-# `Error: mkl-service + Intel(R) MKL: MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library.`
-# (see https://github.com/pytorch/pytorch/issues/37377)
-import numpy
-import torch
 from omegaconf import OmegaConf
 
 from utils.utils import build_cfg_path, form_list_from_user_input, sanity_check
 
-def parallel_feature_extraction(args):
-    '''Distributes the feature extraction in embarasingly-parallel fashion. Specifically,
-    it divides the dataset (list of video paths) among all specified devices evenly and extract features.'''
 
+def main(args_cli):
+    # config
+    args_yml = OmegaConf.load(build_cfg_path(args_cli.feature_type))
+    args = OmegaConf.merge(args_yml, args_cli)  # the latter arguments are prioritized
+    # OmegaConf.set_readonly(args, True)
+    sanity_check(args)
+
+    # verbosing with the print -- haha (TODO: logging)
+    print(OmegaConf.to_yaml(args))
+    if args.on_extraction in ['save_numpy', 'save_pickle']:
+        print(f'Saving features to {args.output_path}')
+    print('Device:', args.device)
+
+    # import are done here to avoid import errors (we have two conda environements)
     if args.feature_type == 'i3d':
-        from models.i3d.extract_i3d import ExtractI3D  # defined here to avoid import errors
+        from models.i3d.extract_i3d import ExtractI3D
         extractor = ExtractI3D(args)
     elif args.feature_type == 'r21d':
-        from models.r21d.extract_r21d import ExtractR21D  # defined here to avoid import errors
+        from models.r21d.extract_r21d import ExtractR21D
         extractor = ExtractR21D(args)
     elif args.feature_type == 'vggish':
-        from models.vggish.extract_vggish import ExtractVGGish  # defined here to avoid import errors
+        from models.vggish.extract_vggish import ExtractVGGish
         extractor = ExtractVGGish(args)
     elif args.feature_type == 'resnet':
         from models.resnet.extract_resnet import ExtractResNet
@@ -36,40 +41,17 @@ def parallel_feature_extraction(args):
     else:
         raise NotADirectoryError
 
+    # unifies whatever a user specified as paths into a list of paths
     video_paths = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
-    indices = torch.arange(len(video_paths))
 
-    # the indices correspond to the positions of the target videos in
-    # the video_paths list. They are required here because
-    # scatter module inputs only tensors but there is no such torch tensor
-    # that would be suitable for strings (video_paths). Also, the
-    # input have the method '.device' which allows us to access the
-    # current device in the extractor.
-    # For CPU, we may just provide the indices as they are.
-    if args.cpu:
-        extractor(indices)
-    else:
-        replicas = torch.nn.parallel.replicate(extractor, args.device_ids[:len(indices)])
-        inputs = torch.nn.parallel.scatter(indices, args.device_ids[:len(indices)])
-        torch.nn.parallel.parallel_apply(replicas[:len(inputs)], inputs)
+    print(f'The number of specified videos: {len(video_paths)}')
 
-    # closing the tqdm progress bar to avoid some unexpected errors due to multi-threading
-    extractor.tqdm_progress.close()
+    for video_path in video_paths:
+        extractor._extract(video_path)  # note the `_` in the method name
+
+    # yep, it is this simple!
 
 
 if __name__ == '__main__':
-    cfg_cli = OmegaConf.from_cli()
-    print(cfg_cli)
-    cfg_yml = OmegaConf.load(build_cfg_path(cfg_cli.feature_type))
-    # the latter arguments are prioritized
-    cfg = OmegaConf.merge(cfg_yml, cfg_cli)
-    # OmegaConf.set_readonly(cfg, True)
-    print(OmegaConf.to_yaml(cfg))
-    # some printing
-    if cfg.on_extraction in ['save_numpy', 'save_pickle']:
-        print(f'Saving features to {cfg.output_path}')
-    if cfg.keep_tmp_files:
-        print(f'Keeping temp files in {cfg.tmp_path}')
-
-    sanity_check(cfg)
-    parallel_feature_extraction(cfg)
+    args_cli = OmegaConf.from_cli()
+    main(args_cli)

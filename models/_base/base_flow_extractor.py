@@ -10,7 +10,6 @@ from models._base.base_extractor import BaseExtractor
 from models.raft.raft_src.raft import RAFT, InputPadder
 from models.transforms import (PILToTensor, ResizeImproved, ToFloat,
                                ToTensorWithoutScaling)
-from omegaconf import ListConfig
 from utils.utils import dp_state_to_normal, reencode_video_with_diff_fps
 
 
@@ -20,12 +19,11 @@ class BaseOpticalFlowExtractor(BaseExtractor):
     def __init__(self,
         # BaseExtractor arguments
         feature_type: str,
-        video_paths: Union[str, ListConfig],
-        file_with_video_paths: str,
         on_extraction: str,
         tmp_path: str,
         output_path: str,
         keep_tmp_files: bool,
+        device: str,
         # This class
         ckpt_path: str,
         batch_size: int,
@@ -36,13 +34,12 @@ class BaseOpticalFlowExtractor(BaseExtractor):
     ) -> None:
         # init the BaseExtractor
         super().__init__(
-            feature_type,
-            video_paths,
-            file_with_video_paths,
-            on_extraction,
-            tmp_path,
-            output_path,
-            keep_tmp_files,
+            feature_type=feature_type,
+            on_extraction=on_extraction,
+            tmp_path=tmp_path,
+            output_path=output_path,
+            keep_tmp_files=keep_tmp_files,
+            device=device,
         )
         # (Re-)Define arguments for this class
         self.ckpt_path = ckpt_path
@@ -61,46 +58,18 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         self.extraction_fps = extraction_fps # use `None` to skip reencoding and keep the original video fps
         self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
         self.show_pred = show_pred
+        self.name2module = self.load_model()
 
     @torch.no_grad()
-    def extract(
-        self,
-        device: torch.device,
-        name2module: Dict[str, torch.nn.Module],
-        video_path: Union[str, None] = None
-    ) -> Dict[str, np.ndarray]:
-        '''The extraction call. Made to clean the forward call a bit.
+    def extract(self, video_path: str) -> Dict[str, np.ndarray]:
+        '''Extracts features for a given video path.
 
         Arguments:
-            device {torch.device}
-            name2module {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
-
-        Keyword Arguments:
-            video_path {Union[str, None]} -- if you would like to use import it and use it as
-                                             "path -> model"-fashion (default: {None})
+            video_path (str): a video path from which to extract features
 
         Returns:
             Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
         '''
-
-        def _run_on_a_batch(
-            vid_feats: List[torch.Tensor],
-            batch: List[torch.Tensor],
-            name2module: Dict[str, torch.nn.Module],
-            device: torch.device,
-            padder=None,
-        ):
-            model = name2module['model']
-            batch = torch.cat(batch).to(device)
-            if padder is not None:
-                batch = padder.pad(batch)
-
-            batch_feats = model(batch[:-1], batch[1:])
-            # maybe un-padding only before saving because np.concat will not work if the img is unpadded
-            if padder is not None:
-                batch_feats = padder.unpad(batch_feats)
-            vid_feats.extend(batch_feats.tolist())
-            self.maybe_show_pred(batch_feats, batch, device)
 
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
@@ -141,12 +110,14 @@ class BaseOpticalFlowExtractor(BaseExtractor):
 
                 # - 1 is used because we need B+1 frames to calculate B frames
                 if len(batch) - 1 == self.batch_size:
-                    _run_on_a_batch(vid_feats, batch, name2module, device, padder)
+                    batch_feats = self.run_on_a_batch(batch, padder)
+                    vid_feats.extend(batch_feats.tolist())
                     # leaving the last element to calculate flow between it and the first element
                     batch = [batch[-1]]
             else:
                 if len(batch) > 1:
-                    _run_on_a_batch(vid_feats, batch, name2module, device, padder)
+                    batch_feats = self.run_on_a_batch(batch, padder)
+                    vid_feats.extend(batch_feats.tolist())
                 cap.release()
                 break
 
@@ -162,12 +133,22 @@ class BaseOpticalFlowExtractor(BaseExtractor):
 
         return features_with_meta
 
+    def run_on_a_batch(self, batch: List[torch.Tensor], padder=None) -> torch.Tensor:
+        model = self.name2module['model']
+        batch = torch.cat(batch).to(self.device)
+        if padder is not None:
+            batch = padder.pad(batch)
 
-    def load_model(self, device: torch.device) -> torch.nn.Module:
+        batch_feats = model(batch[:-1], batch[1:])
+        # maybe un-padding only before saving because np.concat will not work if the img is unpadded
+        if padder is not None:
+            batch_feats = padder.unpad(batch_feats)
+        self.maybe_show_pred(batch_feats, batch)
+        return batch_feats
+
+
+    def load_model(self) -> torch.nn.Module:
         '''Defines the models, loads checkpoints, sends them to the device.
-
-        Args:
-            device (torch.device)
 
         Returns:
             torch.nn.Module: flow extraction module.
@@ -183,11 +164,11 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         state_dict = torch.load(self.ckpt_path, map_location='cpu')
         state_dict = dp_state_to_normal(state_dict)
         model.load_state_dict(state_dict)
-        model = model.to(device)
+        model = model.to(self.device)
         model.eval()
         return {'model': model}
 
-    def maybe_show_pred(self, batch_feats: torch.Tensor, batch: torch.Tensor, device: torch.device = None):
+    def maybe_show_pred(self, batch_feats: torch.Tensor, batch: torch.Tensor):
         '''Shows the resulting flow frames and a corrsponding RGB frame (the 1st of the two) in a cv2 window.
 
         Args:

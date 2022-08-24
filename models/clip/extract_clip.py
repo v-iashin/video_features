@@ -16,17 +16,16 @@ class ExtractCLIP(BaseFrameWiseExtractor):
 
     def __init__(self, args: omegaconf.DictConfig) -> None:
         super().__init__(
-            args.feature_type,
-            args.video_paths,
-            args.file_with_video_paths,
-            args.on_extraction,
-            args.tmp_path,
-            args.output_path,
-            args.keep_tmp_files,
-            args.model_name,
-            args.batch_size,
-            args.extraction_fps,
-            args.show_pred,
+            feature_type=args.feature_type,
+            on_extraction=args.on_extraction,
+            tmp_path=args.tmp_path,
+            output_path=args.output_path,
+            keep_tmp_files=args.keep_tmp_files,
+            device=args.device,
+            model_name=args.model_name,
+            batch_size=args.batch_size,
+            extraction_fps=args.extraction_fps,
+            show_pred=args.show_pred,
         )
         self.transforms = 'For CLIP, it is easier to define in .load_model method because we need input size'
         if self.show_pred:
@@ -38,14 +37,12 @@ class ExtractCLIP(BaseFrameWiseExtractor):
                 self.pred_texts = list(pred_texts)
             # .long() is required because torch.nn.Embedding allows only Longs for pytorch 1.7.1
             self.pred_texts_tok = clip.tokenize(self.pred_texts).long()
+        self.name2module = self.load_model()
 
 
-    def load_model(self, device: torch.device) -> Dict[str, torch.nn.Module]:
+    def load_model(self) -> Dict[str, torch.nn.Module]:
         '''Defines the models, loads checkpoints, sends them to the device.
         For CLIP, it also sets the appropriate transforms
-
-        Args:
-            device (torch.device): The device
 
         Raises:
             NotImplementedError: if a model is not implemented.
@@ -65,7 +62,7 @@ class ExtractCLIP(BaseFrameWiseExtractor):
         else:
             raise NotImplementedError(f'Model {self.model_name} not found')
 
-        model, _ = clip.load(str(model_path), device=device)
+        model, _ = clip.load(str(model_path), device=self.device)
         model.eval()
 
         # defining transforms
@@ -86,15 +83,15 @@ class ExtractCLIP(BaseFrameWiseExtractor):
             'model.logit_scale': model.logit_scale,
         }
 
-    def maybe_show_pred(self, visual_feats: torch.Tensor, name2module, device=None):
+    def maybe_show_pred(self, visual_feats: torch.Tensor):
         # for each batch we will compute text representation: it is a bit redundant but it only
         # creates a problem during `show_pred`, i.e. debugging. It is not a big deal
         if self.show_pred:
             # to(device) is called here (instead of __init__) because device is defined in .extract()
-            text_feats = name2module['model.encode_text'](self.pred_texts_tok.to(device))
+            text_feats = self.name2module['model.encode_text'](self.pred_texts_tok.to(self.device))
 
             # visual_feats:T, 512  text_feats:N, 512
-            visual_feats = visual_feats.to(device=device, dtype=torch.double)
+            visual_feats = visual_feats.to(device=self.device, dtype=torch.double)
             text_feats = text_feats.to(dtype=torch.double)
 
             # normalized features
@@ -102,7 +99,7 @@ class ExtractCLIP(BaseFrameWiseExtractor):
             text_feats = text_feats / text_feats.norm(dim=1, keepdim=True)
 
             # cosine similarity as logits
-            logit_scale = name2module['model.logit_scale'].exp().to(dtype=visual_feats.dtype)
+            logit_scale = self.name2module['model.logit_scale'].exp().to(dtype=visual_feats.dtype)
             logits = logit_scale * visual_feats @ text_feats.t()
             logits = logits.cpu()
 

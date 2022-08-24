@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Union
+from typing import Dict
 
 import cv2
 import numpy as np
@@ -23,21 +23,15 @@ class ExtractI3D(BaseExtractor):
         # init the BaseExtractor
         super().__init__(
             feature_type=args.feature_type,
-            video_paths=args.video_paths,
-            file_with_video_paths=args.file_with_video_paths,
             on_extraction=args.on_extraction,
             tmp_path=args.tmp_path,
             output_path=args.output_path,
             keep_tmp_files=args.keep_tmp_files,
+            device=args.device,
         )
         # (Re-)Define arguments for this class
         self.streams = ['rgb', 'flow'] if args.streams is None else [args.streams]
         self.flow_type = args.flow_type
-        self.flow_model_paths = {'pwc': DATASET_to_PWC_CKPT_PATHS['sintel'], 'raft': DATASET_to_RAFT_CKPT_PATHS['sintel']}
-        self.i3d_weights_paths = {
-            'rgb': './models/i3d/checkpoints/i3d_rgb.pt',
-            'flow': './models/i3d/checkpoints/i3d_flow.pt',
-        }
         self.i3d_classes_num = 400
         self.min_side_size = 256
         self.central_crop_size = 224
@@ -66,55 +60,18 @@ class ExtractI3D(BaseExtractor):
         }
         self.show_pred = args.show_pred
         self.output_feat_keys = self.streams + ['fps', 'timestamps_ms']
+        self.name2module = self.load_model()
 
     @torch.no_grad()
-    def extract(
-        self,
-        device: torch.device,
-        name2module: Dict[str, torch.nn.Module],
-        video_path: Union[str, None] = None
-    ) -> Dict[str, np.ndarray]:
+    def extract(self, video_path: str) -> Dict[str, np.ndarray]:
         '''The extraction call. Made to clean the forward call a bit.
 
         Arguments:
-            device {torch.device}
-            name2module {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
-
-        Keyword Arguments:
-            video_path {Union[str, None]} -- if you would like to use import it and use it as
-                                             "path -> model"-fashion (default: {None})
+            video_path (str): a video path from which to extract features
 
         Returns:
-            Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
+            Dict[str, np.ndarray]: feature name (e.g. 'fps' or feature_type) to the feature tensor
         '''
-        def _run_on_a_stack(feats_dict, rgb_stack, name2module, device, stack_counter, padder=None):
-            models = name2module['model']
-            flow_xtr_model = name2module['flow_xtr_model']
-            rgb_stack = torch.cat(rgb_stack).to(device)
-
-            for stream in self.streams:
-                # if i3d stream is flow, we first need to calculate optical flow, otherwise, we use rgb
-                # `end_idx-1` and `start_idx+1` because flow is calculated between f and f+1 frames
-                # we also use `end_idx-1` for stream == 'rgb' case: just to make sure the feature length
-                # is same regardless of whether only rgb is used or flow
-                if stream == 'flow':
-                    if self.flow_type == 'raft':
-                        stream_slice = flow_xtr_model(padder.pad(rgb_stack)[:-1], padder.pad(rgb_stack)[1:])
-                    elif self.flow_type == 'pwc':
-                        stream_slice = flow_xtr_model(rgb_stack[:-1], rgb_stack[1:])
-                    else:
-                        raise NotImplementedError
-                elif stream == 'rgb':
-                    stream_slice = rgb_stack[:-1]
-                else:
-                    raise NotImplementedError
-                # apply transforms depending on the stream (flow or rgb)
-                stream_slice = self.i3d_transforms[stream](stream_slice)
-                # extract features for a stream
-                feats = models[stream](stream_slice, features=True)  # (B, 1024)
-                # add features to the output dict
-                feats_dict[stream].extend(feats.tolist())
-                self.maybe_show_pred(stream_slice, name2module['model'][stream], stack_counter)
 
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
@@ -124,7 +81,7 @@ class ExtractI3D(BaseExtractor):
         fps = cap.get(cv2.CAP_PROP_FPS)
         # timestamp when the last frame in the stack begins (when the old frame of the last pair ends)
         timestamps_ms = []
-        stack = []
+        rgb_stack = []
         feats_dict = {stream: [] for stream in self.streams}
 
         # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
@@ -150,15 +107,17 @@ class ExtractI3D(BaseExtractor):
                 if self.flow_type == 'raft' and padder is None:
                     padder = InputPadder(rgb.shape)
 
-                stack.append(rgb)
+                rgb_stack.append(rgb)
 
                 # - 1 is used because we need B+1 frames to calculate B frames
-                if len(stack) - 1 == self.stack_size:
-                    _run_on_a_stack(feats_dict, stack, name2module, device, stack_counter, padder)
+                if len(rgb_stack) - 1 == self.stack_size:
+                    batch_feats_dict = self.run_on_a_stack(rgb_stack, stack_counter, padder)
+                    for stream in self.streams:
+                        feats_dict[stream].extend(batch_feats_dict[stream].tolist())
                     # leaving the elements if step_size < stack_size so they will not be loaded again
                     # if step_size == stack_size one element is left because the flow between the last element
                     # in the prev list and the first element in the current list
-                    stack = stack[self.step_size:]
+                    rgb_stack = rgb_stack[self.step_size:]
                     stack_counter += 1
                     timestamps_ms.append(cap.get(cv2.CAP_PROP_POS_MSEC))
             else:
@@ -178,12 +137,42 @@ class ExtractI3D(BaseExtractor):
 
         return feats_dict
 
-    def load_model(self, device: torch.device) -> Dict[str, torch.nn.Module]:
+
+    def run_on_a_stack(self, rgb_stack, stack_counter, padder=None) -> Dict[str, torch.Tensor]:
+        models = self.name2module['model']
+        flow_xtr_model = self.name2module['flow_xtr_model']
+        rgb_stack = torch.cat(rgb_stack).to(self.device)
+
+        batch_feats_dict = {}
+        for stream in self.streams:
+            # if i3d stream is flow, we first need to calculate optical flow, otherwise, we use rgb
+            # `end_idx-1` and `start_idx+1` because flow is calculated between f and f+1 frames
+            # we also use `end_idx-1` for stream == 'rgb' case: just to make sure the feature length
+            # is same regardless of whether only rgb is used or flow
+            if stream == 'flow':
+                if self.flow_type == 'raft':
+                    stream_slice = flow_xtr_model(padder.pad(rgb_stack)[:-1], padder.pad(rgb_stack)[1:])
+                elif self.flow_type == 'pwc':
+                    stream_slice = flow_xtr_model(rgb_stack[:-1], rgb_stack[1:])
+                else:
+                    raise NotImplementedError
+            elif stream == 'rgb':
+                stream_slice = rgb_stack[:-1]
+            else:
+                raise NotImplementedError
+            # apply transforms depending on the stream (flow or rgb)
+            stream_slice = self.i3d_transforms[stream](stream_slice)
+            # extract features for a stream
+            batch_feats_dict[stream] = models[stream](stream_slice, features=True)  # (B, 1024)
+            # add features to the output dict
+            self.maybe_show_pred(stream_slice, self.name2module['model'][stream], stack_counter)
+
+        return batch_feats_dict
+
+
+    def load_model(self) -> Dict[str, torch.nn.Module]:
         '''Defines the models, loads checkpoints, sends them to the device.
         Since I3D is two-stream, it may load a optical flow extraction model as well.
-
-        Args:
-            device (torch.device): The device
 
         Raises:
             NotImplementedError: if a model is not implemented.
@@ -191,6 +180,11 @@ class ExtractI3D(BaseExtractor):
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
         '''
+        flow_model_paths = {'pwc': DATASET_to_PWC_CKPT_PATHS['sintel'], 'raft': DATASET_to_RAFT_CKPT_PATHS['sintel']}
+        i3d_weights_paths = {
+            'rgb': './models/i3d/checkpoints/i3d_rgb.pt',
+            'flow': './models/i3d/checkpoints/i3d_flow.pt',
+        }
         # Flow extraction module
         if self.flow_type == 'pwc':
             from models.pwc.pwc_src.pwc_net import PWCNet
@@ -201,18 +195,18 @@ class ExtractI3D(BaseExtractor):
             raise NotImplementedError
 
         # preprocess state dict
-        state_dict = torch.load(self.flow_model_paths[self.flow_type], map_location='cpu')
+        state_dict = torch.load(flow_model_paths[self.flow_type], map_location='cpu')
         state_dict = dp_state_to_normal(state_dict)
         flow_xtr_model.load_state_dict(state_dict)
-        flow_xtr_model = flow_xtr_model.to(device)
+        flow_xtr_model = flow_xtr_model.to(self.device)
         flow_xtr_model.eval()
 
         # Feature extraction models (rgb and flow streams)
         i3d_stream_models = {}
         for stream in self.streams:
             i3d_stream_model = I3D(num_classes=self.i3d_classes_num, modality=stream)
-            i3d_stream_model.load_state_dict(torch.load(self.i3d_weights_paths[stream], map_location='cpu'))
-            i3d_stream_model = i3d_stream_model.to(device)
+            i3d_stream_model.load_state_dict(torch.load(i3d_weights_paths[stream], map_location='cpu'))
+            i3d_stream_model = i3d_stream_model.to(self.device)
             i3d_stream_model.eval()
             i3d_stream_models[stream] = i3d_stream_model
 
