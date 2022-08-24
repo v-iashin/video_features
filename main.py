@@ -1,4 +1,5 @@
 from omegaconf import OmegaConf
+from tqdm import tqdm
 
 from utils.utils import build_cfg_path, form_list_from_user_input, sanity_check
 
@@ -42,11 +43,11 @@ def main(args_cli):
         raise NotADirectoryError
 
     # unifies whatever a user specified as paths into a list of paths
-    video_paths = form_list_from_user_input(args.video_paths, args.file_with_video_paths)
+    video_paths = form_list_from_user_input(args.video_paths, args.file_with_video_paths, to_shuffle=True)
 
     print(f'The number of specified videos: {len(video_paths)}')
 
-    for video_path in video_paths:
+    for video_path in tqdm(video_paths):
         extractor._extract(video_path)  # note the `_` in the method name
 
     # yep, it is this simple!

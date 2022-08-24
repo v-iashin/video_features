@@ -1,6 +1,7 @@
 import argparse
 import os
 import pickle
+import random
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Union
@@ -95,7 +96,7 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
     if args.feature_type == 'pwc' or (args.feature_type == 'i3d' and args.flow_type == 'pwc'):
-        assert not args.cpu, 'PWC does NOT support using CPU'
+        assert args.device != 'cpu', 'PWC does NOT support using CPU'
     if 'batch_size' in args:
         assert args.batch_size is not None, f'Please specify `batch_size`. It is {args.batch_size} now'
 
@@ -117,7 +118,8 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
 
 def form_list_from_user_input(
         video_paths: Union[str, ListConfig, None] = None,
-        file_with_video_paths: str = None
+        file_with_video_paths: str = None,
+        to_shuffle: bool = True,
     ) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
        transforms the user input into a list of paths.
@@ -126,6 +128,8 @@ def form_list_from_user_input(
         video_paths (Union[str, ListConfig, None], optional): a list of video paths. Defaults to None.
         file_with_video_paths (str, optional): a path to a file with video files for extraction.
                                                Defaults to None.
+        to_shuffle (bool, optional): if the list of paths should be shuffled. If True is should prevent
+                                     potential worker collisions (two workers process the same video)
 
     Returns:
         list: list with paths
@@ -147,6 +151,9 @@ def form_list_from_user_input(
     for path in path_list:
         if not Path(path).exists():
             print(f'The path does not exist: {path}')
+
+    if to_shuffle:
+        random.shuffle(path_list)
 
     return path_list
 
