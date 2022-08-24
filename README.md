@@ -5,8 +5,9 @@
 
 <img  src="https://github.com/v-iashin/v-iashin.github.io/raw/master/images/video_features/vid_feats.gif" width="300" />
 
-`video_features` allows you to extract features from raw videos in parallel with multiple GPUs.
-It supports several extractors that capture visual appearance, optical flow, and audio features.
+`video_features` allows you to extract features from video clips.
+It supports a variety of extractors and modalities,
+i.e. visual appearance, optical flow, and audio.
 See more details in [Documentation](https://v-iashin.github.io/video_features/).
 </div>
 
@@ -29,11 +30,11 @@ conda activate torch_zoo
 # extract r(2+1)d features for the sample videos
 python main.py \
     feature_type=r21d \
-    device_ids="[0]" \
+    device="cuda:0" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 
-# use `device_ids="[0, 2]"` to run on 0th and 2nd devices in parallel
-# or add `cpu=true` to use CPU
+# if you have many GPUs, just run this command from another terminal with another device
+# device can also be "cpu"
 ```
 
 If you are more comfortable with Docker, there is a
