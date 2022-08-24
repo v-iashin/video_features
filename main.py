@@ -54,7 +54,7 @@ def parallel_feature_extraction(args):
         torch.nn.parallel.parallel_apply(replicas[:len(inputs)], inputs)
 
     # closing the tqdm progress bar to avoid some unexpected errors due to multi-threading
-    extractor.progress.close()
+    extractor.tqdm_progress.close()
 
 
 if __name__ == '__main__':
