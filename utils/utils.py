@@ -67,28 +67,23 @@ def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_p
         output_path (str): Where to save the features if `save_numpy` or `save_pickle` is used.
     '''
     # since the features are enclosed in a dict with another meta information we will iterate on kv
+    action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl'}
+    action2savefn = {'save_numpy': write_numpy, 'save_pickle': write_pickle}
+
     for key, value in feats_dict.items():
         if on_extraction == 'print':
             print(key)
             print(value)
             print(f'max: {value.max():.8f}; mean: {value.mean():.8f}; min: {value.min():.8f}')
             print()
-        elif on_extraction == 'save_numpy':
+        elif on_extraction in ['save_numpy', 'save_pickle']:
             # make dir if doesn't exist
             os.makedirs(output_path, exist_ok=True)
-            fpath = make_path(output_path, video_path, key, '.npy')
+            fpath = make_path(output_path, video_path, key, action2ext[on_extraction])
             if key != 'fps' and len(value) == 0:
                 print(f'Warning: the value is empty for {key} @ {fpath}')
             # save the info behind the each key
-            np.save(fpath, value)
-        elif on_extraction == 'save_pickle':
-            # make dir if doesn't exist
-            os.makedirs(output_path, exist_ok=True)
-            fpath = make_path(output_path, video_path, key, '.pkl')
-            if key != 'fps' and len(value) == 0:
-                print(f'Warning: the value is empty for {key} @ {fpath}')
-            # save the info behind the each key
-            pickle.dump(value, open(fpath, 'wb'))
+            action2savefn[on_extraction](fpath, value)
         else:
             raise NotImplementedError(f'on_extraction: {on_extraction} is not implemented')
 
@@ -288,5 +283,50 @@ def dp_state_to_normal(state_dict):
 def load_numpy(fpath):
     return np.load(fpath)
 
+def write_numpy(fpath, value):
+    return np.save(fpath, value)
+
 def load_pickle(fpath):
     return pickle.load(open(fpath, 'rb'))
+
+def write_pickle(fpath, value):
+    return pickle.dump(value, open(fpath, 'wb'))
+
+def is_already_exist(
+        output_path: Union[str, Path],
+        video_path: Union[str, Path],
+        output_feat_keys: List[str],
+        on_extraction: str,
+    ) -> bool:
+    '''Checks if the all feature files already exist, and also checks if IO does not produce any errors.
+
+    Args:
+        output_path (Union[str, Path]): root folder to output features to
+        video_path (Union[str, Path]): the path to a video to extract features from
+        output_feat_keys (List[str]): the feature file keys (e.g. 'feature_type', 'fps', and 'timestamp_ms')
+        on_extraction (str): action on extraction such as 'save_numpy' or 'print'
+    '''
+    # if a user does not want to save any features, we need to extract them. 'False' will continue extraction.
+    if on_extraction == 'print':
+        return False
+
+    action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl'}
+    action2loadfn = {'save_numpy': load_numpy, 'save_pickle': load_pickle}
+
+    if on_extraction in ['save_numpy', 'save_pickle']:
+        how_many_files_should_exist = len(output_feat_keys)
+        how_many_files_exist = 0  # it is a counter
+
+        for key in output_feat_keys:
+            fpath = make_path(output_path, video_path, key, action2ext[on_extraction])
+            if Path(fpath).exists():
+                action2loadfn[on_extraction](fpath)
+                how_many_files_exist += 1
+            else:
+                return False
+
+    if how_many_files_exist == how_many_files_should_exist:
+        print(f'Features for {video_path} already exist in {str(Path(fpath).absolute().parent)}/. Skipping..')
+        return True
+    else:
+        return False
