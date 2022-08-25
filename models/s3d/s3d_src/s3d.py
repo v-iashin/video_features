@@ -26,32 +26,24 @@ class S3D(nn.Module):
             Mixed_5c(),
         )
 
-        # v-iashin: moved .view() and .mean() functions here from .forward() to toggle these easily from
-        # Extractor.load_model() depending on if I need `show_pred` or not
-        self.fc = nn.Sequential(
-            nn.Conv3d(1024, num_class, kernel_size=1, stride=1, bias=True),  # (B, 1024, T-1, 1, 1) <-
-            nn.Flatten(start_dim=2, end_dim=4),  # (B, 400, 7) <- (B, 400, 7, 1, 1)
-            nn.AdaptiveAvgPool1d(output_size=1), #  (B, 400, 1) <- (B, 400, 7)
-            nn.Flatten(start_dim=1),  # (B, 400) <- (B, 400, 1)
-        )
+        self.fc = nn.Sequential(nn.Conv3d(1024, num_class, kernel_size=1, stride=1, bias=True),)
 
         if ckpt_path is not None:
             ckpt = torch.load(ckpt_path, map_location=torch.device('cpu'))
             self.load_state_dict(ckpt)
 
-    def forward(self, x):
+    def forward(self, x, features=False):
         # (B, 1024, 8, 7, 7) <-
         y = self.base(x)
         # (B, 1024, 7, 1, 1)
         y = F.avg_pool3d(y, (2, y.size(3), y.size(4)), stride=1)
-        # (B, 400, 7, 1, 1)
-        y = self.fc(y)
-
-        # moved to self.fc
-        # # (B, 400, 7)
-        # y = y.view(y.size(0), y.size(1), y.size(2))
-        # # (B, 400)
-        # y = torch.mean(y, 2)
+        if not features:
+            # (B, 400, 7, 1, 1) <- (B, 1024, 7, 1, 1)
+            y = self.fc(y)
+        # (B, 400, 7)
+        y = y.view(y.size(0), y.size(1), y.size(2))
+        # (B, 400)
+        y = torch.mean(y, 2)
 
         return y
 

@@ -28,9 +28,10 @@ class ExtractS3D(BaseExtractor):
         self.extraction_fps = args.extraction_fps
         self.step_size = args.step_size
         self.stack_size = args.stack_size
+        # normalization is not used as per: https://github.com/kylemin/S3D/issues/4
         self.transforms = torchvision.transforms.Compose([
             ToFloatTensorInZeroOne(),
-            Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            Resize(224),
             CenterCrop((224, 224))
         ])
         self.show_pred = args.show_pred
@@ -63,9 +64,11 @@ class ExtractS3D(BaseExtractor):
 
         for stack_idx, (start_idx, end_idx) in enumerate(slices):
             # inference
-            output = self.name2module['model'](rgb[:, :, start_idx:end_idx, :, :].to(self.device))
+            rgb_stack = rgb[:, :, start_idx:end_idx, :, :].to(self.device)
+            output = self.name2module['model'](rgb_stack, features=True)
+            print(output.shape)
             vid_feats.extend(output.tolist())
-            self.maybe_show_pred(output, start_idx, end_idx)
+            self.maybe_show_pred(rgb_stack, start_idx, end_idx)
 
         feats_dict = {
             self.feature_type: np.array(vid_feats),
@@ -86,34 +89,14 @@ class ExtractS3D(BaseExtractor):
         model = S3D(num_class=400, ckpt_path=s3d_kinetics400_weights_torch_path)
         model = model.to(self.device)
         model.eval()
-        # S3D classifier squeezes the dims of the feature tensor and applies global avg pooling on logits:
-        # (B, num_cls) <- (B, num_cls, T) <- (B, num_cls, T, 1, 1) <- (B, 1024, T, 1, 1)
-        # We need features before the classifier, squeezed, and permuted but not global pooled:
-        # (B, T, 1024) <- (B, 1024, T) <- (B, 1024, T, 1, 1)
-        # Thus, to reuse the output features in `class_head` in `show_pred`,
-        # we need to undo the permute and dimension squeezing:
-        # (B, T, 1024) -> (B, 1024, T) -> (B, 1024, T, 1, 1)
-        # so we could do instead the classification:
-        # (B, num_cls) <- (B, num_cls, T) <- (B, num_cls, T, 1, 1) <- (B, 1024, T, 1, 1)
-        # so, let's make the undo operation:
-        class_head = torch.nn.Sequential(
-            Permute((0, 2, 1)),  # (B, 1024, T) <- (B, T, 1024)
-            Unsqueeze((3, 4)),  # (B, 1024, T, 1, 1) <- (B, 1024, T)
-            model.fc,  # the original S3D classifier
-        )
-        # this what will be executed for feature extraction - compare with S3D().forward()
-        model.fc = torch.nn.Sequential(
-            Squeeze((3, 4)),  # (B, 1024, T) <- (B, 1024, T, 1, 1)
-            Permute((0, 2, 1)),  # (B, T, 1024) <-
-        )
 
         return {
             'model': model,
-            'class_head': class_head,
         }
 
-    def maybe_show_pred(self, visual_feats: torch.Tensor, start_idx: int, end_idx: int):
+
+    def maybe_show_pred(self, rgb_stack: torch.Tensor, start_idx: int, end_idx: int):
         if self.show_pred:
-            logits = self.name2module['class_head'](visual_feats)
+            logits = self.name2module['model'](rgb_stack, features=False)
             print(f'At frames ({start_idx}, {end_idx})')
             show_predictions_on_dataset(logits, 'kinetics')
