@@ -5,7 +5,6 @@ import cv2
 import numpy as np
 import torch
 from models._base.base_extractor import BaseExtractor
-from omegaconf import ListConfig
 from utils.utils import reencode_video_with_diff_fps
 
 
@@ -16,12 +15,11 @@ class BaseFrameWiseExtractor(BaseExtractor):
     def __init__(self,
         # BaseExtractor arguments
         feature_type: str,
-        video_paths: Union[str, ListConfig],
-        file_with_video_paths: str,
         on_extraction: str,
         tmp_path: str,
         output_path: str,
         keep_tmp_files: bool,
+        device: str,
         # This class
         model_name: str,
         batch_size: int,
@@ -30,13 +28,12 @@ class BaseFrameWiseExtractor(BaseExtractor):
     ) -> None:
         # init the BaseExtractor
         super().__init__(
-            feature_type,
-            video_paths,
-            file_with_video_paths,
-            on_extraction,
-            tmp_path,
-            output_path,
-            keep_tmp_files,
+            feature_type=feature_type,
+            on_extraction=on_extraction,
+            tmp_path=tmp_path,
+            output_path=output_path,
+            keep_tmp_files=keep_tmp_files,
+            device=device,
         )
         # (Re-)Define arguments for this class
         self.model_name = model_name
@@ -46,38 +43,15 @@ class BaseFrameWiseExtractor(BaseExtractor):
         self.show_pred = show_pred
 
     @torch.no_grad()
-    def extract(
-        self,
-        device: torch.device,
-        name2module: Dict[str, torch.nn.Module],
-        video_path: Union[str, None] = None
-    ) -> Dict[str, np.ndarray]:
-        '''The extraction call. Made to clean the forward call a bit.
+    def extract(self, video_path: str) -> Dict[str, np.ndarray]:
+        '''Extracts features for a given video path.
 
         Arguments:
-            device {torch.device}
-            name2module {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
-
-        Keyword Arguments:
-            video_path {Union[str, None]} -- if you would like to use import it and use it as
-                                             "path -> model"-fashion (default: {None})
+            video_path (str): a video path from which to extract features
 
         Returns:
             Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
         '''
-
-        def _run_on_a_batch(
-            vid_feats: List[torch.Tensor],
-            batch: List[torch.Tensor],
-            name2module: Dict[str, torch.nn.Module],
-            device: torch.device,
-        ):
-            model = name2module['model']
-            batch = torch.cat(batch).to(device)
-            batch_feats = model(batch)
-            vid_feats.extend(batch_feats.tolist())
-            self.maybe_show_pred(batch_feats, name2module, device)
-
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
             video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
@@ -110,13 +84,15 @@ class BaseFrameWiseExtractor(BaseExtractor):
                 batch.append(rgb)
                 # when batch is formed to inference
                 if len(batch) == self.batch_size:
-                    _run_on_a_batch(vid_feats, batch, name2module, device)
+                    batch_feats = self.run_on_a_batch(batch)
+                    vid_feats.extend(batch_feats.tolist())
                     # clean up the batch list
                     batch = []
             else:
                 # if the last batch was smaller than the batch size
                 if len(batch) != 0:
-                    _run_on_a_batch(vid_feats, batch, name2module, device)
+                    batch_feats = self.run_on_a_batch(batch)
+                    vid_feats.extend(batch_feats.tolist())
                 cap.release()
                 break
 
@@ -131,3 +107,10 @@ class BaseFrameWiseExtractor(BaseExtractor):
         }
 
         return features_with_meta
+
+    def run_on_a_batch(self, batch: List[torch.Tensor]) -> torch.Tensor:
+        model = self.name2module['model']
+        batch = torch.cat(batch).to(self.device)
+        batch_feats = model(batch)
+        self.maybe_show_pred(batch_feats)
+        return batch_feats

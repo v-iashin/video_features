@@ -3,9 +3,18 @@
   <img src="../../_assets/i3d.png" width="300" />
 </figure>
 
-The _Inflated 3D ([I3D](https://arxiv.org/abs/1705.07750))_ features are extracted using a pre-trained model on [Kinetics 400](https://deepmind.com/research/open-source/kinetics). Here, the features are extracted from the second-to-the-last layer of I3D, before summing them up. Therefore, it outputs two tensors with 1024-d features: for RGB and flow streams. By default, it expects to input 64 RGB and flow frames (`224x224`) which spans 2.56 seconds of the video recorded at 25 fps. In the default case, the features will be of size `Tv x 1024` where `Tv = duration / 2.56`.
+The _Inflated 3D ([I3D](https://arxiv.org/abs/1705.07750))_ features are extracted using
+a pre-trained model on [Kinetics 400](https://deepmind.com/research/open-source/kinetics).
+Here, the features are extracted from the second-to-the-last layer of I3D, before summing them up.
+Therefore, it outputs two tensors with 1024-d features: for RGB and flow streams.
+By default, it expects to input 64 RGB and flow frames (`224x224`) which spans 2.56 seconds of the video recorded at 25 fps.
+In the default case, the features will be of size `Tv x 1024` where `Tv = duration / 2.56`.
 
-Please note, this implementation uses either [PWC-Net](https://arxiv.org/abs/1709.02371) (the default) and [RAFT](https://arxiv.org/abs/2003.12039) optical flow extraction instead of the TV-L1 algorithm, which was used in the original I3D paper as it hampers speed. Yet, it might possibly lead to worse peformance. Our tests show that the performance is reasonable. You may test it yourself by providing `--show_pred` flag.
+Please note, this implementation uses either [PWC-Net](https://arxiv.org/abs/1709.02371) (the default)
+and [RAFT](https://arxiv.org/abs/2003.12039) optical flow extraction instead of the TV-L1 algorithm,
+which was used in the original I3D paper as it hampers speed.
+Yet, it might possibly lead to worse peformance. Our tests show that the performance is reasonable.
+You may test it yourself by providing `--show_pred` flag.
 
 !!! warning "CUDA 11 and GPUs like RTX 3090 and newer"
 
@@ -17,14 +26,16 @@ Please note, this implementation uses either [PWC-Net](https://arxiv.org/abs/170
 
 !!! warning "The PWC-Net does NOT support using CPU currently"
 
-    The PWC-Net uses `cupy` module, which makes it difficult to turn to a version that does not use the GPU. However, if you have solution, you may submit a PR.
+    The PWC-Net uses `cupy` module, which makes it difficult to turn to a version that does not use the GPU.
+    However, if you have solution, you may submit a PR.
 
 ---
 
 ---
 
 ## Set up the Environment for I3D
-Depending on whether you would like to use PWC-Net or RAFT for optical flow extraction, you will need to install separate conda environments – `conda_env_pwc.yml` and `conda_env_torch_zoo`, respectively
+Depending on whether you would like to use PWC-Net or RAFT for optical flow extraction,
+you will need to install separate conda environments – `conda_env_pwc.yml` and `conda_env_torch_zoo`, respectively
 
 ```bash
 # it will create a new conda environment called 'pwc' on your machine
@@ -49,6 +60,7 @@ and extract features from `./sample/v_ZNVhz7ctTq0.mp4` video and show the predic
 ```bash
 python main.py \
     feature_type=i3d \
+    device="cuda:0" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4]" \
     show_pred=true
 ```
@@ -61,11 +73,12 @@ Activate the environment
 conda activate pwc
 ```
 
-The following will extract I3D features for sample videos using 0th and 2nd devices in parallel. The features are going to be extracted with the default parameters.
+The following will extract I3D features for sample videos.
+The features are going to be extracted with the default parameters.
 ```bash
 python main.py \
     feature_type=i3d \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
 
@@ -73,19 +86,22 @@ The video paths can be specified as a `.txt` file with paths
 ```bash
 python main.py \
     feature_type=i3d \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     file_with_video_paths=./sample/sample_video_paths.txt
 ```
-It is also possible to extract features from either `rgb` or `flow` modalities individually (`--streams`) and, therefore, increasing the speed
+It is also possible to extract features from either `rgb` or `flow` modalities individually (`--streams`)
+and, therefore, increasing the speed
 ```bash
 python main.py \
     feature_type=i3d \
     streams=flow \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     file_with_video_paths=./sample/sample_video_paths.txt
 ```
 
-To extract optical flow frames using RAFT approach, specify `--flow_type raft`. Note that using RAFT will make the extraction slower than with PWC-Net yet visual inspection of extracted flow frames suggests that RAFT has a better quality of the estimated flow
+To extract optical flow frames using RAFT approach, specify `--flow_type raft`.
+Note that using RAFT will make the extraction slower than with PWC-Net yet visual inspection of extracted flow
+frames suggests that RAFT has a better quality of the estimated flow
 
 ```bash
 # make sure to activate the correct environment (`torch_zoo`)
@@ -93,15 +109,16 @@ To extract optical flow frames using RAFT approach, specify `--flow_type raft`. 
 python main.py \
     feature_type=i3d \
     flow_type=raft \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     file_with_video_paths=./sample/sample_video_paths.txt
 ```
 
-The features can be saved as numpy arrays by specifying `--on_extraction save_numpy` or `save_pickle`. By default, it will create a folder `./output` and will store features there
+The features can be saved as numpy arrays by specifying `--on_extraction save_numpy` or `save_pickle`.
+By default, it will create a folder `./output` and will store features there
 ```bash
 python main.py \
     feature_type=i3d \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     on_extraction=save_numpy \
     file_with_video_paths=./sample/sample_video_paths.txt
 ```
@@ -111,7 +128,7 @@ Also, you may want to try to change I3D window and step sizes
 ```bash
 python main.py \
     feature_type=i3d \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     stack_size=24 \
     step_size=24 \
     file_with_video_paths=./sample/sample_video_paths.txt
@@ -121,15 +138,18 @@ By default, the frames are extracted according to the original fps of a video. I
 ```bash
 python main.py \
     feature_type=i3d \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     extraction_fps=25 \
     stack_size=24 \
     step_size=24 \
     file_with_video_paths=./sample/sample_video_paths.txt
 ```
-A fun note, the time span of the I3D features in the last example will match the time span of VGGish features with default parameters (24/25 = 0.96).
+A fun note, the time span of the I3D features in the last example will match the time span of VGGish features
+with default parameters (24/25 = 0.96).
 
-If `--keep_tmp_files` is specified, it keeps them in `--tmp_path` which is `./tmp` by default. Be careful with the `--keep_tmp_files` argument when playing with `--extraction_fps` as it may mess up the frames you extracted before in the same folder.
+If `--keep_tmp_files` is specified, it keeps them in `--tmp_path` which is `./tmp` by default.
+Be careful with the `--keep_tmp_files` argument when playing with `--extraction_fps` as it may mess up the
+frames you extracted before in the same folder.
 
 ---
 

@@ -54,37 +54,45 @@ conda activate torch_zoo
 ```
 
 A minimal working example:
-it will extract RAFT optical flow frames for sample videos using 0th and 2nd devices in parallel.
+it will extract RAFT optical flow frames for sample videos.
 ```bash
 python main.py \
     feature_type=raft \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
-Note, if your videos are quite long, have large dimensions and fps, watch your RAM as the frames are stored in the memory until they are saved. Please see other examples how can you overcome this problem.
+Note, if your videos are quite long, have large dimensions and fps, watch your RAM as the frames are stored
+in the memory until they are saved.
+Please see other examples how can you overcome this problem.
 
-By default, the frames are extracted using the Sintel model. If you wish you can use KITTI-pretrained model by changing the `finetuned_on` argument:
+By default, the frames are extracted using the Sintel model.
+If you wish you can use KITTI-pretrained model by changing the `finetuned_on` argument:
 ```bash
 python main.py \
     feature_type=raft \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     finetuned_on=kitti \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
 
-If you would like to save the frames, use `--on_extraction save_numpy` (or `save_pickle`) – by default, the frames are saved in `./output/` or where `--output_path` specifies. In the case of RAFT, besides frames, it also saves timestamps in ms and the original fps of the video into the same folder with features.
+If you would like to save the frames, use `--on_extraction save_numpy` (or `save_pickle`) – by default,
+the frames are saved in `./output/` or where `--output_path` specifies.
+In the case of RAFT, besides frames, it also saves timestamps in ms and the original fps of the video into
+the same folder with features.
 ```bash
 python main.py \
     feature_type=raft \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     on_extraction=save_numpy \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
-Since extracting flow between two frames is cheap we may increase the extraction speed with batching. Therefore, you can use `--batch_size` argument (defaults to `1`) to do so. _A precaution: make sure to properly test the memory impact of using a specific batch size if you are not sure which kind of videos you have. For instance, you tested the extraction on 16:9 aspect ratio videos but some videos are 16:10 which might give you a mem error. Therefore, I would recommend to tune `--batch_size` on a square video and using the resize arguments (showed later)_
+Since extracting flow between two frames is cheap we may increase the extraction speed with batching.
+Therefore, you can use `--batch_size` argument (defaults to `1`) to do so.
+_A precaution: make sure to properly test the memory impact of using a specific batch size if you are not sure which kind of videos you have. For instance, you tested the extraction on 16:9 aspect ratio videos but some videos are 16:10 which might give you a mem error. Therefore, I would recommend to tune `--batch_size` on a square video and using the resize arguments (showed later)_
 ```bash
 python main.py \
     feature_type=raft \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     batch_size=16 \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
@@ -95,7 +103,7 @@ The latter might be useful when you are not sure which aspect ratio the videos h
 ```bash
 python main.py \
     feature_type=raft \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     side_size=256 \
     resize_to_smaller_edge=false \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
@@ -104,7 +112,7 @@ If the videos have different fps rate, `--extraction_fps` might be used to speci
 ```bash
 python main.py \
     feature_type=raft \
-    device_ids="[0, 2]" \
+    device="cuda:0" \
     extraction_fps=1 \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```

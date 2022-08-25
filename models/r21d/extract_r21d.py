@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict
 
 import numpy as np
 import torch
@@ -10,8 +10,6 @@ from torchvision.io.video import read_video
 from utils.utils import (form_slices, reencode_video_with_diff_fps,
                          show_predictions_on_dataset)
 
-# import traceback
-
 
 class ExtractR21D(BaseExtractor):
 
@@ -19,12 +17,11 @@ class ExtractR21D(BaseExtractor):
         # init the BaseExtractor
         super().__init__(
             feature_type=args.feature_type,
-            video_paths=args.video_paths,
-            file_with_video_paths=args.file_with_video_paths,
             on_extraction=args.on_extraction,
             tmp_path=args.tmp_path,
             output_path=args.output_path,
             keep_tmp_files=args.keep_tmp_files,
+            device=args.device,
         )
         # (Re-)Define arguments for this class
         r21d_model_cfgs = {
@@ -58,26 +55,17 @@ class ExtractR21D(BaseExtractor):
         ])
         self.show_pred = args.show_pred
         self.output_feat_keys = [self.feature_type]
+        self.name2module = self.load_model()
 
     @torch.no_grad()
-    def extract(
-        self,
-        device: torch.device,
-        name2module: Dict[str, torch.nn.Module],
-        video_path: Union[str, None] = None
-    ) -> Dict[str, np.ndarray]:
-        '''The extraction call. Made to clean the forward call a bit.
+    def extract(self, video_path: str) -> Dict[str, np.ndarray]:
+        '''Extracts features for a given video path.
 
         Arguments:
-            device {torch.device}
-            name2module {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
-
-        Keyword Arguments:
-            video_path {Union[str, None]} -- if you would like to use import it and use it as
-                                             "path -> model"-fashion (default: {None})
+            video_path (str): a video path from which to extract features
 
         Returns:
-            Dict[str, np.ndarray]: 'features_name'
+            Dict[str, np.ndarray]: feature name (e.g. 'fps' or feature_type) to the feature tensor
         '''
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
@@ -95,11 +83,9 @@ class ExtractR21D(BaseExtractor):
 
         for stack_idx, (start_idx, end_idx) in enumerate(slices):
             # inference
-            with torch.no_grad():
-                output = name2module['model'](rgb[:, :, start_idx:end_idx, :, :].to(device))
-                vid_feats.extend(output.tolist())
-
-                self.maybe_show_pred(output, name2module, start_idx, end_idx)
+            output = self.name2module['model'](rgb[:, :, start_idx:end_idx, :, :].to(self.device))
+            vid_feats.extend(output.tolist())
+            self.maybe_show_pred(output, start_idx, end_idx)
 
         feats_dict = {
             self.feature_type: np.array(vid_feats),
@@ -107,11 +93,8 @@ class ExtractR21D(BaseExtractor):
 
         return feats_dict
 
-    def load_model(self, device: torch.device) -> Dict[str, torch.nn.Module]:
+    def load_model(self) -> Dict[str, torch.nn.Module]:
         '''Defines the models, loads checkpoints, sends them to the device.
-
-        Args:
-            device (torch.device): The device
 
         Raises:
             NotImplementedError: if a model is not implemented.
@@ -128,18 +111,19 @@ class ExtractR21D(BaseExtractor):
                 num_classes=self.model_def['num_classes'],
                 pretrained=True,
             )
-        model = model.to(device)
+        model = model.to(self.device)
         model.eval()
         # save the pre-trained classifier for show_preds and replace it in the net with identity
         class_head = model.fc
         model.fc = torch.nn.Identity()
+
         return {
             'model': model,
             'class_head': class_head,
         }
 
-    def maybe_show_pred(self, visual_feats: torch.Tensor, name2module, start_idx: int, end_idx: int):
+    def maybe_show_pred(self, visual_feats: torch.Tensor, start_idx: int, end_idx: int):
         if self.show_pred:
-            logits = name2module['class_head'](visual_feats)
+            logits = self.name2module['class_head'](visual_feats)
             print(f'At frames ({start_idx}, {end_idx})')
             show_predictions_on_dataset(logits, self.model_def['dataset'])

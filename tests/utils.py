@@ -20,6 +20,8 @@ def md5sum(path: str):
 def make_ref_path(feature_type, file_key, **patch_kwargs):
     filename = ''
     for k, v in patch_kwargs.items():
+        if k == 'device':
+            continue
         if k == 'video_paths':
             v = Path(v).stem
         if k == 'model_name':
@@ -48,13 +50,12 @@ def get_config(feature_type, **patch_kwargs):
     sanity_check(config)
     return config
 
-def get_import_api_feats(extractor, device, video_paths):
-    name2module = extractor.load_model(device)
-    feat_out_import = extractor.extract(device, name2module, video_paths)
+def get_import_api_feats(extractor, video_paths):
+    feat_out_import = extractor.extract(video_paths)
     return feat_out_import
 
 
-def get_cmd_api_feats(feature_type: str, file_keys: List[str], device: str, **patch_kwargs):
+def get_cmd_api_feats(feature_type: str, file_keys: List[str], **patch_kwargs):
     with tempfile.TemporaryDirectory(suffix='_todel_video_features') as output_root:
         # to reduce the number of code lines, these two dicts are created
         action2loadfn = {'save_numpy': load_numpy, 'save_pickle': load_pickle}
@@ -66,7 +67,6 @@ def get_cmd_api_feats(feature_type: str, file_keys: List[str], device: str, **pa
             # make a cmd (the quotation of numeric arguments might lead to unwanted fails :/)
             cmd = f'{sys.executable} main.py'
             cmd += f' feature_type={feature_type}'
-            cmd += ' device_ids=0' if device == 'cuda' else ' cpu="true"'
             for k, v in patch_kwargs.items():
                 # skips if None, and 0, empty list or dict() but if False does not skip
                 cmd += f' {k}={v}' if (isinstance(v, bool) or v) else ''
@@ -95,14 +95,14 @@ def all_close(a, b, tol=1e-6) -> bool:
     '''Determines if tensors/values `a` and `b` are close to each other given a tolerance'''
     return abs(a - b).sum() < tol
 
-def base_test_script(feature_type: str, Extractor, device: str, to_make_ref: bool, **patch_kwargs):
+def base_test_script(feature_type: str, Extractor, to_make_ref: bool, **patch_kwargs):
     args = get_config(feature_type, **patch_kwargs)
     # get the model
     extractor = Extractor(args)
     output_feat_keys = extractor.output_feat_keys
     # calculate features: CLI API and import API
-    feat_out_cmd = get_cmd_api_feats(feature_type, output_feat_keys, device, **patch_kwargs)
-    feat_out_import = get_import_api_feats(extractor, device, patch_kwargs['video_paths'])
+    feat_out_cmd = get_cmd_api_feats(feature_type, output_feat_keys, **patch_kwargs)
+    feat_out_import = get_import_api_feats(extractor, patch_kwargs['video_paths'])
     # tests
     for k in output_feat_keys:
         # TODO: reuse something like all_close function instead

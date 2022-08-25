@@ -34,10 +34,11 @@ Activate the environment
 conda activate pwc
 ```
 
-and extract optical flow from `./sample/v_GGSY1Qvo990.mp4` using one GPU and show the flow for each frame
+and extract optical flow from `./sample/v_GGSY1Qvo990.mp4` and show the flow for each frame
 ```bash
 python main.py \
     feature_type=pwc \
+    device="cuda:0" \
     show_pred=true \
     video_paths="[./sample/v_GGSY1Qvo990.mp4]"
 ```
@@ -47,7 +48,8 @@ To use `show_pred=true`, a screen must be attached to the machine or X11 forward
 ---
 
 ## Examples
-Please see the examples for [`RAFT`](raft.md) optical flow frame extraction. Make sure to replace `--feature_type` argument to `pwc`.
+Please see the examples for [`RAFT`](raft.md) optical flow frame extraction.
+Make sure to replace `--feature_type` argument to `pwc`.
 
 ---
 
