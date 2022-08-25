@@ -74,7 +74,13 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     Args:
         args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
     '''
-
+    if 'device_ids' in args:
+        print('WARNING:')
+        print('Running feature extraction on multiple devices in a _single_ process is no longer supported.')
+        print('To use several GPUs, you simply need to start the extraction with another GPU ordinal.')
+        print('For instance, in one terminal: `device="cuda:0"` and `device="cuda:1"` in the second, etc.')
+        print(f'Your device specification (device_ids={args.device_ids}) is converted to `device="cuda:0"`.')
+        args.device = 'cuda:0'
     if 'cuda' in args.device and not torch.cuda.is_available():
         print(f'A GPU was attempted to use but the system does not have one. Going to use CPU...')
         args.device = 'cpu'

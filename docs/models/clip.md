@@ -51,8 +51,10 @@ conda activate torch_zoo
 ```
 
 It is pretty much the same procedure as with other features.
-Here we take `ViT/B-32` as an example, but we also support `ViT-B/16`, `RN50x16`, `RN50x4`, `RN101`, `RN50` and others in [OpenAI CLIP implementation](https://github.com/openai/CLIP).
-In addition, if you want to use your weights, you need to copy your weights to `models/clip/checkpoints`, rename it `CLIP-custom.pth` and specify `model_name=custom`.
+Here we take `ViT/B-32` as an example, but we also support `ViT-B/16`, `RN50x16`, `RN50x4`, `RN101`, `RN50`
+and others in [OpenAI CLIP implementation](https://github.com/openai/CLIP).
+In addition, if you want to use your weights, you need to copy your weights to
+`models/clip/checkpoints`, rename it `CLIP-custom.pth` and specify `model_name=custom`.
 ```bash
 python main.py \
     feature_type="clip" \
@@ -60,7 +62,9 @@ python main.py \
     device="cuda:0" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
-If you would like to save the features, use `--on_extraction save_numpy` (or `save_pickle`) – by default, the features are saved in `./output/` or where `--output_path` specifies. In the case of frame-wise features, besides features, it also saves timestamps in ms and the original fps of the video into the same folder with features.
+If you would like to save the features, use `--on_extraction save_numpy` (or `save_pickle`) – by default, the features are saved in `./output/` or where `--output_path` specifies.
+In the case of frame-wise features, besides features, it also saves timestamps in ms
+and the original fps of the video into the same folder with features.
 ```bash
 python main.py \
     feature_type="clip" \

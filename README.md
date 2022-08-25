@@ -69,16 +69,16 @@ documentation page.
 ## Multi-GPU and Multi-Node Setups
 
 With `video_features`, it is easy to parallelize feature extraction among many GPUs.
-To extract features in parallel on many GPUs, it is enough to start the script in another terminal
+It is enough to start the script in another terminal with another GPU (or even the same one)
 pointing to the same output folder and input video paths.
 The script will check if the features already exist and skip them.
-It also tries to load the feature file to check if it is corrupted (i.e. not openable).
+It will also try to load the feature file to check if it is corrupted (i.e. not openable).
 This approach allows you to continue feature extraction if the previous script failed for some reason.
 
-Similarly, we may start many single-GPU jobs on a GPU cluster with shared disk space and scale
-extraction with as many GPUs as you have.
+If you have an access to a GPU cluster with shared disk space you may scale
+extraction with as many GPUs as you can by creating several single-GPU jobs with the same command.
 
-Since each time the script is run the list of input files is shuffled you don't need to worry that
+Since each time the script is run the list of input files is shuffled, you don't need to worry that
 workers will be processing the same video.
 On a rare occasion when the collision happens, the script will rewrite previously extracted features.
 

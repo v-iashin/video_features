@@ -63,7 +63,8 @@ documentation page.
 ## Multi-GPU and Multi-Node Setups
 
 With `video_features`, it is easy to parallelize feature extraction among many GPUs.
-It is enough to start the script in another terminal pointing to the same output folder and input video paths.
+It is enough to start the script in another terminal with another GPU (or even the same one)
+pointing to the same output folder and input video paths.
 The script will check if the features already exist and skip them.
 It will also try to load the feature file to check if it is corrupted (i.e. not openable).
 This approach allows you to continue feature extraction if the previous script failed for some reason.

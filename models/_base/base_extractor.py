@@ -122,7 +122,7 @@ class BaseExtractor(object):
                     return False
 
         if how_many_files_exist == how_many_files_should_exist:
-            print(f'Features for {video_path} already exist in {str(Path(fpath).absolute().parent)}/. Skipping..')
+            print(f'Features for {video_path} already exist in {str(Path(fpath).absolute().parent)}/ - skipping..')
             return True
         else:
             return False
