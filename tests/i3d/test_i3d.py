@@ -22,23 +22,24 @@ TO_MAKE_REF = False
 signature = 'device, video_paths, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref'
 if '/pwc/' in sys.executable:
     test_params = [
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', None, None, None, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', 24, 24, 25, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'pwc', None, None, None, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', 'flow', 'pwc', None, None, None, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', None, None, None, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', 24, 24, 25, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'pwc', None, None, None, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'pwc', None, None, None, TO_MAKE_REF),
     ]
 else:
     test_params = [
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'raft', None, None, None, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 24, 25, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'raft', None, None, None, TO_MAKE_REF),
-        ('cuda', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', None, None, None, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 24, 25, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'raft', None, None, None, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
     ]
 
 @pytest.mark.parametrize(signature, test_params)
 def test(device, video_paths, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref):
     # get config
     patch_kwargs = dict(
+        device=device,
         video_paths=video_paths,
         streams=streams,
         flow_type=flow_type,
@@ -46,4 +47,4 @@ def test(device, video_paths, streams, flow_type, stack_size, step_size, extract
         step_size=step_size,
         extraction_fps=extraction_fps
     )
-    base_test_script(FEATURE_TYPE, Extractor, device, to_make_ref, **patch_kwargs)
+    base_test_script(FEATURE_TYPE, Extractor, to_make_ref, **patch_kwargs)

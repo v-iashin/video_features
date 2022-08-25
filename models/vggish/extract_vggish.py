@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Dict, Union
+from typing import Dict
 
 import numpy as np
 import torch
@@ -15,37 +15,27 @@ class ExtractVGGish(BaseExtractor):
         # init the BaseExtractor
         super().__init__(
             feature_type=args.feature_type,
-            video_paths=args.video_paths,
-            file_with_video_paths=args.file_with_video_paths,
             on_extraction=args.on_extraction,
             tmp_path=args.tmp_path,
             output_path=args.output_path,
             keep_tmp_files=args.keep_tmp_files,
+            device=args.device,
         )
         # (Re-)Define arguments for this class
         if args.show_pred:
             raise NotImplementedError
         self.output_feat_keys = [self.feature_type]
+        self.name2module = self.load_model()
 
     @torch.no_grad()
-    def extract(
-        self,
-        device: torch.device,
-        name2module: Dict[str, torch.nn.Module],
-        video_path: Union[str, None] = None
-    ) -> Dict[str, np.ndarray]:
-        '''The extraction call. Made to clean the forward call a bit.
+    def extract(self, video_path: str) -> Dict[str, np.ndarray]:
+        '''Extracts features for a given video path.
 
         Arguments:
-            device {torch.device}
-            name2module {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
-
-        Keyword Arguments:
-            video_path {Union[str, None]} -- if you would like to use import it and use it as
-                                             "path -> model"-fashion (default: {None})
+            video_path (str): a video path from which to extract features
 
         Returns:
-            Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
+            Dict[str, np.ndarray]: feature name (e.g. 'fps' or feature_type) to the feature tensor
         '''
         file_ext = pathlib.Path(video_path).suffix
 
@@ -59,7 +49,7 @@ class ExtractVGGish(BaseExtractor):
             raise NotImplementedError
 
         with torch.no_grad():
-            vggish_stack = name2module['model'](audio_wav_path, device).cpu().numpy()
+            vggish_stack = self.name2module['model'](audio_wav_path, self.device).cpu().numpy()
 
         # removes the folder with audio files created during the process
         if not self.keep_tmp_files:
@@ -71,16 +61,14 @@ class ExtractVGGish(BaseExtractor):
 
         return feats_dict
 
-    def load_model(self, device: torch.device) -> torch.nn.Module:
+    def load_model(self) -> torch.nn.Module:
         '''Defines the models, loads checkpoints, sends them to the device.
 
-        Args:
-            device (torch.device)
 
         Returns:
             {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
         '''
         model = VGGish()
-        model = model.to(device)
+        model = model.to(self.device)
         model.eval()
         return {'model': model}

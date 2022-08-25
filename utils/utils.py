@@ -1,6 +1,7 @@
 import argparse
 import os
 import pickle
+import random
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Union
@@ -55,38 +56,6 @@ def make_path(output_root, video_path, output_key, ext):
     # construct the paths to save the features
     return os.path.join(output_root, fname)
 
-def action_on_extraction(feats_dict: Dict[str, np.ndarray], video_path, output_path, on_extraction: str):
-    '''What is going to be done with the extracted features.
-
-    Args:
-        feats_dict (Dict[str, np.ndarray]): A dict with features and possibly some meta. Key will be used as
-                                            suffixes to the saved files if `save_numpy` or `save_pickle` is
-                                            used.
-        video_path (str): A path to the video.
-        on_extraction (str): What to do with the features on extraction.
-        output_path (str): Where to save the features if `save_numpy` or `save_pickle` is used.
-    '''
-    # since the features are enclosed in a dict with another meta information we will iterate on kv
-    action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl'}
-    action2savefn = {'save_numpy': write_numpy, 'save_pickle': write_pickle}
-
-    for key, value in feats_dict.items():
-        if on_extraction == 'print':
-            print(key)
-            print(value)
-            print(f'max: {value.max():.8f}; mean: {value.mean():.8f}; min: {value.min():.8f}')
-            print()
-        elif on_extraction in ['save_numpy', 'save_pickle']:
-            # make dir if doesn't exist
-            os.makedirs(output_path, exist_ok=True)
-            fpath = make_path(output_path, video_path, key, action2ext[on_extraction])
-            if key != 'fps' and len(value) == 0:
-                print(f'Warning: the value is empty for {key} @ {fpath}')
-            # save the info behind the each key
-            action2savefn[on_extraction](fpath, value)
-        else:
-            raise NotImplementedError(f'on_extraction: {on_extraction} is not implemented')
-
 def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
     '''print(form_slices(100, 15, 15) - example'''
     slices = []
@@ -105,14 +74,21 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     Args:
         args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
     '''
+    if 'device_ids' in args:
+        print('WARNING:')
+        print('Running feature extraction on multiple devices in a _single_ process is no longer supported.')
+        print('To use several GPUs, you simply need to start the extraction with another GPU ordinal.')
+        print('For instance, in one terminal: `device="cuda:0"` and `device="cuda:1"` in the second, etc.')
+        print(f'Your device specification (device_ids={args.device_ids}) is converted to `device="cuda:0"`.')
+        args.device = 'cuda:0'
+    if 'cuda' in args.device and not torch.cuda.is_available():
+        print(f'A GPU was attempted to use but the system does not have one. Going to use CPU...')
+        args.device = 'cpu'
     assert args.file_with_video_paths or args.video_paths, '`video_paths` or `file_with_video_paths` must be specified'
     filenames = [Path(p).stem for p in form_list_from_user_input(args.video_paths, args.file_with_video_paths)]
     assert len(filenames) == len(set(filenames)), 'Non-unique filenames. See video_features/issues/54'
     assert os.path.relpath(args.output_path) != os.path.relpath(args.tmp_path), 'The same path for out & tmp'
     if args.show_pred:
-        if not args.cpu:
-            print('You want to see predictions. So, I will use only the first GPU from the list you specified.')
-            args.device_ids = [args.device_ids[0]]
         if args.feature_type == 'vggish':
             print('Showing class predictions is not implemented for VGGish')
     # if args.feature_type == 'r21d':
@@ -126,9 +102,7 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
     if args.feature_type == 'pwc' or (args.feature_type == 'i3d' and args.flow_type == 'pwc'):
-        assert not args.cpu, 'PWC does NOT support using CPU'
-    if isinstance(args.device_ids, int):
-        args.device_ids = [args.device_ids]
+        assert args.device != 'cpu', 'PWC does NOT support using CPU'
     if 'batch_size' in args:
         assert args.batch_size is not None, f'Please specify `batch_size`. It is {args.batch_size} now'
 
@@ -150,7 +124,8 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
 
 def form_list_from_user_input(
         video_paths: Union[str, ListConfig, None] = None,
-        file_with_video_paths: str = None
+        file_with_video_paths: str = None,
+        to_shuffle: bool = True,
     ) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
        transforms the user input into a list of paths.
@@ -159,6 +134,8 @@ def form_list_from_user_input(
         video_paths (Union[str, ListConfig, None], optional): a list of video paths. Defaults to None.
         file_with_video_paths (str, optional): a path to a file with video files for extraction.
                                                Defaults to None.
+        to_shuffle (bool, optional): if the list of paths should be shuffled. If True is should prevent
+                                     potential worker collisions (two workers process the same video)
 
     Returns:
         list: list with paths
@@ -180,6 +157,9 @@ def form_list_from_user_input(
     for path in path_list:
         if not Path(path).exists():
             print(f'The path does not exist: {path}')
+
+    if to_shuffle:
+        random.shuffle(path_list)
 
     return path_list
 
@@ -291,42 +271,3 @@ def load_pickle(fpath):
 
 def write_pickle(fpath, value):
     return pickle.dump(value, open(fpath, 'wb'))
-
-def is_already_exist(
-        output_path: Union[str, Path],
-        video_path: Union[str, Path],
-        output_feat_keys: List[str],
-        on_extraction: str,
-    ) -> bool:
-    '''Checks if the all feature files already exist, and also checks if IO does not produce any errors.
-
-    Args:
-        output_path (Union[str, Path]): root folder to output features to
-        video_path (Union[str, Path]): the path to a video to extract features from
-        output_feat_keys (List[str]): the feature file keys (e.g. 'feature_type', 'fps', and 'timestamp_ms')
-        on_extraction (str): action on extraction such as 'save_numpy' or 'print'
-    '''
-    # if a user does not want to save any features, we need to extract them. 'False' will continue extraction.
-    if on_extraction == 'print':
-        return False
-
-    action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl'}
-    action2loadfn = {'save_numpy': load_numpy, 'save_pickle': load_pickle}
-
-    if on_extraction in ['save_numpy', 'save_pickle']:
-        how_many_files_should_exist = len(output_feat_keys)
-        how_many_files_exist = 0  # it is a counter
-
-        for key in output_feat_keys:
-            fpath = make_path(output_path, video_path, key, action2ext[on_extraction])
-            if Path(fpath).exists():
-                action2loadfn[on_extraction](fpath)
-                how_many_files_exist += 1
-            else:
-                return False
-
-    if how_many_files_exist == how_many_files_should_exist:
-        print(f'Features for {video_path} already exist in {str(Path(fpath).absolute().parent)}/. Skipping..')
-        return True
-    else:
-        return False

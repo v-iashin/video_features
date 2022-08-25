@@ -53,7 +53,7 @@ Finally, try to extract video features:
 # ubuntu@56b1bf77a20c:~/video_features $
 python main.py \
     feature_type=r21d \
-    device_ids="[0]" \
+    device="cuda:0" \
     video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
 ```
 
@@ -95,7 +95,7 @@ For instance:
 # ubuntu@56b1bf77a20c:~/video_features $
 python main.py \
     feature_type=r21d \
-    device_ids="[0]" \
+    device="cuda:0" \
     video_paths="[./dataset/vid_1.mp4, ./dataset/vid_2.mp4]" \
     on_extraction="save_numpy"
 # you should have features in `./output`
