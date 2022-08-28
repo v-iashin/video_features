@@ -8,7 +8,7 @@ The S3D action recognition model was originally introduced in
 [Rethinking Spatiotemporal Feature Learning: Speed-Accuracy Trade-offs in Video Classification](https://arxiv.org/abs/1712.04851).
 We support the PyTorch weights for [Kinetics 400](https://deepmind.com/research/open-source/kinetics) provided by
 [github.com/kylemin/S3D](https://github.com/kylemin/S3D/commit/098fd72a00186574a316af6af97957c6d7be80a0).
-According to the model card, with this weights, the model achieves 72.08% top-1 accuracy (top5: 90.35%)
+According to the model card, with these weights, the model should achieve 72.08% top-1 accuracy (top5: 90.35%)
 on the Kinetics 400 validation set.
 
 How the model was pre-trained?
@@ -18,7 +18,7 @@ Therefore, to extract features (`Tv x 1024`), we resize the input video such tha
 and take the center crop to make it `224 x 224`.
 By default, the feature extractor will split the input video into 64-stack frames (2.56 sec) with no overlap
 as it is during the pre-training and will do a forward pass on each of them.
-This should be similar to I3D behaviour.
+This should be similar to I3D behavior.
 For instance, given an ~18-second 25 fps video, the features will be of size `7 x 1024`.
 Specify, `step_size`, `extraction_fps`, and `stack_size` to change the default behavior.
 
