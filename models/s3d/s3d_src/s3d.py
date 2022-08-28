@@ -47,58 +47,6 @@ class S3D(nn.Module):
 
         return y
 
-class Permute(nn.Module):
-    '''The same as tensor.permute() but as a module to use in nn.Squential'''
-
-    def __init__(self, new_dim_order: tuple):
-        super().__init__()
-        self.new_dim_order = new_dim_order
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x.permute(self.new_dim_order)
-
-class Squeeze(nn.Module):
-    '''tensor.squeeze() as a nn.Module to use in nn.Squential'''
-    def __init__(self, dims: tuple):
-        super().__init__()
-        # to squeeze 3 and 4 dims in (B, T, D, 1, 1) use (3, 4) rathan than (3, 3)
-        # we make sure to reverse-sort them because squeeze will be applied in a loop:
-        # imagine dims=(3, 4): x.squeeze(3).squeeze(4) -- 4th is already missing after squeezing the 3rd
-        self.dims = sorted(dims, reverse=True)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        for dim in self.dims:
-            x = x.squeeze(dim)
-        return x
-
-class Unsqueeze(nn.Module):
-    '''tensor.unsqueeze() as a nn.Module to use in nn.Squential'''
-    def __init__(self, dims: tuple):
-        super().__init__()
-        # to unsqueeze 3 and 4 dims for (B, T, D) use (3, 4)
-        # we make sure _not_ to reverse-sort them because squeeze will be applied in a loop:
-        # imagine dims=(4, 3): x.unsqueeze(4).unsqueeze(3) -- will fail
-        self.dims = sorted(dims, reverse=False)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        for dim in self.dims:
-            x = x.unsqueeze(dim)
-        return x
-
-class Unqueeze(nn.Module):
-    '''tensor.squeeze() as a nn.Module to use in nn.Squential'''
-    def __init__(self, dims: tuple):
-        super().__init__()
-        # to squeeze 3 and 4 dims in (B, T, D, 1, 1) use (3, 4) rathan than (3, 3)
-        # we make sure not to reverse-sort them because squeeze will be applied in a loop
-        self.dims = sorted(dims, reverse=False)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        for dim in self.dims:
-            x = x.unsqueeze(dim)
-        return x
-
-
 
 class BasicConv3d(nn.Module):
     def __init__(self, in_planes, out_planes, kernel_size, stride, padding=0):

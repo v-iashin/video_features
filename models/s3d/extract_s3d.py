@@ -4,9 +4,8 @@ import numpy as np
 import torch
 import torchvision
 from models._base.base_extractor import BaseExtractor
-from models.s3d.s3d_src.s3d import S3D, Permute, Squeeze, Unsqueeze
-from models.transforms import (CenterCrop, Normalize, Resize,
-                               ToFloatTensorInZeroOne)
+from models.s3d.s3d_src.s3d import S3D
+from models.transforms import CenterCrop, Resize, ToFloatTensorInZeroOne
 from torchvision.io.video import read_video
 from utils.utils import (form_slices, reencode_video_with_diff_fps,
                          show_predictions_on_dataset)
@@ -25,9 +24,9 @@ class ExtractS3D(BaseExtractor):
             device=args.device,
         )
         # (Re-)Define arguments for this class
-        self.extraction_fps = args.extraction_fps
-        self.step_size = args.step_size
-        self.stack_size = args.stack_size
+        self.stack_size = 64 if args.stack_size is None else args.stack_size
+        self.step_size = 64 if args.step_size is None else args.step_size
+        self.extraction_fps = 25 if args.extraction_fps is None else args.extraction_fps
         # normalization is not used as per: https://github.com/kylemin/S3D/issues/4
         self.transforms = torchvision.transforms.Compose([
             ToFloatTensorInZeroOne(),
@@ -66,7 +65,6 @@ class ExtractS3D(BaseExtractor):
             # inference
             rgb_stack = rgb[:, :, start_idx:end_idx, :, :].to(self.device)
             output = self.name2module['model'](rgb_stack, features=True)
-            print(output.shape)
             vid_feats.extend(output.tolist())
             self.maybe_show_pred(rgb_stack, start_idx, end_idx)
 
