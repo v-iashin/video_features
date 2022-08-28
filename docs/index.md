@@ -10,8 +10,9 @@ i. e. visual appearance, optical flow, and audio.
 
 Action Recognition
 
-- [I3D-Net RGB + Flow (Kinetics 400)](https://v-iashin.github.io/video_features/models/i3d)
+- [S3D (Kinetics 400)](https://v-iashin.github.io/video_features/models/s3d)
 - [R(2+1)d RGB (IG-65M, Kinetics 400)](https://v-iashin.github.io/video_features/models/r21d)
+- [I3D-Net RGB + Flow (Kinetics 400)](https://v-iashin.github.io/video_features/models/i3d)
 
 Sound Recognition
 

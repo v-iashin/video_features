@@ -103,6 +103,7 @@ def base_test_script(feature_type: str, Extractor, to_make_ref: bool, **patch_kw
     # calculate features: CLI API and import API
     feat_out_cmd = get_cmd_api_feats(feature_type, output_feat_keys, **patch_kwargs)
     feat_out_import = get_import_api_feats(extractor, patch_kwargs['video_paths'])
+    print(feat_out_cmd, feat_out_import)
     # tests
     for k in output_feat_keys:
         # TODO: reuse something like all_close function instead

@@ -19,28 +19,25 @@ def main(args_cli):
 
     # import are done here to avoid import errors (we have two conda environements)
     if args.feature_type == 'i3d':
-        from models.i3d.extract_i3d import ExtractI3D
-        extractor = ExtractI3D(args)
+        from models.i3d.extract_i3d import ExtractI3D as Extractor
     elif args.feature_type == 'r21d':
-        from models.r21d.extract_r21d import ExtractR21D
-        extractor = ExtractR21D(args)
+        from models.r21d.extract_r21d import ExtractR21D as Extractor
+    elif args.feature_type == 's3d':
+        from models.s3d.extract_s3d import ExtractS3D as Extractor
     elif args.feature_type == 'vggish':
-        from models.vggish.extract_vggish import ExtractVGGish
-        extractor = ExtractVGGish(args)
+        from models.vggish.extract_vggish import ExtractVGGish as Extractor
     elif args.feature_type == 'resnet':
-        from models.resnet.extract_resnet import ExtractResNet
-        extractor = ExtractResNet(args)
+        from models.resnet.extract_resnet import ExtractResNet as Extractor
     elif args.feature_type == 'raft':
-        from models.raft.extract_raft import ExtractRAFT
-        extractor = ExtractRAFT(args)
+        from models.raft.extract_raft import ExtractRAFT as Extractor
     elif args.feature_type == 'pwc':
-        from models.pwc.extract_pwc import ExtractPWC
-        extractor = ExtractPWC(args)
+        from models.pwc.extract_pwc import ExtractPWC as Extractor
     elif args.feature_type == 'clip':
-        from models.clip.extract_clip import ExtractCLIP
-        extractor = ExtractCLIP(args)
+        from models.clip.extract_clip import ExtractCLIP as Extractor
     else:
-        raise NotADirectoryError
+        raise NotImplementedError(f'Extractor {args.feature_type} is not implemented.')
+
+    extractor = Extractor(args)
 
     # unifies whatever a user specified as paths into a list of paths
     video_paths = form_list_from_user_input(args.video_paths, args.file_with_video_paths, to_shuffle=True)

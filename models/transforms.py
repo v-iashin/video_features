@@ -91,7 +91,10 @@ class Resize(object):
             size = None
         else:
             size = self.size
-        return torch.nn.functional.interpolate(vid, size=size, scale_factor=scale, mode=interpolation, align_corners=False)
+        return torch.nn.functional.interpolate(
+            vid, size=size, scale_factor=scale, mode=interpolation, align_corners=False,
+            recompute_scale_factor=False
+        )
 
 
 class ToFloatTensorInZeroOne(object):
