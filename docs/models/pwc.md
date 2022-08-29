@@ -27,7 +27,7 @@ conda env create -f conda_env_pwc.yml
 
 ---
 
-## Minimal Working Example
+## Quick Start
 
 Activate the environment
 ```bash
