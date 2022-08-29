@@ -46,7 +46,7 @@ conda env create -f conda_env_torch_zoo.yml
 
 ---
 
-## Minimal Working Example
+## Quick Start
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1LKoytZmNxtC-EuCp7pHDM6sFvK1XdwlW?usp=sharing)
 
