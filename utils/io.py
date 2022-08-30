@@ -47,7 +47,6 @@ class VideoLoader:
                  overlap: Optional[int] = 0
                  ):
         """
-        TODO: the timestamps may be wrong
         Args:
             path: The path of the video
             batch_size: len(result) = batch_size
@@ -71,7 +70,7 @@ class VideoLoader:
             self.path = reencode_video_with_diff_fps(path, tmp_path=tmp_path, extraction_fps=fps)
             self.fps = fps
             new_cap = cv2.VideoCapture(self.path)
-            self.num_frames = new_cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            self.num_frames = int(new_cap.get(cv2.CAP_PROP_FRAME_COUNT))
             new_cap.release()
         elif total is not None:  # fix number of frames
             ori_cap = cv2.VideoCapture(path)
@@ -84,7 +83,7 @@ class VideoLoader:
         else:  # old fps
             ori_cap = cv2.VideoCapture(path)
             self.fps = ori_cap.get(cv2.CAP_PROP_FPS)
-            self.num_frames = ori_cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            self.num_frames = int(ori_cap.get(cv2.CAP_PROP_FRAME_COUNT))
             ori_cap.release()
             self.path = path
 
@@ -95,13 +94,13 @@ class VideoLoader:
         # this case
         frame_exists, _ = self.cap.read()
         if frame_exists:  # if not missing, go back to the start
-            print("not missing")
+            # print("not missing")  # For debug
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         else:
-            print('missing')
+            print('Detect missing frame')  # For debug
         return self
 
-    def __next__(self) -> List[Tuple[Union[Tensor, np.ndarray], float, int]]:
+    def __next__(self) -> Tuple[List[Union[np.ndarray, Tensor]], List[float], List[int]]:
         if not self.cap.isOpened():
             raise StopIteration
         frame_idx = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
@@ -117,23 +116,27 @@ class VideoLoader:
         # and the VideoCapture object will be released.
         # If the VideoCapture object is released, will raise StopIteration.
         # If no frame is read, raise StopIteration
-        batch = []
+        batch, times, indices = [], [], []
         while len(batch) < self.batch_size:
             frame_exists, rgb = self.cap.read()
             if frame_exists:
                 rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-                timestamps_ms = self.cap.get(cv2.CAP_PROP_POS_MSEC)
                 idx = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+                # timestamps_ms = self.cap.get(cv2.CAP_PROP_POS_MSEC)
+                timestamps_ms = idx / self.fps * 1000
+                indices.append(idx)
+                times.append(timestamps_ms)
                 if self.transform is not None:
-                    batch.append((self.transform(rgb), timestamps_ms, idx))
+                    batch.append(self.transform(rgb))
                 else:
-                    batch.append((rgb, timestamps_ms, idx))
+                    batch.append(rgb)
             else:
                 self.cap.release()
                 break
         if len(batch) == 0:
             raise StopIteration
-        return batch
+
+        return batch, times, indices
 
     def __len__(self):
         return self.num_frames

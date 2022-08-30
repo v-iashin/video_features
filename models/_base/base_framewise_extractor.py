@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from models._base.base_extractor import BaseExtractor
 from utils.utils import reencode_video_with_diff_fps
+from utils.io import VideoLoader
 
 
 class BaseFrameWiseExtractor(BaseExtractor):
@@ -52,57 +53,73 @@ class BaseFrameWiseExtractor(BaseExtractor):
         Returns:
             Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
         '''
-        # take the video, change fps and save to the tmp folder
-        if self.extraction_fps is not None:
-            video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
 
-        # read a video
-        cap = cv2.VideoCapture(video_path)
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        timestamps_ms = []
-        batch = []
+        video = VideoLoader(
+            video_path,
+            batch_size=self.batch_size,
+            fps=self.extraction_fps,
+            tmp_path=self.tmp_path,
+            transform=lambda x: self.transforms(x).unsqueeze(0)
+        )
         vid_feats = []
+        timestamps_ms = []
+        for batch, timestamp_ms, idx in video:
+            # batch = torch.stack(batch, dim=0)
+            batch_feats = self.run_on_a_batch(batch)
+            vid_feats.extend(batch_feats.tolist())
+            timestamps_ms.extend(timestamp_ms)
 
-        # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
-        # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
-        # this case
-        first_frame = True
-        while cap.isOpened():
-            frame_exists, rgb = cap.read()
-
-            if first_frame:
-                first_frame = False
-                if frame_exists is False:
-                    continue
-
-            if frame_exists:
-                timestamps_ms.append(cap.get(cv2.CAP_PROP_POS_MSEC))
-                # prepare data (first -- transform, then -- unsqueeze)
-                rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-                rgb = self.transforms(rgb)
-                rgb = rgb.unsqueeze(0)
-                batch.append(rgb)
-                # when batch is formed to inference
-                if len(batch) == self.batch_size:
-                    batch_feats = self.run_on_a_batch(batch)
-                    vid_feats.extend(batch_feats.tolist())
-                    # clean up the batch list
-                    batch = []
-            else:
-                # if the last batch was smaller than the batch size
-                if len(batch) != 0:
-                    batch_feats = self.run_on_a_batch(batch)
-                    vid_feats.extend(batch_feats.tolist())
-                cap.release()
-                break
-
-        # removes the video with different fps if it was created to preserve disk space
-        if (self.extraction_fps is not None) and (not self.keep_tmp_files):
-            os.remove(video_path)
+        # take the video, change fps and save to the tmp folder
+        # if self.extraction_fps is not None:
+        #     video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
+        #
+        # # read a video
+        # cap = cv2.VideoCapture(video_path)
+        # fps = cap.get(cv2.CAP_PROP_FPS)
+        # timestamps_ms = []
+        # batch = []
+        # vid_feats = []
+        #
+        # # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
+        # # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
+        # # this case
+        # first_frame = True
+        # while cap.isOpened():
+        #     frame_exists, rgb = cap.read()
+        #
+        #     if first_frame:
+        #         first_frame = False
+        #         if frame_exists is False:
+        #             continue
+        #
+        #     if frame_exists:
+        #         timestamps_ms.append(cap.get(cv2.CAP_PROP_POS_MSEC))
+        #         # prepare data (first -- transform, then -- unsqueeze)
+        #         rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
+        #         rgb = self.transforms(rgb)
+        #         rgb = rgb.unsqueeze(0)
+        #         batch.append(rgb)
+        #         # when batch is formed to inference
+        #         if len(batch) == self.batch_size:
+        #             batch_feats = self.run_on_a_batch(batch)
+        #             vid_feats.extend(batch_feats.tolist())
+        #             # clean up the batch list
+        #             batch = []
+        #     else:
+        #         # if the last batch was smaller than the batch size
+        #         if len(batch) != 0:
+        #             batch_feats = self.run_on_a_batch(batch)
+        #             vid_feats.extend(batch_feats.tolist())
+        #         cap.release()
+        #         break
+        #
+        # # removes the video with different fps if it was created to preserve disk space
+        # if (self.extraction_fps is not None) and (not self.keep_tmp_files):
+        #     os.remove(video_path)
 
         features_with_meta = {
             self.feature_type: np.array(vid_feats),
-            'fps': np.array(fps),
+            'fps': np.array(video.fps),
             'timestamps_ms': np.array(timestamps_ms)
         }
 
