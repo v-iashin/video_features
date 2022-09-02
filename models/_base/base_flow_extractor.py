@@ -10,7 +10,8 @@ from models._base.base_extractor import BaseExtractor
 from models.raft.raft_src.raft import RAFT, InputPadder
 from models.transforms import (PILToTensor, ResizeImproved, ToFloat,
                                ToTensorWithoutScaling)
-from utils.utils import dp_state_to_normal, reencode_video_with_diff_fps
+from utils.utils import dp_state_to_normal
+# from utils.utils import dp_state_to_normal, reencode_video_with_diff_fps
 from utils.io import VideoLoader
 
 
@@ -31,6 +32,7 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         resize_to_smaller_edge: bool,
         side_size: Union[None, int],
         extraction_fps: Union[None, int],
+        extraction_total: Union[None, int],
         show_pred: bool,
     ) -> None:
         # init the BaseExtractor
@@ -57,6 +59,7 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         else:
             self.transforms = torchvision.transforms.Compose([ToTensorWithoutScaling()])
         self.extraction_fps = extraction_fps # use `None` to skip reencoding and keep the original video fps
+        self.extraction_total = extraction_total
         self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
         self.show_pred = show_pred
         self.name2module = self.load_model()
@@ -77,6 +80,7 @@ class BaseOpticalFlowExtractor(BaseExtractor):
             batch_size=self.batch_size + 1,  # two frames generate one flow. Add one to generate batch_size flows.
             fps=self.extraction_fps,
             tmp_path=self.tmp_path,
+            keep_tmp=self.keep_tmp_files,
             transform=lambda x: self.transforms(x).unsqueeze(0),
             overlap=1
         )

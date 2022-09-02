@@ -3,6 +3,7 @@ feature_type: 'resnet'
 model_name: 'resnet50'
 batch_size: 1 # Batchsize (only frame-wise extractors are supported)
 extraction_fps: null # For original video fps, leave unspecified "null" (None)
+extraction_total: null # extract a fix number of frames. It is mutually exclusive with "fps"
 
 # Extraction Parameters
 device: 'cuda:0'  # device as in `torch`, can be 'cpu'

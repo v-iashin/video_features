@@ -105,6 +105,9 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         assert args.device != 'cpu', 'PWC does NOT support using CPU'
     if 'batch_size' in args:
         assert args.batch_size is not None, f'Please specify `batch_size`. It is {args.batch_size} now'
+    if 'extraction_fps' in args and 'extraction_total' in args:
+        assert not (args.extraction_fps is not None and args.extraction_total is not None),\
+            '`fps` and `total` is mutually exclusive'
 
     # patch_output_paths
     # preprocess paths
@@ -178,31 +181,6 @@ def which_ffmpeg() -> str:
         result = subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         ffmpeg_path = result.stdout.decode('utf-8').replace('\n', '')
     return ffmpeg_path
-
-
-def reencode_video_with_diff_fps(video_path: str, tmp_path: str, extraction_fps: float) -> str:
-    '''Reencodes the video given the path and saves it to the tmp_path folder.
-
-    Args:
-        video_path (str): original video
-        tmp_path (str): the folder where tmp files are stored (will be appended with a proper filename).
-        extraction_fps (float): target fps value
-
-    Returns:
-        str: The path where the tmp file is stored. To be used to load the video from
-    '''
-    assert which_ffmpeg() != '', 'Is ffmpeg installed? Check if the conda environment is activated.'
-    assert video_path.endswith('.mp4'), 'The file does not end with .mp4. Comment this if expected'
-    # create tmp dir if doesn't exist
-    os.makedirs(tmp_path, exist_ok=True)
-
-    # form the path to tmp directory
-    new_path = os.path.join(tmp_path, f'{Path(video_path).stem}_new_fps.mp4')
-    cmd = f'{which_ffmpeg()} -hide_banner -loglevel panic '
-    cmd += f'-y -i {video_path} -filter:v fps=fps={extraction_fps} {new_path}'
-    subprocess.call(cmd.split())
-
-    return new_path
 
 
 def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:

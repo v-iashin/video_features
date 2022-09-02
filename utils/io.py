@@ -43,6 +43,7 @@ class VideoLoader:
                  fps: Optional[int] = None,
                  total: Optional[int] = None,
                  tmp_path: Optional[Union[str, PathLike]] = 'tmp',
+                 keep_tmp: Optional[bool] = False,
                  transform: Optional[Callable] = None,
                  overlap: Optional[int] = 0
                  ):
@@ -55,6 +56,11 @@ class VideoLoader:
             tmp_path: Path of temporary file(s).
             transform: A Callable function that apply transformation on each [3, H, W] images.
             overlap: Overlap of two adjacent batches.
+        Returns:
+            Tuple of (batch, times, indices)
+            batch: a list of collected features
+            times: the corresponding timestamp of the above features in milliseconds.
+            indices: the corresponding indices of the above features. start from zero.
         """
         # sanity check & save properties
         assert type(batch_size) is int and batch_size > 0
@@ -62,32 +68,38 @@ class VideoLoader:
         self.batch_size = batch_size
         self.transform = transform
         self.overlap = overlap
+        self.keep_tmp = keep_tmp
+        self.have_generated_tmp_file = False
 
         if fps is not None and total is not None:
             raise ValueError(f"You can only choose one frame extracting method."
                              f" The parameter 'fps' and 'total' is mutually exclusive")
         elif fps is not None:  # new fps
             self.path = reencode_video_with_diff_fps(path, tmp_path=tmp_path, extraction_fps=fps)
-            self.fps = fps
-            new_cap = cv2.VideoCapture(self.path)
-            self.num_frames = int(new_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.height, self.width = int(new_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(new_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            new_cap.release()
+            self.have_generated_tmp_file = True
+            for k, v in self._get_video_prop(self.path).items():
+                self.__setattr__(k, v)
+            # self.fps = fps
+            # new_cap = cv2.VideoCapture(self.path)
+            # self.num_frames = int(new_cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            # self.height, self.width = int(new_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(new_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            # new_cap.release()
         elif total is not None:  # fix number of frames
-            ori_cap = cv2.VideoCapture(path)
-            ori_num_frames = ori_cap.get(cv2.CAP_PROP_FRAME_COUNT)
-            ori_fps = ori_cap.get(cv2.CAP_PROP_FPS)
-            self.height, self.width = int(ori_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(ori_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            ori_cap.release()
-            self.fps = total * ori_fps / ori_num_frames
-            self.path = reencode_video_with_diff_fps(path, tmp_path=tmp_path, extraction_fps=self.fps)
+            # ori_cap = cv2.VideoCapture(path)
+            # ori_num_frames = ori_cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            # ori_fps = ori_cap.get(cv2.CAP_PROP_FPS)
+            # self.height, self.width = int(ori_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(ori_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            # ori_cap.release()
+            # self.fps = total * ori_fps / ori_num_frames
+            video_prop = self._get_video_prop(path)
+            self.height, self.width = video_prop['height'], video_prop['width']
             self.num_frames = total
+            self.fps = total * video_prop['fps'] / video_prop['num_frames']
+            self.path = reencode_video_with_diff_fps(path, tmp_path=tmp_path, extraction_fps=self.fps)
+            self.have_generated_tmp_file = True
         else:  # old fps
-            ori_cap = cv2.VideoCapture(path)
-            self.fps = ori_cap.get(cv2.CAP_PROP_FPS)
-            self.num_frames = int(ori_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.height, self.width = int(ori_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(ori_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            ori_cap.release()
+            for k, v in self._get_video_prop(path).items():
+                self.__setattr__(k, v)
             self.path = path
 
     def __iter__(self):
@@ -145,4 +157,19 @@ class VideoLoader:
         return self.num_frames
 
     def __del__(self):
-        self.cap.release()
+        # use `hasattr` in case the attribution has not been defined
+        if hasattr(self, 'cap'):
+            self.cap.release()
+        if hasattr(self, 'have_generated_tmp_file') and hasattr(self, 'keep_tmp'):
+            if self.have_generated_tmp_file and not self.keep_tmp:
+                os.remove(self.path)
+
+    @staticmethod
+    def _get_video_prop(path):
+        cap = cv2.VideoCapture(path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        cap.release()
+        return dict(fps=fps, num_frames=num_frames, height=height, width=width)

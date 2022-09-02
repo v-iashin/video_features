@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import torch
 from models._base.base_extractor import BaseExtractor
-from utils.utils import reencode_video_with_diff_fps
+# from utils.utils import reencode_video_with_diff_fps
 from utils.io import VideoLoader
 
 
@@ -25,6 +25,7 @@ class BaseFrameWiseExtractor(BaseExtractor):
         model_name: str,
         batch_size: int,
         extraction_fps: Union[None, int],
+        extraction_total: Union[None, int],
         show_pred: bool,
     ) -> None:
         # init the BaseExtractor
@@ -40,6 +41,7 @@ class BaseFrameWiseExtractor(BaseExtractor):
         self.model_name = model_name
         self.batch_size = batch_size
         self.extraction_fps = extraction_fps # use `None` to skip reencoding and keep the original video fps
+        self.extraction_total = extraction_total
         self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
         self.show_pred = show_pred
 
@@ -58,7 +60,9 @@ class BaseFrameWiseExtractor(BaseExtractor):
             video_path,
             batch_size=self.batch_size,
             fps=self.extraction_fps,
+            total=self.extraction_total,
             tmp_path=self.tmp_path,
+            keep_tmp=self.keep_tmp_files,
             transform=lambda x: self.transforms(x).unsqueeze(0)
         )
         vid_feats = []
