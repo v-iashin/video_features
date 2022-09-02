@@ -71,11 +71,13 @@ class VideoLoader:
             self.fps = fps
             new_cap = cv2.VideoCapture(self.path)
             self.num_frames = int(new_cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.height, self.width = int(new_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(new_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             new_cap.release()
         elif total is not None:  # fix number of frames
             ori_cap = cv2.VideoCapture(path)
             ori_num_frames = ori_cap.get(cv2.CAP_PROP_FRAME_COUNT)
             ori_fps = ori_cap.get(cv2.CAP_PROP_FPS)
+            self.height, self.width = int(ori_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(ori_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             ori_cap.release()
             self.fps = total * ori_fps / ori_num_frames
             self.path = reencode_video_with_diff_fps(path, tmp_path=tmp_path, extraction_fps=self.fps)
@@ -84,6 +86,7 @@ class VideoLoader:
             ori_cap = cv2.VideoCapture(path)
             self.fps = ori_cap.get(cv2.CAP_PROP_FPS)
             self.num_frames = int(ori_cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.height, self.width = int(ori_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(ori_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             ori_cap.release()
             self.path = path
 
@@ -121,7 +124,7 @@ class VideoLoader:
             frame_exists, rgb = self.cap.read()
             if frame_exists:
                 rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-                idx = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+                idx = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) - 1  # start from 0
                 # timestamps_ms = self.cap.get(cv2.CAP_PROP_POS_MSEC)
                 timestamps_ms = idx / self.fps * 1000
                 indices.append(idx)
