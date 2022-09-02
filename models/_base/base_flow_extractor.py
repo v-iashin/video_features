@@ -74,7 +74,7 @@ class BaseOpticalFlowExtractor(BaseExtractor):
 
         video = VideoLoader(
             video_path,
-            batch_size=self.batch_size,
+            batch_size=self.batch_size + 1,  # two frames generate one flow. Add one to generate batch_size flows.
             fps=self.extraction_fps,
             tmp_path=self.tmp_path,
             transform=lambda x: self.transforms(x).unsqueeze(0),
