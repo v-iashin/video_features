@@ -11,7 +11,6 @@ from models.raft.raft_src.raft import RAFT, InputPadder
 from models.transforms import (PILToTensor, ResizeImproved, ToFloat,
                                ToTensorWithoutScaling)
 from utils.utils import dp_state_to_normal
-# from utils.utils import dp_state_to_normal, reencode_video_with_diff_fps
 from utils.io import VideoLoader
 
 
@@ -19,22 +18,22 @@ class BaseOpticalFlowExtractor(BaseExtractor):
     '''Common things for all frame-wise extractors (such as RAFT and PWC).'''
 
     def __init__(self,
-        # BaseExtractor arguments
-        feature_type: str,
-        on_extraction: str,
-        tmp_path: str,
-        output_path: str,
-        keep_tmp_files: bool,
-        device: str,
-        # This class
-        ckpt_path: str,
-        batch_size: int,
-        resize_to_smaller_edge: bool,
-        side_size: Union[None, int],
-        extraction_fps: Union[None, int],
-        extraction_total: Union[None, int],
-        show_pred: bool,
-    ) -> None:
+                 # BaseExtractor arguments
+                 feature_type: str,
+                 on_extraction: str,
+                 tmp_path: str,
+                 output_path: str,
+                 keep_tmp_files: bool,
+                 device: str,
+                 # This class
+                 ckpt_path: str,
+                 batch_size: int,
+                 resize_to_smaller_edge: bool,
+                 side_size: Union[None, int],
+                 extraction_fps: Union[None, int],
+                 extraction_total: Union[None, int],
+                 show_pred: bool,
+                 ) -> None:
         # init the BaseExtractor
         super().__init__(
             feature_type=feature_type,
@@ -58,7 +57,7 @@ class BaseOpticalFlowExtractor(BaseExtractor):
             ])
         else:
             self.transforms = torchvision.transforms.Compose([ToTensorWithoutScaling()])
-        self.extraction_fps = extraction_fps # use `None` to skip reencoding and keep the original video fps
+        self.extraction_fps = extraction_fps  # use `None` to skip reencoding and keep the original video fps
         self.extraction_total = extraction_total
         self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
         self.show_pred = show_pred
@@ -95,60 +94,6 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         for i, ts in enumerate(timestamps_ms_list):
             timestamps_ms.extend(ts if i == 0 else ts[1:])
 
-        # # take the video, change fps and save to the tmp folder
-        # if self.extraction_fps is not None:
-        #     video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
-        #
-        # cap = cv2.VideoCapture(video_path)
-        # fps = cap.get(cv2.CAP_PROP_FPS)
-        # timestamps_ms = []
-        # batch = []
-        # vid_feats = []
-        #
-        # # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
-        # # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
-        # # this case
-        # first_frame = True
-        # # we use None to check if we are just started to extract frames
-        # padder = None
-        # while cap.isOpened():
-        #     frame_exists, rgb = cap.read()
-        #
-        #     if first_frame:
-        #         first_frame = False
-        #         if frame_exists is False:
-        #             continue
-        #
-        #     if frame_exists:
-        #         timestamps_ms.append(cap.get(cv2.CAP_PROP_POS_MSEC))
-        #         # preprocess the image
-        #         rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-        #         rgb = self.transforms(rgb)
-        #         rgb = rgb.unsqueeze(0)
-        #
-        #         if padder is None and self.feature_type == 'raft':
-        #             # I need the rgb shape to init it :/
-        #             padder = InputPadder(rgb.shape)
-        #
-        #         batch.append(rgb)
-        #
-        #         # - 1 is used because we need B+1 frames to calculate B frames
-        #         if len(batch) - 1 == self.batch_size:
-        #             batch_feats = self.run_on_a_batch(batch, padder)
-        #             vid_feats.extend(batch_feats.tolist())
-        #             # leaving the last element to calculate flow between it and the first element
-        #             batch = [batch[-1]]
-        #     else:
-        #         if len(batch) > 1:
-        #             batch_feats = self.run_on_a_batch(batch, padder)
-        #             vid_feats.extend(batch_feats.tolist())
-        #         cap.release()
-        #         break
-        #
-        # # removes the video with different fps to preserve disk space
-        # if (self.extraction_fps is not None) and (not self.keep_tmp_files):
-        #     os.remove(video_path)
-
         features_with_meta = {
             self.feature_type: np.array(vid_feats),
             'fps': np.array(video.fps),
@@ -169,7 +114,6 @@ class BaseOpticalFlowExtractor(BaseExtractor):
             batch_feats = padder.unpad(batch_feats)
         self.maybe_show_pred(batch_feats, batch)
         return batch_feats
-
 
     def load_model(self) -> torch.nn.Module:
         '''Defines the models, loads checkpoints, sends them to the device.

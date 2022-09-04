@@ -47,21 +47,22 @@ class VideoLoader:
                  transform: Optional[Callable] = None,
                  overlap: Optional[int] = 0
                  ):
-        """
+        '''
         Args:
             path: The path of the video
             batch_size: len(result) = batch_size
             fps: Extract frames by fps. The parameter 'fps' and 'total' is mutually exclusive
             total: Extract frames by a fix number. The parameter 'fps' and 'total' is mutually exclusive
             tmp_path: Path of temporary file(s).
-            transform: A Callable function that apply transformation on each [3, H, W] images.
+            keep_tmp: whether keep the temporary file.
+            transform: A Callable object that applies transformation on each [3, H, W] images.
             overlap: Overlap of two adjacent batches.
         Returns:
             Tuple of (batch, times, indices)
             batch: a list of collected features
             times: the corresponding timestamp of the above features in milliseconds.
             indices: the corresponding indices of the above features. start from zero.
-        """
+        '''
         # sanity check & save properties
         assert type(batch_size) is int and batch_size > 0
         assert type(overlap) is int and 0 <= overlap < batch_size
@@ -94,31 +95,27 @@ class VideoLoader:
     def __iter__(self):
         self.cap = cv2.VideoCapture(self.path)
         self.current_idx = 0  # maintain the index of current frame instead of getting property in CV2 to avoid bugs
-        self._last_batch, self._last_times, self._last_indices = [], [], []
+        self._last_batch, self._last_times, self._last_indices = [], [], []  # cache the overlap
         # BUG of cv2:
         # Sometimes frame#0 is missing, which needs to skip.
         frame_exists, _ = self.cap.read()
         if frame_exists:  # if not missing, go back to the start
             self.cap.release()
             self.cap = cv2.VideoCapture(self.path)
-            # self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         else:
             print('Detect missing frame')  # For debug
         return self
 
     def __next__(self) -> Tuple[List[Union[np.ndarray, Tensor]], List[float], List[int]]:
+        """
+        Normally, a call will read `batch_size-overlap` frames from the video and `overlap` frames from the cache.
+        As exceptions, the first batch reads `batch_size` frames and the last batch may contain fewer frames.
+        """
         if not self.cap.isOpened():
             raise StopIteration
-        # frame_idx = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+        # If all frames have been read at the beginning, raise StopIteration
         if self.current_idx == len(self):
             raise StopIteration
-
-        # # Deal with overlap
-        # if self.overlap != 0 and self.current_idx != 0 and self.current_idx - self.overlap >= 0:
-        #     # BUG of cv2:
-        #     # set(cv2.CAP_PROP_POS_FRAMES, value) may break get(cv2.CAP_PROP_POS_FRAMES)
-        #     self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_idx - self.overlap)
-        #     self.current_idx -= self.overlap
 
         # load overlap
         batch, times, indices = [], [], []
@@ -127,18 +124,11 @@ class VideoLoader:
             times += self._last_times
             indices += self._last_indices
 
-        # Normally, this will perform batch_size times.
-        # If the read finishes before the batch is filled, a smaller batch will be returned,
-        # and the VideoCapture object will be released.
-        # If the VideoCapture object is released, will raise StopIteration.
-        # If no frame is read, raise StopIteration
         while len(batch) < self.batch_size:
             frame_exists, rgb = self.cap.read()
             self.current_idx += 1
             if frame_exists:
                 rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-                # idx = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)) - 1  # start from 0
-                # timestamps_ms = self.cap.get(cv2.CAP_PROP_POS_MSEC)
                 timestamps_ms = (self.current_idx - 1) / self.fps * 1000
                 indices.append(self.current_idx - 1)
                 times.append(timestamps_ms)
@@ -147,6 +137,9 @@ class VideoLoader:
                 else:
                     batch.append(rgb)
             else:
+                # If read a non-exist frame, which indicates all frames of the video have been read,
+                # release the VideoCapture and return the smaller batch. The StopIteration will be
+                # raised in the next start.
                 self.cap.release()
                 break
         if len(batch) == 0:
@@ -173,6 +166,7 @@ class VideoLoader:
 
     @staticmethod
     def _get_video_prop(path):
+        """Get properties of a video"""
         cap = cv2.VideoCapture(path)
         fps = cap.get(cv2.CAP_PROP_FPS)
         num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
