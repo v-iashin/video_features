@@ -29,6 +29,7 @@ test_params = [
     # ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'RN50', 1, None, TO_MAKE_REF),
 ]
 
+
 @pytest.mark.parametrize(signature, test_params)
 def test(device, video_paths, model_name, batch_size, extraction_fps, to_make_ref):
     # get config

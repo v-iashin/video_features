@@ -1,12 +1,11 @@
-'''
+"""
 Mostly from torchvision
-'''
+"""
 import torch
 from typing import Iterable
 import numpy as np
 from PIL import Image
 import random
-
 
 
 def crop(vid, i, j, h, w):
@@ -130,7 +129,6 @@ class Pad(object):
         return pad(vid, self.padding, self.fill)
 
 
-
 class TensorCenterCrop(object):
 
     def __init__(self, crop_size: int) -> None:
@@ -190,7 +188,6 @@ class ToFCHW(object):
         return tensor_cfhw.permute(1, 0, 2, 3)
 
 
-
 def resize(img, size, resize_to_smaller_edge=True, interpolation=Image.BILINEAR):
     r"""
     (v-iashin): this is almost the same implementation as in PyTorch except it has no _is_pil_image() check
@@ -233,6 +230,7 @@ def resize(img, size, resize_to_smaller_edge=True, interpolation=Image.BILINEAR)
     else:
         return img.resize(size[::-1], interpolation)
 
+
 class ResizeImproved(object):
 
     def __init__(self, size: int, resize_to_smaller_edge: bool = True, interpolation=Image.BILINEAR):
@@ -243,10 +241,12 @@ class ResizeImproved(object):
     def __call__(self, img):
         return resize(img, self.size, self.resize_to_smaller_edge, self.interpolation)
 
+
 class ToTensorWithoutScaling(object):
 
     def __call__(self, np_img):
         return torch.from_numpy(np_img).permute(2, 0, 1).float()
+
 
 class ToFloat(object):
 
@@ -280,6 +280,7 @@ class PILToTensor:
 
 if __name__ == "__main__":
     import torchvision.transforms as transforms
+
     width = 100
     height = 200
     max_side_size = 512
