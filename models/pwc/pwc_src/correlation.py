@@ -301,12 +301,12 @@ class _FunctionCorrelation(torch.autograd.Function):
 
         self.save_for_backward(first, second, rbot0, rbot1)
 
-        assert (first.is_contiguous() == True)
-        assert (second.is_contiguous() == True)
+        assert (first.is_contiguous() is True)
+        assert (second.is_contiguous() is True)
 
         output = first.new_zeros([first.size(0), 81, first.size(2), first.size(3)])
 
-        if first.is_cuda == True:
+        if first.is_cuda is True:
             n = first.size(2) * first.size(3)
             cupy_launch('kernel_Correlation_rearrange', cupy_kernel('kernel_Correlation_rearrange', {
                 'input': first,
@@ -342,7 +342,7 @@ class _FunctionCorrelation(torch.autograd.Function):
                 stream=Stream
             )
 
-        elif first.is_cuda == False:
+        elif first.is_cuda is False:
             raise NotImplementedError()
 
         # end
@@ -355,14 +355,14 @@ class _FunctionCorrelation(torch.autograd.Function):
     def backward(self, gradOutput):
         first, second, rbot0, rbot1 = self.saved_tensors
 
-        assert (gradOutput.is_contiguous() == True)
+        assert (gradOutput.is_contiguous() is True)
 
         gradFirst = first.new_zeros([first.size(0), first.size(1), first.size(2), first.size(3)]) if \
-        self.needs_input_grad[0] == True else None
+            self.needs_input_grad[0] is True else None
         gradSecond = first.new_zeros([first.size(0), first.size(1), first.size(2), first.size(3)]) if \
-        self.needs_input_grad[1] == True else None
+            self.needs_input_grad[1] is True else None
 
-        if first.is_cuda == True:
+        if first.is_cuda is True:
             if gradFirst is not None:
                 for intSample in range(first.size(0)):
                     n = first.size(1) * first.size(2) * first.size(3)
@@ -403,7 +403,7 @@ class _FunctionCorrelation(torch.autograd.Function):
                 # end
             # end
 
-        elif first.is_cuda == False:
+        elif first.is_cuda is False:
             raise NotImplementedError()
 
         # end
