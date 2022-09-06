@@ -9,16 +9,16 @@ from utils.utils import (load_numpy, load_pickle, make_path, write_numpy,
 
 
 class BaseExtractor(object):
-    '''Common things to be inherited by every descendant'''
+    """Common things to be inherited by every descendant"""
 
     def __init__(self,
-        feature_type: str,
-        on_extraction: str,
-        tmp_path: str,
-        output_path: str,
-        keep_tmp_files: bool,
-        device: str,
-    ) -> None:
+                 feature_type: str,
+                 on_extraction: str,
+                 tmp_path: str,
+                 output_path: str,
+                 keep_tmp_files: bool,
+                 device: str,
+                 ) -> None:
         self.feature_type = feature_type
         self.on_extraction = on_extraction
         self.tmp_path = tmp_path
@@ -27,7 +27,7 @@ class BaseExtractor(object):
         self.device = device
 
     def _extract(self, video_path: str):
-        '''A wrapper around self.extract. It handles exceptions, checks if files already exist and saves
+        """A wrapper around self.extract. It handles exceptions, checks if files already exist and saves
         the extracted files if a user desires.
 
         Args:
@@ -36,7 +36,7 @@ class BaseExtractor(object):
         Raises:
             KeyboardInterrupt: when an error occurs, the script will continue with the rest of the videos.
                                If a user wants to kill it, ^C (KB interrupt) should be used.
-        '''
+        """
         # the try and except structure is used to continue extraction even if after an error (a few bad vids)
         try:
             # skips a video path if already exists
@@ -52,20 +52,19 @@ class BaseExtractor(object):
             traceback.print_exc()  # prints the error
             print('Continuing...')
 
-
     def action_on_extraction(
-        self,
-        feats_dict: Dict[str, np.ndarray],
-        video_path: str,
+            self,
+            feats_dict: Dict[str, np.ndarray],
+            video_path: str,
     ) -> None:
-        '''What is going to be done with the extracted features.
+        """What is going to be done with the extracted features.
 
         Args:
             feats_dict (Dict[str, np.ndarray]): A dict with features and possibly some meta. Key will be used as
                                                 suffixes to the saved files if `save_numpy` or `save_pickle` is
                                                 used.
             video_path (str): A path to the video.
-        '''
+        """
         # since the features are enclosed in a dict with another meta information we will iterate on kv
         action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl'}
         action2savefn = {'save_numpy': write_numpy, 'save_pickle': write_pickle}
@@ -94,14 +93,14 @@ class BaseExtractor(object):
                 raise NotImplementedError(f'on_extraction: {self.on_extraction} is not implemented')
 
     def is_already_exist(
-        self,
-        video_path: Union[str, Path],
+            self,
+            video_path: Union[str, Path],
     ) -> bool:
-        '''Checks if the all feature files already exist, and also checks if IO does not produce any errors.
+        """Checks if the all feature files already exist, and also checks if IO does not produce any errors.
 
         Args:
             video_path (Union[str, Path]): the path to a video to extract features from
-        '''
+        """
         # if a user does not want to save any features, we need to extract them. 'False' will continue extraction.
         if self.on_extraction == 'print':
             return False

@@ -14,7 +14,6 @@ from tests.utils import base_test_script
 THIS_FILE_PATH = __file__
 FEATURE_TYPE = Path(THIS_FILE_PATH).parent.name
 
-
 # True when run for the first time, then must be False
 TO_MAKE_REF = False
 
@@ -23,6 +22,8 @@ test_params = [
     ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, None, None, TO_MAKE_REF),
     ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 32, 32, 20, TO_MAKE_REF),
 ]
+
+
 @pytest.mark.parametrize(signature, test_params)
 def test(device, video_paths, stack_size, step_size, extraction_fps, to_make_ref):
     # get config
