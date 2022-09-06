@@ -200,11 +200,14 @@ def reencode_video_with_diff_fps(video_path: str, tmp_path: str, extraction_fps:
 
     # form the path to tmp directory
     new_path = os.path.join(tmp_path, f'{Path(video_path).stem}_new_fps.mp4')
-    cmd = f'{which_ffmpeg()} -hide_banner -loglevel panic '
-    cmd += f'-y -i {video_path} -filter:v fps=fps={extraction_fps} {new_path}'
-    subprocess.call(cmd.split())
+    cmd = [
+        which_ffmpeg(), "-hide_banner", "-loglevel", "panic",
+        "-y", "-i", video_path, "-filter:v", f"fps=fps={extraction_fps}", new_path
+    ]
+    subprocess.call(cmd)
 
     return new_path
+
 
 
 def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:
