@@ -59,14 +59,14 @@ class ExtractR21D(BaseExtractor):
 
     @torch.no_grad()
     def extract(self, video_path: str) -> Dict[str, np.ndarray]:
-        '''Extracts features for a given video path.
+        """Extracts features for a given video path.
 
         Arguments:
             video_path (str): a video path from which to extract features
 
         Returns:
             Dict[str, np.ndarray]: feature name (e.g. 'fps' or feature_type) to the feature tensor
-        '''
+        """
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
             video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
@@ -94,14 +94,14 @@ class ExtractR21D(BaseExtractor):
         return feats_dict
 
     def load_model(self) -> Dict[str, torch.nn.Module]:
-        '''Defines the models, loads checkpoints, sends them to the device.
+        """Defines the models, loads checkpoints, sends them to the device.
 
         Raises:
             NotImplementedError: if a model is not implemented.
 
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
-        '''
+        """
         if self.model_name == 'r2plus1d_18_16_kinetics':
             model = torchvision.models.video.r2plus1d_18(pretrained=True)
         else:

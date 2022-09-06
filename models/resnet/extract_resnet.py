@@ -34,14 +34,14 @@ class ExtractResNet(BaseFrameWiseExtractor):
 
 
     def load_model(self) -> Dict[str, torch.nn.Module]:
-        '''Defines the models, loads checkpoints, sends them to the device.
+        """Defines the models, loads checkpoints, sends them to the device.
 
         Raises:
             NotImplementedError: if a model is not implemented.
 
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
-        '''
+        """
         try:
             model = getattr(models, self.model_name)
         except AttributeError:
