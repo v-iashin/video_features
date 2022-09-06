@@ -39,14 +39,14 @@ class ExtractS3D(BaseExtractor):
 
     @torch.no_grad()
     def extract(self, video_path: str) -> Dict[str, np.ndarray]:
-        '''Extracts features for a given video path.
+        """Extracts features for a given video path.
 
         Arguments:
             video_path (str): a video path from which to extract features
 
         Returns:
             Dict[str, np.ndarray]: feature name (e.g. 'fps' or feature_type) to the feature tensor
-        '''
+        """
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
             video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)
@@ -54,7 +54,7 @@ class ExtractS3D(BaseExtractor):
         # read a video
         rgb, audio, info = read_video(video_path, pts_unit='sec')
         # prepare data (first -- transform, then -- unsqueeze)
-        rgb = self.transforms(rgb) # could run out of memory here
+        rgb = self.transforms(rgb)  # could run out of memory here
         rgb = rgb.unsqueeze(0)
         # slice the stack of frames
         slices = form_slices(rgb.size(2), self.stack_size, self.step_size)
@@ -75,14 +75,14 @@ class ExtractS3D(BaseExtractor):
         return feats_dict
 
     def load_model(self) -> Dict[str, torch.nn.Module]:
-        '''Defines the models, loads checkpoints, sends them to the device.
+        """Defines the models, loads checkpoints, sends them to the device.
 
         Raises:
             NotImplementedError: if a model is not implemented.
 
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
-        '''
+        """
         s3d_kinetics400_weights_torch_path = './models/s3d/checkpoint/S3D_kinetics400_torchified.pt'
         model = S3D(num_class=400, ckpt_path=s3d_kinetics400_weights_torch_path)
         model = model.to(self.device)
@@ -91,7 +91,6 @@ class ExtractS3D(BaseExtractor):
         return {
             'model': model,
         }
-
 
     def maybe_show_pred(self, rgb_stack: torch.Tensor, start_idx: int, end_idx: int):
         if self.show_pred:

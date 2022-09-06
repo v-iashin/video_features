@@ -35,6 +35,7 @@ else:
         ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
     ]
 
+
 @pytest.mark.parametrize(signature, test_params)
 def test(device, video_paths, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref):
     # get config

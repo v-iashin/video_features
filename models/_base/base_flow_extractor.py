@@ -14,24 +14,24 @@ from utils.utils import dp_state_to_normal, reencode_video_with_diff_fps
 
 
 class BaseOpticalFlowExtractor(BaseExtractor):
-    '''Common things for all frame-wise extractors (such as RAFT and PWC).'''
+    """Common things for all frame-wise extractors (such as RAFT and PWC)."""
 
     def __init__(self,
-        # BaseExtractor arguments
-        feature_type: str,
-        on_extraction: str,
-        tmp_path: str,
-        output_path: str,
-        keep_tmp_files: bool,
-        device: str,
-        # This class
-        ckpt_path: str,
-        batch_size: int,
-        resize_to_smaller_edge: bool,
-        side_size: Union[None, int],
-        extraction_fps: Union[None, int],
-        show_pred: bool,
-    ) -> None:
+                 # BaseExtractor arguments
+                 feature_type: str,
+                 on_extraction: str,
+                 tmp_path: str,
+                 output_path: str,
+                 keep_tmp_files: bool,
+                 device: str,
+                 # This class
+                 ckpt_path: str,
+                 batch_size: int,
+                 resize_to_smaller_edge: bool,
+                 side_size: Union[None, int],
+                 extraction_fps: Union[None, int],
+                 show_pred: bool,
+                 ) -> None:
         # init the BaseExtractor
         super().__init__(
             feature_type=feature_type,
@@ -55,21 +55,21 @@ class BaseOpticalFlowExtractor(BaseExtractor):
             ])
         else:
             self.transforms = torchvision.transforms.Compose([ToTensorWithoutScaling()])
-        self.extraction_fps = extraction_fps # use `None` to skip reencoding and keep the original video fps
+        self.extraction_fps = extraction_fps  # use `None` to skip reencoding and keep the original video fps
         self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
         self.show_pred = show_pred
         self.name2module = self.load_model()
 
     @torch.no_grad()
     def extract(self, video_path: str) -> Dict[str, np.ndarray]:
-        '''Extracts features for a given video path.
+        """Extracts features for a given video path.
 
         Arguments:
             video_path (str): a video path from which to extract features
 
         Returns:
             Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
-        '''
+        """
 
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
@@ -146,13 +146,12 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         self.maybe_show_pred(batch_feats, batch)
         return batch_feats
 
-
     def load_model(self) -> torch.nn.Module:
-        '''Defines the models, loads checkpoints, sends them to the device.
+        """Defines the models, loads checkpoints, sends them to the device.
 
         Returns:
             torch.nn.Module: flow extraction module.
-        '''
+        """
         if self.feature_type == 'raft':
             model = RAFT()
         elif self.feature_type == 'pwc':
@@ -169,13 +168,13 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         return {'model': model}
 
     def maybe_show_pred(self, batch_feats: torch.Tensor, batch: torch.Tensor):
-        '''Shows the resulting flow frames and a corrsponding RGB frame (the 1st of the two) in a cv2 window.
+        """Shows the resulting flow frames and a corrsponding RGB frame (the 1st of the two) in a cv2 window.
 
         Args:
             batch_feats (torch.Tensor): the output of the model
             batch (torch.Tensor): the stack of rgb inputs
             device (torch.device, optional): _description_. Defaults to None.
-        '''
+        """
         if self.show_pred:
             for idx, flow in enumerate(batch_feats):
                 img = batch[idx].permute(1, 2, 0).cpu().numpy()

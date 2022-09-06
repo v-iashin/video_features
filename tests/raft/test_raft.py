@@ -14,7 +14,6 @@ from tests.utils import base_test_script
 THIS_FILE_PATH = __file__
 FEATURE_TYPE = Path(THIS_FILE_PATH).parent.name
 
-
 # True when run for the first time, then must be False
 TO_MAKE_REF = False
 
@@ -24,11 +23,13 @@ test_params = [
     # ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'kitti', 1, None, True, None, TO_MAKE_REF), # 500MB+
     # ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'sintel', 16, None, True, None, TO_MAKE_REF), # 500MB+
     # ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'sintel', 1, 256, False, None, TO_MAKE_REF), # 500MB+
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'sintel', 1, None, True, 1, TO_MAKE_REF), # 26M
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'kitti', 1, 256, True, 1, TO_MAKE_REF), # 26M
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'sintel', 16, 256, False, 1, TO_MAKE_REF), # 17M
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'sintel', 1, 256, False, 1, TO_MAKE_REF), # 17M
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'sintel', 1, None, True, 1, TO_MAKE_REF),  # 26M
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'kitti', 1, 256, True, 1, TO_MAKE_REF),  # 26M
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'sintel', 16, 256, False, 1, TO_MAKE_REF),  # 17M
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'sintel', 1, 256, False, 1, TO_MAKE_REF),  # 17M
 ]
+
+
 @pytest.mark.parametrize(signature, test_params)
 def test(device, video_paths, finetuned_on, batch_size, side_size, resize_to_smaller_edge, extraction_fps, to_make_ref):
     # get config

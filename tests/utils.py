@@ -17,6 +17,7 @@ def md5sum(path: str):
         content = f.read()
     return hashlib.md5(content).hexdigest()
 
+
 def make_ref_path(feature_type, file_key, **patch_kwargs):
     filename = ''
     for k, v in patch_kwargs.items():
@@ -31,6 +32,7 @@ def make_ref_path(feature_type, file_key, **patch_kwargs):
     ref_path = Path('./tests') / feature_type / 'reference' / filename
     return ref_path
 
+
 def make_ref(args, video_path: Path, data, save_path):
     assert not save_path.exists()
     save_path.parent.mkdir(exist_ok=True)
@@ -43,12 +45,14 @@ def make_ref(args, video_path: Path, data, save_path):
     torch.save(to_save, save_path)
     print('Saved to', save_path)
 
+
 def get_config(feature_type, **patch_kwargs):
     config = OmegaConf.load(build_cfg_path(feature_type))
     for k, v in patch_kwargs.items():
         setattr(config, k, v)
     sanity_check(config)
     return config
+
 
 def get_import_api_feats(extractor, video_paths):
     feat_out_import = extractor.extract(video_paths)
@@ -84,16 +88,19 @@ def get_cmd_api_feats(feature_type: str, file_keys: List[str], **patch_kwargs):
 
             # read from the saved file
             for key in file_keys:
-                load_path = Path(make_path(output_root_load, patch_kwargs['video_paths'], key, action2ext[on_extraction]))
+                load_path = Path(
+                    make_path(output_root_load, patch_kwargs['video_paths'], key, action2ext[on_extraction]))
                 assert load_path.exists(), (load_path, output_root_load)
                 feat_out_cmd[on_extraction][key] = action2loadfn[on_extraction](str(load_path))
 
     return feat_out_cmd
 
+
 # TODO: replace it with numpy's or torch's all close
 def all_close(a, b, tol=1e-6) -> bool:
     '''Determines if tensors/values `a` and `b` are close to each other given a tolerance'''
     return abs(a - b).sum() < tol
+
 
 def base_test_script(feature_type: str, Extractor, to_make_ref: bool, **patch_kwargs):
     args = get_config(feature_type, **patch_kwargs)

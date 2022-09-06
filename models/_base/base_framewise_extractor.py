@@ -9,23 +9,23 @@ from utils.utils import reencode_video_with_diff_fps
 
 
 class BaseFrameWiseExtractor(BaseExtractor):
-    '''Common things for all frame-wise extractors (such as ResNet or CLIP).
-    However, optical flow has another parent class: OpticalFlowExtractor'''
+    """Common things for all frame-wise extractors (such as ResNet or CLIP).
+    However, optical flow has another parent class: OpticalFlowExtractor"""
 
     def __init__(self,
-        # BaseExtractor arguments
-        feature_type: str,
-        on_extraction: str,
-        tmp_path: str,
-        output_path: str,
-        keep_tmp_files: bool,
-        device: str,
-        # This class
-        model_name: str,
-        batch_size: int,
-        extraction_fps: Union[None, int],
-        show_pred: bool,
-    ) -> None:
+                 # BaseExtractor arguments
+                 feature_type: str,
+                 on_extraction: str,
+                 tmp_path: str,
+                 output_path: str,
+                 keep_tmp_files: bool,
+                 device: str,
+                 # This class
+                 model_name: str,
+                 batch_size: int,
+                 extraction_fps: Union[None, int],
+                 show_pred: bool,
+                 ) -> None:
         # init the BaseExtractor
         super().__init__(
             feature_type=feature_type,
@@ -38,20 +38,20 @@ class BaseFrameWiseExtractor(BaseExtractor):
         # (Re-)Define arguments for this class
         self.model_name = model_name
         self.batch_size = batch_size
-        self.extraction_fps = extraction_fps # use `None` to skip reencoding and keep the original video fps
+        self.extraction_fps = extraction_fps  # use `None` to skip reencoding and keep the original video fps
         self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
         self.show_pred = show_pred
 
     @torch.no_grad()
     def extract(self, video_path: str) -> Dict[str, np.ndarray]:
-        '''Extracts features for a given video path.
+        """Extracts features for a given video path.
 
         Arguments:
             video_path (str): a video path from which to extract features
 
         Returns:
             Dict[str, np.ndarray]: 'features_name', 'fps', 'timestamps_ms'
-        '''
+        """
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
             video_path = reencode_video_with_diff_fps(video_path, self.tmp_path, self.extraction_fps)

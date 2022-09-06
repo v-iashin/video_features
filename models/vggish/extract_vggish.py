@@ -29,14 +29,14 @@ class ExtractVGGish(BaseExtractor):
 
     @torch.no_grad()
     def extract(self, video_path: str) -> Dict[str, np.ndarray]:
-        '''Extracts features for a given video path.
+        """Extracts features for a given video path.
 
         Arguments:
             video_path (str): a video path from which to extract features
 
         Returns:
             Dict[str, np.ndarray]: feature name (e.g. 'fps' or feature_type) to the feature tensor
-        '''
+        """
         file_ext = pathlib.Path(video_path).suffix
 
         if file_ext == '.mp4':
@@ -62,12 +62,12 @@ class ExtractVGGish(BaseExtractor):
         return feats_dict
 
     def load_model(self) -> torch.nn.Module:
-        '''Defines the models, loads checkpoints, sends them to the device.
+        """Defines the models, loads checkpoints, sends them to the device.
 
 
         Returns:
             {Dict[str, torch.nn.Module]}: model-agnostic dict holding modules for extraction
-        '''
+        """
         model = VGGish()
         model = model.to(self.device)
         model.eval()

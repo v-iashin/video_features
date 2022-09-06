@@ -1,7 +1,7 @@
-'''
+"""
     The content of this file is commented to avoid parsing it with pytest test discovery.
     Since PWC optical flow extraction depends on another env
-'''
+"""
 import sys
 from pathlib import Path
 
@@ -18,7 +18,6 @@ from tests.utils import base_test_script
 THIS_FILE_PATH = __file__
 FEATURE_TYPE = Path(THIS_FILE_PATH).parent.name
 
-
 # True when run for the first time, then must be False
 TO_MAKE_REF = False
 
@@ -28,6 +27,7 @@ test_params = [
     ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 112, 3, TO_MAKE_REF),  # 18M
     # ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 384, 5, TO_MAKE_REF),  # 345M
 ]
+
 
 @pytest.mark.parametrize(signature, test_params)
 def test(device, video_paths, side_size, extraction_fps, to_make_ref):

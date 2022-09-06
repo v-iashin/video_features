@@ -1,7 +1,7 @@
-'''
+"""
     Reference: https://github.com/princeton-vl/RAFT/tree/25eb2ac723c36865c636c9d1f497af8023981868
     Modified by Vladimir Iashin for github.com/v-iashin/video_features
-'''
+"""
 import numpy as np
 import torch
 import torch.nn as nn
@@ -19,28 +19,32 @@ except:
     class autocast:
         def __init__(self, enabled):
             pass
+
         def __enter__(self):
             pass
+
         def __exit__(self, *args):
             pass
 
+
 class InputPadder:
     """ Pads images such that dimensions are divisible by 8"""
+
     def __init__(self, dims, mode='sintel'):
         self.ht, self.wd = dims[-2:]
         pad_ht = (((self.ht // 8) + 1) * 8 - self.ht) % 8
         pad_wd = (((self.wd // 8) + 1) * 8 - self.wd) % 8
         if mode == 'sintel':
-            self._pad = [pad_wd//2, pad_wd - pad_wd//2, pad_ht//2, pad_ht - pad_ht//2]
+            self._pad = [pad_wd // 2, pad_wd - pad_wd // 2, pad_ht // 2, pad_ht - pad_ht // 2]
         else:
-            self._pad = [pad_wd//2, pad_wd - pad_wd//2, 0, pad_ht]
+            self._pad = [pad_wd // 2, pad_wd - pad_wd // 2, 0, pad_ht]
 
     def pad(self, input):
         return F.pad(input, self._pad, mode='replicate')
 
     def unpad(self, x):
         ht, wd = x.shape[-2:]
-        c = [self._pad[2], ht-self._pad[3], self._pad[0], wd-self._pad[1]]
+        c = [self._pad[2], ht - self._pad[3], self._pad[0], wd - self._pad[1]]
         return x[..., c[0]:c[1], c[2]:c[3]]
 
 
@@ -91,8 +95,8 @@ class RAFT(nn.Module):
     def initialize_flow(self, img):
         """ Flow is represented as difference between two coordinate grids flow = coords1 - coords0"""
         N, C, H, W = img.shape
-        coords0 = coords_grid(N, H//8, W//8).to(img.device)
-        coords1 = coords_grid(N, H//8, W//8).to(img.device)
+        coords0 = coords_grid(N, H // 8, W // 8).to(img.device)
+        coords1 = coords_grid(N, H // 8, W // 8).to(img.device)
 
         # optical flow computed as difference: flow = coords1 - coords0
         return coords0, coords1
@@ -103,13 +107,12 @@ class RAFT(nn.Module):
         mask = mask.view(N, 1, 9, 8, 8, H, W)
         mask = torch.softmax(mask, dim=2)
 
-        up_flow = F.unfold(8 * flow, [3,3], padding=1)
+        up_flow = F.unfold(8 * flow, [3, 3], padding=1)
         up_flow = up_flow.view(N, 2, 9, 1, 1, H, W)
 
         up_flow = torch.sum(mask * up_flow, dim=2)
         up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
-        return up_flow.reshape(N, 2, 8*H, 8*W)
-
+        return up_flow.reshape(N, 2, 8 * H, 8 * W)
 
     # (v-iashin) def forward(self, image1, image2, iters=12, flow_init=None, upsample=True, test_mode=False):
     def forward(self, image1, image2, iters=20, flow_init=None, upsample=True, test_mode=True):
@@ -150,7 +153,7 @@ class RAFT(nn.Module):
         flow_predictions = []
         for itr in range(iters):
             coords1 = coords1.detach()
-            corr = corr_fn(coords1) # index correlation volume
+            corr = corr_fn(coords1)  # index correlation volume
 
             flow = coords1 - coords0
             with autocast(enabled=self.mixed_precision):
