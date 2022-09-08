@@ -5,7 +5,6 @@ side_size: null # if resized to the smaller edge, min(W, H) = side_size, if to t
 resize_to_smaller_edge: true # if false, the larger edge will be used to be resized to `side_size`
 
 # Extraction Parameters
-cpu: false # pwc does NOT support using CPU
 batch_size: 1 # increase the extraction speed with batching
 device: 'cuda:0'  # device as in `torch`, can be 'cpu'
 on_extraction: 'print'  # what to do once the features are extracted. Can be ['print', 'save_numpy', 'save_pickle']
