@@ -1,4 +1,4 @@
-# R(2+1)D (RGB-only)
+# S3D
 
 <figure>
   <img src="../../_assets/s3d.png" width="300" />
