@@ -44,6 +44,26 @@ python main.py \
 
 ---
 
+## Supported Arguments
+
+<!-- the <div> makes columns wider -->
+| <div style="width: 12em">Argument</div> | <div style="width: 8em">Default</div> | Description                                                                                                                                                                                                                     |
+| --------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model_name`                            | `"ViT-B/32"`                          | A variant of CLIP. `"ViT-B/16"`, `"RN50x16"`, `"RN50x4"`, `"RN101"`, `"RN50"`, and `"custom"` are supported.                                                                                                                    |
+| `batch_size`                            | `1`                                   | You may speed up extraction of features by increasing the batch size as much as your GPU permits.                                                                                                                               |
+| `extraction_fps`                        | `null`                                | If specified (e.g. as `5`), the video will be re-encoded to the `extraction_fps` fps. Leave unspecified or `null` to skip re-encoding.                                                                                          |
+| `device`                                | `"cuda:0"`                            | The device specification. It follows the PyTorch style. Use `"cuda:3"` for the 4th GPU on the machine or `"cpu"` for CPU-only.                                                                                                  |
+| `video_paths`                           | `null`                                | A list of videos for feature extraction. E.g. `"[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"` or just one path `"./sample/v_GGSY1Qvo990.mp4"`.                                                                     |
+| `file_with_video_paths`                 | `null`                                | A path to a text file with video paths (one path per line). Hint: given a folder `./dataset` with `.mp4` files one could use: `find ./dataset -name "*mp4" > ./video_paths.txt`.                                                |
+| `on_extraction`                         | `print`                               | If `print`, the features are printed to the terminal. If `save_numpy` or `save_pickle`, the features are saved to either `.npy` file or `.pkl`.                                                                                 |
+| `output_path`                           | `"./output"`                          | A path to a folder for storing the extracted features (if `on_extraction` is either `save_numpy` or `save_pickle`).                                                                                                             |
+| `keep_tmp_files`                        | `false`                               | If `true`, the reencoded videos will be kept in `tmp_path`.                                                                                                                                                                     |
+| `tmp_path`                              | `"./tmp"`                             | A path to a folder for storing temporal files (e.g. reencoded videos).                                                                                                                                                          |
+| `show_pred`                             | `false`                               | If `true`, the script will print the predictions of the model on a down-stream task. It is useful for debugging.                                                                                                                |
+| `pred_texts`                            | `null`                                | If `show_pred=true`, the texts specified in `pred_texts` are used for zero-shot classification (e.g. `pred_texts="['a dog smiles', 'a woman is lifting']"`). If `pred_texts` is unspecified, Kinetics 400 classes will be used. |
+
+---
+
 ## Examples
 Start by activating the environment
 ```bash
