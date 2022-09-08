@@ -90,4 +90,5 @@ Please, let me know if you found this repo useful for your projects or papers.
 
 - [@Kamino666](https://github.com/Kamino666): added CLIP model as well as Windows and CPU support (and
 many other small things).
+- [@borijang](https://github.com/borijang): for solving bugs with file names, I3D checkpoint loading enhancement and code style improvements.
 - [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.
