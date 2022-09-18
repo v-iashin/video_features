@@ -13,20 +13,20 @@ class BaseFrameWiseExtractor(BaseExtractor):
     However, optical flow has another parent class: OpticalFlowExtractor'''
 
     def __init__(self,
-        # BaseExtractor arguments
-        feature_type: str,
-        on_extraction: str,
-        tmp_path: str,
-        output_path: str,
-        keep_tmp_files: bool,
-        device: str,
-        # This class
-        model_name: str,
-        batch_size: int,
-        extraction_fps: Union[None, int],
-        extraction_total: Union[None, int],
-        show_pred: bool,
-    ) -> None:
+                 # BaseExtractor arguments
+                 feature_type: str,
+                 on_extraction: str,
+                 tmp_path: str,
+                 output_path: str,
+                 keep_tmp_files: bool,
+                 device: str,
+                 # This class
+                 model_name: str,
+                 batch_size: int,
+                 extraction_fps: Union[None, int],
+                 extraction_total: Union[None, int],
+                 show_pred: bool,
+                 ) -> None:
         # init the BaseExtractor
         super().__init__(
             feature_type=feature_type,
@@ -39,7 +39,7 @@ class BaseFrameWiseExtractor(BaseExtractor):
         # (Re-)Define arguments for this class
         self.model_name = model_name
         self.batch_size = batch_size
-        self.extraction_fps = extraction_fps # use `None` to skip reencoding and keep the original video fps
+        self.extraction_fps = extraction_fps  # use `None` to skip reencoding and keep the original video fps
         self.extraction_total = extraction_total
         self.output_feat_keys = [self.feature_type, 'fps', 'timestamps_ms']
         self.show_pred = show_pred

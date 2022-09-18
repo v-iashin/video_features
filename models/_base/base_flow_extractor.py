@@ -85,9 +85,9 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         )
         vid_feats = []
         timestamps_ms_list, timestamps_ms = [], []
-        padder = InputPadder((video.height, video.width)) if self.feature_type == 'raft' else None
         for batch, ts, idx in video:
             # batch = torch.stack(batch, dim=0)
+            padder = InputPadder(batch[0].shape) if self.feature_type == 'raft' else None
             batch_feats = self.run_on_a_batch(batch, padder)
             vid_feats.extend(batch_feats.tolist())
             timestamps_ms_list.append(ts)
