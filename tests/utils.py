@@ -34,7 +34,7 @@ def make_ref_path(feature_type, file_key, **patch_kwargs):
 
 
 def make_ref(args, video_path: Path, data, save_path):
-    assert not save_path.exists()
+    assert not save_path.exists(), 'Do you make another ref????'
     save_path.parent.mkdir(exist_ok=True)
     to_save = {
         'args': args,

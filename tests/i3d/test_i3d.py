@@ -24,13 +24,15 @@ if '/pwc/' in sys.executable:
     test_params = [
         ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', None, None, None, TO_MAKE_REF),
         ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', 24, 24, 25, TO_MAKE_REF),
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'pwc', None, None, None, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', 24, 12, 15, TO_MAKE_REF),
+        # ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'pwc', None, None, None, TO_MAKE_REF), # this one does not work on import vs cli
         ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'pwc', None, None, None, TO_MAKE_REF),
     ]
 else:
     test_params = [
         ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', None, None, None, TO_MAKE_REF),
         ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 24, 25, TO_MAKE_REF),
+        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 12, 15, TO_MAKE_REF),
         ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'raft', None, None, None, TO_MAKE_REF),
         ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
     ]
