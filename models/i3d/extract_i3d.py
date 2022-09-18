@@ -64,14 +64,14 @@ class ExtractI3D(BaseExtractor):
 
     @torch.no_grad()
     def extract(self, video_path: str) -> Dict[str, np.ndarray]:
-        '''The extraction call. Made to clean the forward call a bit.
+        """The extraction call. Made to clean the forward call a bit.
 
         Arguments:
             video_path (str): a video path from which to extract features
 
         Returns:
             Dict[str, np.ndarray]: feature name (e.g. 'fps' or feature_type) to the feature tensor
-        '''
+        """
 
         # take the video, change fps and save to the tmp folder
         if self.extraction_fps is not None:
@@ -137,10 +137,9 @@ class ExtractI3D(BaseExtractor):
 
         return feats_dict
 
-
     def run_on_a_stack(self, rgb_stack, stack_counter, padder=None) -> Dict[str, torch.Tensor]:
         models = self.name2module['model']
-        flow_xtr_model = self.name2module['flow_xtr_model']
+        flow_xtr_model = self.name2module.get('flow_xtr_model', None)
         rgb_stack = torch.cat(rgb_stack).to(self.device)
 
         batch_feats_dict = {}
@@ -169,37 +168,34 @@ class ExtractI3D(BaseExtractor):
 
         return batch_feats_dict
 
-
     def load_model(self) -> Dict[str, torch.nn.Module]:
-        '''Defines the models, loads checkpoints, sends them to the device.
+        """Defines the models, loads checkpoints, sends them to the device.
         Since I3D is two-stream, it may load a optical flow extraction model as well.
-
-        Raises:
-            NotImplementedError: if a model is not implemented.
 
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
-        '''
+        """
         flow_model_paths = {'pwc': DATASET_to_PWC_CKPT_PATHS['sintel'], 'raft': DATASET_to_RAFT_CKPT_PATHS['sintel']}
         i3d_weights_paths = {
             'rgb': './models/i3d/checkpoints/i3d_rgb.pt',
             'flow': './models/i3d/checkpoints/i3d_flow.pt',
         }
-        # Flow extraction module
-        if self.flow_type == 'pwc':
-            from models.pwc.pwc_src.pwc_net import PWCNet
-            flow_xtr_model = PWCNet()
-        elif self.flow_type == 'raft':
-            flow_xtr_model = RAFT()
-        else:
-            raise NotImplementedError
+        name2module = {}
 
-        # preprocess state dict
-        state_dict = torch.load(flow_model_paths[self.flow_type], map_location='cpu')
-        state_dict = dp_state_to_normal(state_dict)
-        flow_xtr_model.load_state_dict(state_dict)
-        flow_xtr_model = flow_xtr_model.to(self.device)
-        flow_xtr_model.eval()
+        if "flow" in self.streams:
+            # Flow extraction module
+            if self.flow_type == 'pwc':
+                from models.pwc.pwc_src.pwc_net import PWCNet
+                flow_xtr_model = PWCNet()
+            elif self.flow_type == 'raft':
+                flow_xtr_model = RAFT()
+            # Preprocess state dict
+            state_dict = torch.load(flow_model_paths[self.flow_type], map_location='cpu')
+            state_dict = dp_state_to_normal(state_dict)
+            flow_xtr_model.load_state_dict(state_dict)
+            flow_xtr_model = flow_xtr_model.to(self.device)
+            flow_xtr_model.eval()
+            name2module['flow_xtr_model'] = flow_xtr_model
 
         # Feature extraction models (rgb and flow streams)
         i3d_stream_models = {}
@@ -209,11 +205,9 @@ class ExtractI3D(BaseExtractor):
             i3d_stream_model = i3d_stream_model.to(self.device)
             i3d_stream_model.eval()
             i3d_stream_models[stream] = i3d_stream_model
+        name2module['model'] = i3d_stream_models
 
-        return {
-            'flow_xtr_model': flow_xtr_model,
-            'model': i3d_stream_models,
-        }
+        return name2module
 
     def maybe_show_pred(self, stream_slice: torch.Tensor, model: torch.nn.Module, stack_counter: int) -> None:
         if self.show_pred:

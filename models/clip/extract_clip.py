@@ -40,9 +40,8 @@ class ExtractCLIP(BaseFrameWiseExtractor):
             self.pred_texts_tok = clip.tokenize(self.pred_texts).long()
         self.name2module = self.load_model()
 
-
     def load_model(self) -> Dict[str, torch.nn.Module]:
-        '''Defines the models, loads checkpoints, sends them to the device.
+        """Defines the models, loads checkpoints, sends them to the device.
         For CLIP, it also sets the appropriate transforms
 
         Raises:
@@ -50,7 +49,7 @@ class ExtractCLIP(BaseFrameWiseExtractor):
 
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
-        '''
+        """
         if self.model_name in clip.available_models():
             model_path = self.model_name
         elif self.model_name == 'custom':
