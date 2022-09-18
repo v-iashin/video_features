@@ -23,5 +23,6 @@ class ExtractPWC(BaseOpticalFlowExtractor):
             resize_to_smaller_edge=args.resize_to_smaller_edge,
             side_size=args.side_size,
             extraction_fps=args.extraction_fps,
+            extraction_total=args.extraction_total,
             show_pred=args.show_pred,
         )
