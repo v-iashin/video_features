@@ -18,12 +18,12 @@ KINETICS_CLASS_PATH = './utils/K400_label_map.txt'
 
 
 def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, List]):
-    """Prints out predictions for each feature
+    '''Prints out predictions for each feature
 
     Args:
         logits (torch.FloatTensor): after-classification layer vector (B, classes)
         dataset (str): which dataset to use to show the predictions on. In ('imagenet', 'kinetics')
-    """
+    '''
     if dataset == 'kinetics':
         dataset_classes = [x.strip() for x in open(KINETICS_CLASS_PATH)]
     elif dataset == 'imagenet':
@@ -50,16 +50,14 @@ def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, L
             print(f'{logit:8.3f} | {smax:.3f} | {cls}')
         print()
 
-
 def make_path(output_root, video_path, output_key, ext):
     # extract file name and change the extention
     fname = f'{Path(video_path).stem}_{output_key}{ext}'
     # construct the paths to save the features
     return os.path.join(output_root, fname)
 
-
 def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
-    """print(form_slices(100, 15, 15) - example"""
+    '''print(form_slices(100, 15, 15) - example'''
     slices = []
     # calc how many full stacks can be formed out of framepaths
     full_stack_num = (size - stack_size) // step_size + 1
@@ -71,11 +69,11 @@ def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
 
 
 def sanity_check(args: Union[argparse.Namespace, DictConfig]):
-    """Checks user arguments.
+    '''Checks user arguments.
 
     Args:
         args (Union[argparse.Namespace, DictConfig]): Parsed user arguments
-    """
+    '''
     if 'device_ids' in args:
         print('WARNING:')
         print('Running feature extraction on multiple devices in a _single_ process is no longer supported.')
@@ -107,6 +105,9 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         assert args.device != 'cpu', 'PWC does NOT support using CPU'
     if 'batch_size' in args:
         assert args.batch_size is not None, f'Please specify `batch_size`. It is {args.batch_size} now'
+    if 'extraction_fps' in args and 'extraction_total' in args:
+        assert not (args.extraction_fps is not None and args.extraction_total is not None),\
+            '`fps` and `total` is mutually exclusive'
 
     # patch_output_paths
     # preprocess paths
@@ -128,8 +129,8 @@ def form_list_from_user_input(
         video_paths: Union[str, ListConfig, None] = None,
         file_with_video_paths: str = None,
         to_shuffle: bool = True,
-) -> list:
-    """User specifies either list of videos in the cmd or a path to a file with video paths. This function
+    ) -> list:
+    '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
        transforms the user input into a list of paths.
 
     Args:
@@ -141,7 +142,7 @@ def form_list_from_user_input(
 
     Returns:
         list: list with paths
-    """
+    '''
     if file_with_video_paths is None:
         path_list = [video_paths] if isinstance(video_paths, str) else list(video_paths)
         # TODO: the following `if` could be redundant
@@ -167,11 +168,11 @@ def form_list_from_user_input(
 
 
 def which_ffmpeg() -> str:
-    """Determines the path to ffmpeg library
+    '''Determines the path to ffmpeg library
 
     Returns:
         str -- path to the library
-    """
+    '''
     # Determine the platform on which the program is running
     if platform.system().lower() == 'windows':
         result = subprocess.run(['where', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -182,36 +183,8 @@ def which_ffmpeg() -> str:
     return ffmpeg_path
 
 
-def reencode_video_with_diff_fps(video_path: str, tmp_path: str, extraction_fps: float) -> str:
-    """Reencodes the video given the path and saves it to the tmp_path folder.
-
-    Args:
-        video_path (str): original video
-        tmp_path (str): the folder where tmp files are stored (will be appended with a proper filename).
-        extraction_fps (float): target fps value
-
-    Returns:
-        str: The path where the tmp file is stored. To be used to load the video from
-    """
-    assert which_ffmpeg() != '', 'Is ffmpeg installed? Check if the conda environment is activated.'
-    assert video_path.endswith('.mp4'), 'The file does not end with .mp4. Comment this if expected'
-    # create tmp dir if doesn't exist
-    os.makedirs(tmp_path, exist_ok=True)
-
-    # form the path to tmp directory
-    new_path = os.path.join(tmp_path, f'{Path(video_path).stem}_new_fps.mp4')
-    cmd = [
-        which_ffmpeg(), "-hide_banner", "-loglevel", "panic",
-        "-y", "-i", video_path, "-filter:v", f"fps=fps={extraction_fps}", new_path
-    ]
-    subprocess.call(cmd)
-
-    return new_path
-
-
-
 def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:
-    """Extracts .wav file from .aac which is extracted from .mp4
+    '''Extracts .wav file from .aac which is extracted from .mp4
     We cannot convert .mp4 to .wav directly. For this we do it in two stages: .mp4 -> .aac -> .wav
 
     Args:
@@ -220,7 +193,7 @@ def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:
 
     Returns:
         [str, str] -- path to the .wav and .aac audio
-    """
+    '''
     assert which_ffmpeg() != '', 'Is ffmpeg installed? Check if the conda environment is activated.'
     assert video_path.endswith('.mp4'), 'The file does not end with .mp4. Comment this if expected'
     # create tmp dir if doesn't exist
@@ -243,21 +216,21 @@ def extract_wav_from_mp4(video_path: str, tmp_path: str) -> str:
 
 
 def build_cfg_path(feature_type: str) -> os.PathLike:
-    """Makes a path to the default config file for each feature family.
+    '''Makes a path to the default config file for each feature family.
 
     Args:
         feature_type (str): the type (e.g. 'vggish')
 
     Returns:
         os.PathLike: the path to the default config for the type
-    """
+    '''
     path_base = Path('./configs')
     path = path_base / f'{feature_type}.yml'
     return path
 
 
 def dp_state_to_normal(state_dict):
-    """Converts a torch.DataParallel checkpoint to regular"""
+    '''Converts a torch.DataParallel checkpoint to regular'''
     new_state_dict = {}
     for k, v in state_dict.items():
         if k.startswith('module'):
@@ -268,14 +241,11 @@ def dp_state_to_normal(state_dict):
 def load_numpy(fpath):
     return np.load(fpath)
 
-
 def write_numpy(fpath, value):
     return np.save(fpath, value)
 
-
 def load_pickle(fpath):
     return pickle.load(open(fpath, 'rb'))
-
 
 def write_pickle(fpath, value):
     return pickle.dump(value, open(fpath, 'wb'))

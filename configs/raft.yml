@@ -1,6 +1,7 @@
 # Model
 feature_type: 'raft'
 extraction_fps: null # For original video fps, leave as "null" (None)
+extraction_total: null # extract a fix number of frames. It is mutually exclusive with "fps"
 side_size: null # if resized to the smaller edge, min(W, H) = side_size, if to the larger: max(W, H), if "null" (None) no resize is performed
 resize_to_smaller_edge: true # if false, the larger edge will be used to be resized to `side_size`
 finetuned_on: 'sintel' # also 'kitti' is supported

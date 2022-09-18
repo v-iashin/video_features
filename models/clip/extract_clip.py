@@ -25,6 +25,7 @@ class ExtractCLIP(BaseFrameWiseExtractor):
             model_name=args.model_name,
             batch_size=args.batch_size,
             extraction_fps=args.extraction_fps,
+            extraction_total=args.extraction_total,
             show_pred=args.show_pred,
         )
         self.transforms = 'For CLIP, it is easier to define in .load_model method because we need input size'
