@@ -193,7 +193,7 @@ dependencies:\n\
   - pytest=7.1.2=py37h89c1867_0\n\
   - python=3.7.7=hcff3b4d_5\n\
   - python_abi=3.7=1_cp37m\n\
-  - pytorch=1.2.0=py3.7_cuda10.0.130_cudnn7.6.2_0\n\
+  - pytorch=1.2.0=cuda100py37h938c94c_0\n\
   - pyyaml=5.3.1=py37hb5d75c8_1\n\
   - readline=8.0=h7b6447c_0\n\
   - regex=2022.3.15=py37h7f8727e_0\n\
@@ -204,7 +204,7 @@ dependencies:\n\
   - sqlite=3.31.1=h62c20be_1\n\
   - tk=8.6.8=hbc83047_0\n\
   - tomli=2.0.1=pyhd8ed1ab_0\n\
-  - torchvision=0.4.0=py37_cu100\n\
+  - torchvision=0.4.0=cuda100py37hecfc37a_0\n\
   - tqdm=4.46.0=py_0\n\
   - typing_extensions=4.0.1=pyha770c72_0\n\
   - wcwidth=0.2.5=pyh9f0ad1d_2\n\
