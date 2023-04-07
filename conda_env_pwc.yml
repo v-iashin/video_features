@@ -70,7 +70,7 @@ dependencies:
   - pytest=7.1.2=py37h89c1867_0
   - python=3.7.7=hcff3b4d_5
   - python_abi=3.7=1_cp37m
-  - pytorch=1.2.0=py3.7_cuda10.0.130_cudnn7.6.2_0
+  - pytorch=1.2.0=cuda100py37h938c94c_0
   - pyyaml=5.3.1=py37hb5d75c8_1
   - readline=8.0=h7b6447c_0
   - regex=2022.3.15=py37h7f8727e_0
@@ -81,7 +81,7 @@ dependencies:
   - sqlite=3.31.1=h62c20be_1
   - tk=8.6.8=hbc83047_0
   - tomli=2.0.1=pyhd8ed1ab_0
-  - torchvision=0.4.0=py37_cu100
+  - torchvision=0.4.0=cuda100py37hecfc37a_0
   - tqdm=4.46.0=py_0
   - typing_extensions=4.0.1=pyha770c72_0
   - wcwidth=0.2.5=pyh9f0ad1d_2
