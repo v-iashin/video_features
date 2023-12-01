@@ -131,7 +131,8 @@ def form_list_from_user_input(
         to_shuffle: bool = True,
     ) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
-       transforms the user input into a list of paths.
+       transforms the user input into a list of paths. Files are expected to be formatted with a single
+       video-path in each line.
 
     Args:
         video_paths (Union[str, ListConfig, None], optional): a list of video paths. Defaults to None.
