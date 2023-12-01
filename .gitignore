@@ -1,0 +1,26 @@
+# Compiled python
+*.pyc
+*.pyd
+
+# Editor temporaries
+*.swn
+*.swo
+*.swp
+*~
+
+# NFS handle files
+**/.nfs*
+
+# Sublime Text settings
+*.sublime-workspace
+*.sublime-project
+
+# Visual Studio Code files
+.vs
+/.vscode/*
+!/.vscode/extensions.json
+!/.vscode/settings_recommended.json
+
+# Output files
+./output
+./Output
