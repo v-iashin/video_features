@@ -34,6 +34,8 @@ def main(args_cli):
         from models.pwc.extract_pwc import ExtractPWC as Extractor
     elif args.feature_type == 'clip':
         from models.clip.extract_clip import ExtractCLIP as Extractor
+    elif args.feature_type == 'hf':
+        from models.hf.extract_frames import ExtractFrames as Extractor
     else:
         raise NotImplementedError(f'Extractor {args.feature_type} is not implemented.')
 
