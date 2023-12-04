@@ -60,6 +60,19 @@ python main.py \
 # device can also be "cpu"
 ```
 
+Do you want to run the same example on multiple GPUs through a slurm cluster?
+Simply enable the `slurm` option and specify the number of parallel jobs to submit. Note that slurm parameters can be found in `base_slurm.yml` and can be overwritten through model args. For example, if you want to run 2 jobs in parallel with default settings, you can run the following command:
+```bash
+# extract r(2+1)d features for the sample videos
+python main.py \
+    feature_type=r21d \
+    device="cuda:0" \
+    video_paths="[./sample/v_ZNVhz7ctTq0.mp4, ./sample/v_GGSY1Qvo990.mp4]"
+    slurm.submitit=True \
+    slurm.num_arrays=2
+```
+and if you want to modify, say the partition name, you can do that thrgough the `r21d.yml` file in the [config](configs/r21d.yml).
+
 If you are more comfortable with Docker, there is a
 Docker image with a pre-installed environment that supports all models.
 Check out the
