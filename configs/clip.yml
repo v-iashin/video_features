@@ -1,21 +1,34 @@
 # Model
-feature_type: 'clip'
-model_name: 'ViT-B/32' # ViT-B/16 RN50x16 RN50x4 RN101 RN50
+feature_type: "clip"
+model_name: "ViT-B/32" # ViT-B/16 RN50x16 RN50x4 RN101 RN50
 batch_size: 1 # Batchsize (only frame-wise extractors are supported)
 extraction_fps: null # For original video fps, leave unspecified "null" (None)
 extraction_total: null # extract a fix number of frames. It is mutually exclusive with "fps"
 
 # Extraction Parameters
-device: 'cuda:0'  # device as in `torch`, can be 'cpu'
-on_extraction: 'print'  # what to do once the features are extracted. Can be ['print', 'save_numpy', 'save_pickle']
-output_path: './output' # where to store results if saved
-tmp_path: './tmp' # folder to store the temporary files used for extraction (frames or aud files)
+device: "cuda:0" # device as in `torch`, can be 'cpu'
+on_extraction: "print" # what to do once the features are extracted. Can be ['print', 'save_numpy', 'save_pickle']
+output_path: "./output" # where to store results if saved
+tmp_path: "./tmp" # folder to store the temporary files used for extraction (frames or aud files)
 keep_tmp_files: false # to keep temp files after feature extraction.
 show_pred: false # to show preds of a model, i.e. on a pre-train dataset for each feature (Kinetics 400)
 pred_texts: null # provide a list of multiple sentences.  if `null`, will perform zero-shot on Kinetics 400
 
 # config
 config: null
+
+# submitit
+slurm:
+  submit: false
+  name: "VidFeats"
+  log_folder_path: "./output"
+  num_arrays: 2
+  max_arrays: 10 # Max num arrays to run
+  mem_gb: 50 # Memory per task in GB
+  cpus_per_task: 10 # CPU cores to use per task
+  timeout_hrs: 1 # Job length in hours
+  partition: "gpu"
+  monitor: true
 
 # Video paths
 video_paths: null

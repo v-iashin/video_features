@@ -24,3 +24,7 @@
 # Output files
 ./output
 ./Output
+./output/*
+*.out
+*.err
+*.pkl

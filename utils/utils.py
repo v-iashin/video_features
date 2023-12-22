@@ -81,7 +81,7 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         print('For instance, in one terminal: `device="cuda:0"` and `device="cuda:1"` in the second, etc.')
         print(f'Your device specification (device_ids={args.device_ids}) is converted to `device="cuda:0"`.')
         args.device = 'cuda:0'
-    if 'cuda' in args.device and not torch.cuda.is_available():
+    if 'cuda' in args.device and not torch.cuda.is_available() and args.slurm.submit == False:
         print(f'A GPU was attempted to use but the system does not have one. Going to use CPU...')
         args.device = 'cpu'
     assert args.file_with_video_paths or args.video_paths, '`video_paths` or `file_with_video_paths` must be specified'

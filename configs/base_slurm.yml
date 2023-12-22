@@ -1,0 +1,12 @@
+# submitit
+slurm:
+  submit: false
+  name: "VidFeats"
+  log_folder_path: "./output"
+  num_arrays: 2
+  max_arrays: 10 # Max num arrays to run
+  mem_gb: 50 # Memory per task in GB
+  cpus_per_task: 10 # CPU cores to use per task
+  timeout_hrs: 1 # Job length in hours
+  partition: "gpu"
+  monitor: true
