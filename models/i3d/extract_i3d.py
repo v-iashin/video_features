@@ -24,6 +24,7 @@ class ExtractI3D(BaseExtractor):
         super().__init__(
             feature_type=args.feature_type,
             on_extraction=args.on_extraction,
+            save_option=args.save_option,
             tmp_path=args.tmp_path,
             output_path=args.output_path,
             keep_tmp_files=args.keep_tmp_files,
@@ -38,15 +39,24 @@ class ExtractI3D(BaseExtractor):
         self.extraction_fps = args.extraction_fps
         self.step_size = 64 if args.step_size is None else args.step_size
         self.stack_size = 64 if args.stack_size is None else args.stack_size
+        self.aug_type = args.augment
         self.resize_transforms = torchvision.transforms.Compose([
             torchvision.transforms.ToPILImage(),
             ResizeImproved(self.min_side_size),
             PILToTensor(),
             ToFloat(),
         ])
+        if self.aug_type is None:
+            aug_transform = TensorCenterCrop(self.central_crop_size)
+        elif self.aug_type == 'five_crop':
+            aug_transform = torchvision.transforms.FiveCrop(self.central_crop_size)
+            self.num_crop = 5
+        elif self.aug_type == 'ten_crop':
+            aug_transform = torchvision.transforms.TenCrop(self.central_crop_size)
+            self.num_crop = 10
         self.i3d_transforms = {
             'rgb': torchvision.transforms.Compose([
-                TensorCenterCrop(self.central_crop_size),
+                aug_transform,
                 ScaleTo1_1(),
                 PermuteAndUnsqueeze()
             ]),
@@ -82,8 +92,12 @@ class ExtractI3D(BaseExtractor):
         # timestamp when the last frame in the stack begins (when the old frame of the last pair ends)
         timestamps_ms = []
         rgb_stack = []
-        feats_dict = {stream: [] for stream in self.streams}
-
+        
+        if self.aug_type is not None:
+            feats_dict = {stream: [[] for _ in range(self.num_crop)] for stream in self.streams}
+        else:
+            feats_dict = {stream: [] for stream in self.streams}
+            
         # sometimes when the target fps is 1 or 2, the first frame of the reencoded video is missing
         # and cap.read returns None but the rest of the frames are ok. timestep is 0.0 for the 2nd frame in
         # this case
@@ -113,7 +127,11 @@ class ExtractI3D(BaseExtractor):
                 if len(rgb_stack) - 1 == self.stack_size:
                     batch_feats_dict = self.run_on_a_stack(rgb_stack, stack_counter, padder)
                     for stream in self.streams:
-                        feats_dict[stream].extend(batch_feats_dict[stream].tolist())
+                        if isinstance(batch_feats_dict[stream], tuple):
+                            for i in range(len(batch_feats_dict[stream])):
+                                feats_dict[stream][i].extend(batch_feats_dict[stream][i].tolist())
+                        else:
+                            feats_dict[stream].extend(batch_feats_dict[stream].tolist())
                     # leaving the elements if step_size < stack_size so they will not be loaded again
                     # if step_size == stack_size one element is left because the flow between the last element
                     # in the prev list and the first element in the current list
@@ -161,8 +179,11 @@ class ExtractI3D(BaseExtractor):
                 raise NotImplementedError
             # apply transforms depending on the stream (flow or rgb)
             stream_slice = self.i3d_transforms[stream](stream_slice)
-            # extract features for a stream
-            batch_feats_dict[stream] = models[stream](stream_slice, features=True)  # (B, 1024)
+            if isinstance(stream_slice, tuple):
+                # extract features for a stream
+                batch_feats_dict[stream] = tuple([models[stream](stream_crop, features=True) for stream_crop in stream_slice])
+            else:    
+                batch_feats_dict[stream] = models[stream](stream_slice, features=True)  # (B, 1024)
             # add features to the output dict
             self.maybe_show_pred(stream_slice, self.name2module['model'][stream], stack_counter)
 
