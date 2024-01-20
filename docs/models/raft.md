@@ -17,10 +17,10 @@ The optical flow frames have the same size as the video input or as specified by
 ---
 
 ## Set up the Environment for RAFT
-Setup `conda` environment. Requirements for RAFT are similar to the torchvision zoo, which uses `conda_env_torch_zoo.yml`
+Setup `conda` environment. Requirements for RAFT are similar to the torchvision zoo, which uses `conda_env.yml`
 ```bash
-# it will create a new conda environment called 'torch_zoo' on your machine
-conda env create -f conda_env_torch_zoo.yml
+# it will create a new conda environment called 'video_features' on your machine
+conda env create -f conda_env.yml
 ```
 
 ---
@@ -31,7 +31,7 @@ conda env create -f conda_env_torch_zoo.yml
 
 Activate the environment
 ```bash
-conda activate torch_zoo
+conda activate video_features
 ```
 
 and extract optical flow from `./sample/v_GGSY1Qvo990.mp4` using one GPU and show the flow for each frame
@@ -71,7 +71,7 @@ To use `show_pred=true`, a screen must be attached to the machine or X11 forward
 
 Start by activating the environment
 ```bash
-conda activate torch_zoo
+conda activate video_features
 ```
 
 A minimal working example:

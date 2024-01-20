@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, '.')  # nopep8
-
 from models.i3d.extract_i3d import ExtractI3D as Extractor
 from tests.utils import base_test_script
 
@@ -17,25 +16,15 @@ FEATURE_TYPE = Path(THIS_FILE_PATH).parent.name
 # True when run for the first time, then must be False
 TO_MAKE_REF = False
 
-# we separate them here because pwc is not supported from `torch_zoo` conda environement
-# This checks for the python path and adjusts testing parameters
+
 signature = 'device, video_paths, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref'
-if '/pwc/' in sys.executable:
-    test_params = [
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', None, None, None, TO_MAKE_REF),
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', 24, 24, 25, TO_MAKE_REF),
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'pwc', 24, 12, 15, TO_MAKE_REF),
-        # ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'pwc', None, None, None, TO_MAKE_REF), # this one does not work on import vs cli
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'pwc', None, None, None, TO_MAKE_REF),
-    ]
-else:
-    test_params = [
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', None, None, None, TO_MAKE_REF),
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 24, 25, TO_MAKE_REF),
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 12, 15, TO_MAKE_REF),
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'raft', None, None, None, TO_MAKE_REF),
-        ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
-    ]
+test_params = [
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', None, None, None, TO_MAKE_REF),
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 24, 25, TO_MAKE_REF),
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 12, 15, TO_MAKE_REF),
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'raft', None, None, None, TO_MAKE_REF),
+    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
+]
 
 
 @pytest.mark.parametrize(signature, test_params)

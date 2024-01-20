@@ -7,7 +7,6 @@ import torch
 import torchvision
 from models._base.base_extractor import BaseExtractor
 from models.i3d.i3d_src.i3d_net import I3D
-from models.pwc.extract_pwc import DATASET_to_PWC_CKPT_PATHS
 from models.raft.extract_raft import DATASET_to_RAFT_CKPT_PATHS
 from models.raft.raft_src.raft import RAFT, InputPadder
 from models.transforms import (Clamp, PermuteAndUnsqueeze, PILToTensor,
@@ -31,6 +30,9 @@ class ExtractI3D(BaseExtractor):
         )
         # (Re-)Define arguments for this class
         self.streams = ['rgb', 'flow'] if args.streams is None else [args.streams]
+        if args.flow_type == 'pwc':
+            raise NotImplementedError(
+                'PWC is no longer implemented for I3D. See https://github.com/v-iashin/video_features/pull/112')
         self.flow_type = args.flow_type
         self.i3d_classes_num = 400
         self.min_side_size = 256
@@ -151,8 +153,6 @@ class ExtractI3D(BaseExtractor):
             if stream == 'flow':
                 if self.flow_type == 'raft':
                     stream_slice = flow_xtr_model(padder.pad(rgb_stack)[:-1], padder.pad(rgb_stack)[1:])
-                elif self.flow_type == 'pwc':
-                    stream_slice = flow_xtr_model(rgb_stack[:-1], rgb_stack[1:])
                 else:
                     raise NotImplementedError
             elif stream == 'rgb':
@@ -175,7 +175,7 @@ class ExtractI3D(BaseExtractor):
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
         """
-        flow_model_paths = {'pwc': DATASET_to_PWC_CKPT_PATHS['sintel'], 'raft': DATASET_to_RAFT_CKPT_PATHS['sintel']}
+        flow_model_paths = {'raft': DATASET_to_RAFT_CKPT_PATHS['sintel'], }
         i3d_weights_paths = {
             'rgb': './models/i3d/checkpoints/i3d_rgb.pt',
             'flow': './models/i3d/checkpoints/i3d_flow.pt',
@@ -184,11 +184,10 @@ class ExtractI3D(BaseExtractor):
 
         if "flow" in self.streams:
             # Flow extraction module
-            if self.flow_type == 'pwc':
-                from models.pwc.pwc_src.pwc_net import PWCNet
-                flow_xtr_model = PWCNet()
-            elif self.flow_type == 'raft':
+            if self.flow_type == 'raft':
                 flow_xtr_model = RAFT()
+            else:
+                raise NotImplementedError(f'Flow model {self.flow_type} is not implemented')
             # Preprocess state dict
             state_dict = torch.load(flow_model_paths[self.flow_type], map_location='cpu')
             state_dict = dp_state_to_normal(state_dict)

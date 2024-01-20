@@ -1,4 +1,3 @@
-import os
 from typing import Dict, List, Union
 
 import cv2
@@ -15,7 +14,7 @@ from utils.io import VideoLoader
 
 
 class BaseOpticalFlowExtractor(BaseExtractor):
-    '''Common things for all frame-wise extractors (such as RAFT and PWC).'''
+    '''Common things for all frame-wise extractors (such as RAFT).'''
 
     def __init__(self,
                  # BaseExtractor arguments
@@ -123,10 +122,6 @@ class BaseOpticalFlowExtractor(BaseExtractor):
         '''
         if self.feature_type == 'raft':
             model = RAFT()
-        elif self.feature_type == 'pwc':
-            # imported here to avoid environment mismatch when run under `torch_zoo`
-            from models.pwc.pwc_src.pwc_net import PWCNet
-            model = PWCNet()
         else:
             raise NotImplementedError(f'Flow model {self.feature_type} is not implemented')
         state_dict = torch.load(self.ckpt_path, map_location='cpu')

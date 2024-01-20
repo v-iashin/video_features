@@ -21,7 +21,6 @@ Sound Recognition
 Optical Flow
 
 - [RAFT (FlyingChairs, FlyingThings3D, Sintel, KITTI)](https://v-iashin.github.io/video_features/models/raft)
-- [PWC-Net (Sintel)](https://v-iashin.github.io/video_features/models/pwc/)
 
 Frame-wise Features
 
@@ -40,10 +39,10 @@ git clone https://github.com/v-iashin/video_features.git
 cd video_features
 
 # install environment
-conda env create -f conda_env_torch_zoo.yml
+conda env create -f conda_env.yml
 
 # load the environment
-conda activate torch_zoo
+conda activate video_features
 
 # extract r(2+1)d features for the sample videos
 python main.py \
