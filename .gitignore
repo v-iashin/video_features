@@ -24,3 +24,7 @@
 # Output files
 ./output
 ./Output
+
+# test files
+./pytest_cache
+reference
