@@ -2,6 +2,12 @@
 <figure>
   <img src="../../_assets/pwc.png" width="300" />
 </figure>
+
+!!! warning "The PWC-New is no longer supported"
+
+    Thank you for your interest in this model. However, I am no longer supporting it.
+    The reason is that: a) it requires a separate conda environment, b) it depends on `cupy` that is difficult to maintain, c) current implementation does not support newer GPUs, d) [RAFT](https://v-iashin.github.io/video_features/models/raft) is a better alternative, e) the implementation that I used is licensed as GPL which makes the whole library to be GPL. Overall, it is not worth the effort to maintain it. To use it, please refer to the latest commit that supports it: [`bd827df`](https://github.com/v-iashin/video_features/tree/bd827df5e543ef3270946bcf63e47e18abcdd9ab).
+
 [PWC-Net: CNNs for Optical Flow Using Pyramid, Warping, and Cost Volume](https://arxiv.org/abs/1709.02371) frames are extracted for every consecutive pair of frames in a video. PWC-Net is pre-trained on [Sintel Flow dataset](http://sintel.is.tue.mpg.de/). The implementation follows [sniklaus/pytorch-pwc@f61389005](https://github.com/sniklaus/pytorch-pwc/tree/f6138900578214ab4e3daef6743b88f7824293be).
 
 !!! warning "CUDA 11 and GPUs like RTX 3090 and newer"
