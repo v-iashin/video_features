@@ -4,10 +4,10 @@
 </figure>
 
 <!-- TODO: add commit message when it changed -->
-!!! note "PWC-Net is depricated"
+!!! note "PWC-Net is deprecated"
 
     The default behavior has changed in the recent version.
-    Now, the optical flow is extracted with [RAFT](https://v-iashin.github.io/video_features/models/raft) instead of PWC-Net (depricated).
+    Now, the optical flow is extracted with [RAFT](https://v-iashin.github.io/video_features/models/raft) instead of PWC-Net (deprecated).
 
 The _Inflated 3D ([I3D](https://arxiv.org/abs/1705.07750))_ features are extracted using
 a pre-trained model on [Kinetics 400](https://deepmind.com/research/open-source/kinetics).
