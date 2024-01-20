@@ -104,12 +104,10 @@ python main.py \
 
 
 ## Switching conda environments
-By default, the `torch_zoo` environment is activated once you attach the shell.
+By default, the `video_features` environment is activated once you attach the shell.
 The image supports both conda environments and you can switch it simply as follows:
 ```bash
 # ubuntu@56b1bf77a20c:~$
-conda activate pwc
-conda deactivate
-conda activate torch_zoo
+conda activate video_features
 # which python
 ```

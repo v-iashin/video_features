@@ -30,10 +30,10 @@ across the time dimension.
 ---
 
 ## Set up the Environment for S3D
-Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
+Setup `conda` environment. Requirements are in file `conda_env.yml`
 ```bash
-# it will create a new conda environment called 'torch_zoo' on your machine
-conda env create -f conda_env_torch_zoo.yml
+# it will create a new conda environment called 'video_features' on your machine
+conda env create -f conda_env.yml
 ```
 
 ---
@@ -44,7 +44,7 @@ conda env create -f conda_env_torch_zoo.yml
 
 Activate the environment
 ```bash
-conda activate torch_zoo
+conda activate video_features
 ```
 
 and extract features from the `./sample/v_GGSY1Qvo990.mp4` video and show the predicted classes

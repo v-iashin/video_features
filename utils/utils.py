@@ -101,8 +101,6 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
     if args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'r21d']:
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
-    if args.feature_type == 'pwc' or (args.feature_type == 'i3d' and args.flow_type == 'pwc'):
-        assert args.device != 'cpu', 'PWC does NOT support using CPU'
     if 'batch_size' in args:
         assert args.batch_size is not None, f'Please specify `batch_size`. It is {args.batch_size} now'
     if 'extraction_fps' in args and 'extraction_total' in args:

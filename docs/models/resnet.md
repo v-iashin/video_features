@@ -14,10 +14,10 @@ We additionally output timesteps in ms for each feature and fps of the video. We
 ---
 
 ## Set up the Environment for ResNet
-Setup `conda` environment. Requirements are in file `conda_env_torch_zoo.yml`
+Setup `conda` environment. Requirements are in file `conda_env.yml`
 ```bash
-# it will create a new conda environment called 'torch_zoo' on your machine
-conda env create -f conda_env_torch_zoo.yml
+# it will create a new conda environment called 'video_features' on your machine
+conda env create -f conda_env.yml
 ```
 
 ---
@@ -28,7 +28,7 @@ conda env create -f conda_env_torch_zoo.yml
 
 Activate the environment
 ```bash
-conda activate torch_zoo
+conda activate video_features
 ```
 
 and extract features at 1 fps from `./sample/v_GGSY1Qvo990.mp4` video and show the predicted classes
@@ -65,7 +65,7 @@ python main.py \
 ## Examples
 Start by activating the environment
 ```bash
-conda activate torch_zoo
+conda activate video_features
 ```
 
 It is pretty much the same procedure as with other features.
