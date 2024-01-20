@@ -30,6 +30,9 @@ class ExtractI3D(BaseExtractor):
         )
         # (Re-)Define arguments for this class
         self.streams = ['rgb', 'flow'] if args.streams is None else [args.streams]
+        if args.flow_type == 'pwc':
+            raise NotImplementedError(
+                'PWC is no longer implemented for I3D. See https://github.com/v-iashin/video_features/pull/112')
         self.flow_type = args.flow_type
         self.i3d_classes_num = 400
         self.min_side_size = 256

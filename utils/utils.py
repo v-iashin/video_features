@@ -98,6 +98,9 @@ def sanity_check(args: Union[argparse.Namespace, DictConfig]):
         message = f'I3D model does not support inputs shorter than 10 timestamps. You have: {args.stack_size}'
         if args.stack_size is not None:
             assert args.stack_size >= 10, message
+    if args.feature_type == 'pwc' or (args.feature_type == 'i3d' and args.flow_type == 'pwc'):
+        raise NotImplementedError(
+            'PWC is no longer supported. Please see: https://github.com/v-iashin/video_features/pull/112')
     if args.feature_type in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'r21d']:
         if args.keep_tmp_files:
             print('If you want to keep frames while extracting features, please create an issue')
