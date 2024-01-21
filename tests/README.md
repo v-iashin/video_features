@@ -23,32 +23,22 @@ First, checkout to `master` and run tests with `TO_MAKE_REF` set to `True` in ea
 for which you want to run a test (Find & Replace works for well me).
 Then, checkout to the branch you want to test and run tests with `TO_MAKE_REF` set to `False`.
 
-To test one model (`vggish`), run this:
+You may use the conda environment that was installed locally or
+the [Docker](https://v-iashin.github.io/video_features/meta/docker) container.
+
 ```bash
 # conda activate torch_zoo
 pytest tests/vggish
 ```
 
-To test all models but PWC, run this:
 ```bash
-# conda activate torch_zoo
-pytest --ignore tests/pwc
+# conda activate video_features
+pytest
 ```
 
-To test PWC and I3D with the PWC flow:
-```bash
-# conda deactivate
-# conda activate pwc
-pytest tests/pwc tests/i3d
-# conda deactivate
-```
-
+Also, remember that running the code with `show_pred` should yield something reasonable.
 You may use the conda environment that was installed locally or
 the [Docker](https://v-iashin.github.io/video_features/meta/docker) container.
-
-<!-- It may throw 1 warning for `torch_zoo` and 6 more warnings for `pwc`. -->
-
-<!-- Also, remember that running the code with `show_pred` should yield something reasonable. -->
 
 # How to make a test?
 

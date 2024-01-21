@@ -28,3 +28,10 @@
 # test files
 ./pytest_cache
 reference
+
+# vggish checkpoints
+models/vggish/hub/checkpoints/vggish-10086976.pth
+models/vggish/hub/checkpoints/vggish_pca_params-970ea276.pth
+
+# extracted features
+tmp/

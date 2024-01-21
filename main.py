@@ -30,8 +30,6 @@ def main(args_cli):
         from models.resnet.extract_resnet import ExtractResNet as Extractor
     elif args.feature_type == 'raft':
         from models.raft.extract_raft import ExtractRAFT as Extractor
-    elif args.feature_type == 'pwc':
-        from models.pwc.extract_pwc import ExtractPWC as Extractor
     elif args.feature_type == 'clip':
         from models.clip.extract_clip import ExtractCLIP as Extractor
     else:
