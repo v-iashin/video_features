@@ -24,15 +24,7 @@ class ExtractResNet(BaseFrameWiseExtractor):
             extraction_total=args.extraction_total,
             show_pred=args.show_pred,
         )
-        self.transforms = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
         self.name2module = self.load_model()
-
 
     def load_model(self) -> Dict[str, torch.nn.Module]:
         """Defines the models, loads checkpoints, sends them to the device.
@@ -43,12 +35,14 @@ class ExtractResNet(BaseFrameWiseExtractor):
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
         """
-        try:
-            model = getattr(models, self.model_name)
-        except AttributeError:
-            raise NotImplementedError(f'Model {self.model_name} not found.')
+        # TODO: could be 'DEFAULT' to unify with other models from tv
+        weights_key = 'IMAGENET1K_V1'
+        model = models.get_model(self.model_name, weights=weights_key)
+        self.transforms = transforms.Compose([
+            transforms.ToPILImage(),
+            models.get_model_weights(self.model_name)[weights_key].transforms(),
+        ])
 
-        model = model(pretrained=True)
         model = model.to(self.device)
         model.eval()
         # save the pre-trained classifier for show_preds and replace it in the net with identity
