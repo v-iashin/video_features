@@ -2,11 +2,14 @@ from typing import Dict
 
 import numpy as np
 import torch
+
 import torchvision
+from torchvision.io.video import read_video
+import torchvision.models as models
+
 from models._base.base_extractor import BaseExtractor
 from models.transforms import (CenterCrop, Normalize, Resize,
                                ToFloatTensorInZeroOne)
-from torchvision.io.video import read_video
 from utils.io import reencode_video_with_diff_fps
 from utils.utils import form_slices, show_predictions_on_dataset
 
@@ -47,12 +50,6 @@ class ExtractR21D(BaseExtractor):
             self.step_size = self.model_def['step_size']
         if self.stack_size is None:
             self.stack_size = self.model_def['stack_size']
-        self.transforms = torchvision.transforms.Compose([
-            ToFloatTensorInZeroOne(),
-            Resize((128, 171)),
-            Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
-            CenterCrop((112, 112))
-        ])
         self.show_pred = args.show_pred
         self.output_feat_keys = [self.feature_type]
         self.name2module = self.load_model()
@@ -102,8 +99,15 @@ class ExtractR21D(BaseExtractor):
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
         """
+        self.transforms = torchvision.transforms.Compose([
+            ToFloatTensorInZeroOne(),
+            Resize((128, 171)),
+            Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
+            CenterCrop((112, 112)),
+        ])
         if self.model_name == 'r2plus1d_18_16_kinetics':
-            model = torchvision.models.video.r2plus1d_18(pretrained=True)
+            weights_key = 'DEFAULT'
+            model = models.get_model('r2plus1d_18', weights=weights_key)
         else:
             model = torch.hub.load(
                 self.model_def['repo'],
