@@ -74,15 +74,21 @@ python main.py \
 
 ---
 
-## Difference between Tensorflow and PyTorch implementations
+## Difference between TensorFlow and PyTorch implementations
+VGGish was originally implemented in TensorFlow.
+We use the PyTorch implementation by
+[harritaylor/torchvggish](https://github.com/harritaylor/torchvggish/tree/f70241ba)
+The difference in values between the PyTorch and Tensorflow implementation is negligible.
+However, after updating the versions of the dependencies, the values are slightly different.
+If you wish to use the old implementation, you can use the conda environment at the `b21f330` commit or earlier.
+The following table shows the difference in values.
 
 ```
 python main.py \
     feature_type=vggish \
-    on_extraction=save_numpy \
-    file_with_video_paths=./sample/sample_video_paths.txt
+    video_paths="[./sample/v_GGSY1Qvo990.mp4]"
 
-TF (./sample/v_GGSY1Qvo990.mp4):
+Original (./sample/v_GGSY1Qvo990.mp4):
 [[0.         0.04247099 0.09079538 ... 0.         0.18485409 0.        ]
  [0.         0.         0.         ... 0.         0.5720243  0.5475726 ]
  [0.         0.00705254 0.15173683 ... 0.         0.33540994 0.10572422]
@@ -92,7 +98,7 @@ TF (./sample/v_GGSY1Qvo990.mp4):
  [0.         0.31638345 0.         ... 0.         0.         0.        ]]
 max: 2.31246495; mean: 0.13741589; min: 0.00000000
 
-PyTorch (./sample/v_GGSY1Qvo990.mp4):
+b21f330 and ealier (./sample/v_GGSY1Qvo990.mp4):
 [[0.         0.04247095 0.09079528 ... 0.         0.18485469 0.        ]
  [0.         0.         0.         ... 0.         0.5720252  0.5475726 ]
  [0.         0.0070536  0.1517372  ... 0.         0.33541012 0.10572463]
@@ -102,21 +108,16 @@ PyTorch (./sample/v_GGSY1Qvo990.mp4):
  [0.         0.31638315 0.         ... 0.         0.         0.        ]]
 max: 2.31246495; mean: 0.13741589; min: 0.00000000
 
-(PyTorch - TensorFlow).abs()
-tensor([[0.0000e+00, 4.4703e-08, 1.0431e-07,  ..., 0.0000e+00, 5.9605e-07,
-         0.0000e+00],
-        [0.0000e+00, 0.0000e+00, 0.0000e+00,  ..., 0.0000e+00, 8.9407e-07,
-         0.0000e+00],
-        [0.0000e+00, 1.0580e-06, 3.7253e-07,  ..., 0.0000e+00, 1.7881e-07,
-         4.1723e-07],
-        ...,
-        [0.0000e+00, 0.0000e+00, 8.6427e-07,  ..., 0.0000e+00, 2.3097e-07,
-         0.0000e+00],
-        [0.0000e+00, 1.4454e-06, 8.0466e-07,  ..., 0.0000e+00, 0.0000e+00,
-         0.0000e+00],
-        [0.0000e+00, 2.9802e-07, 0.0000e+00,  ..., 0.0000e+00, 0.0000e+00,
-         0.0000e+00]])
-max: 4.0531e-06; mean: 2.2185e-07; min: 0.00000000
+Current (./sample/v_GGSY1Qvo990.mp4):
+[[0.         0.0752698  0.12985817 ... 0.         0.18340725 0.00647891]
+ [0.         0.         0.         ... 0.         0.5479691  0.6105871 ]
+ [0.         0.03563304 0.1507446  ... 0.         0.20983526 0.15856776]
+ ...
+ [0.         0.         0.3077196  ... 0.         0.08271158 0.03223182]
+ [0.         0.15476668 0.25240228 ... 0.         0.         0.        ]
+ [0.         0.3711498  0.         ... 0.         0.         0.        ]]
+max: 2.41924119; mean: 0.13830526; min: 0.00000000
+
 ```
 
 ---
