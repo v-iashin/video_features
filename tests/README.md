@@ -23,9 +23,7 @@ First, checkout to `master` and run tests with `TO_MAKE_REF` set to `True` in ea
 for which you want to run a test (Find & Replace works for well me).
 Then, checkout to the branch you want to test and run tests with `TO_MAKE_REF` set to `False`.
 
-You may use the conda environment that was installed locally or
-the [Docker](https://v-iashin.github.io/video_features/meta/docker) container.
-
+To run tests for a specific model (`vggish`), you may use the following command:
 ```bash
 # conda activate torch_zoo
 pytest tests/vggish
