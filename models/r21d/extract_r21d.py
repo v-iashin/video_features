@@ -105,6 +105,7 @@ class ExtractR21D(BaseExtractor):
             Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
             CenterCrop((112, 112)),
         ])
+
         if self.model_name == 'r2plus1d_18_16_kinetics':
             weights_key = 'DEFAULT'
             model = models.get_model('r2plus1d_18', weights=weights_key)
@@ -115,6 +116,7 @@ class ExtractR21D(BaseExtractor):
                 num_classes=self.model_def['num_classes'],
                 pretrained=True,
             )
+
         model = model.to(self.device)
         model.eval()
         # save the pre-trained classifier for show_preds and replace it in the net with identity
