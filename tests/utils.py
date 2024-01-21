@@ -34,7 +34,9 @@ def make_ref_path(feature_type, file_key, **patch_kwargs):
 
 
 def make_ref(args, video_path: Path, data, save_path):
-    assert not save_path.exists(), 'Do you make another ref????'
+    assert not save_path.exists(), 'Making another reference? ' \
+                                   f'If so, delete the old dir: "{save_path.parent}"' \
+                                   ' or toggle `TO_MAKE_REF` to False in the file you are testing.'
     save_path.parent.mkdir(exist_ok=True)
     to_save = {
         'args': args,
@@ -125,9 +127,9 @@ def base_test_script(feature_type: str, Extractor, to_make_ref: bool, **patch_kw
         if to_make_ref:
             make_ref(args, patch_kwargs['video_paths'], feat_out, ref_path)
         feat_ref = torch.load(ref_path)['data']
-        print(k)
-        print(feat_out - feat_ref)
+        # print(k)
+        # print(feat_out - feat_ref)
         # compare shapes
-        assert feat_out.shape == feat_ref.shape
+        assert feat_out.shape == feat_ref.shape, f'feat_out: {feat_out.shape}\nfeat_ref: {feat_ref.shape}'
         # compare values
-        assert all_close(feat_out, feat_ref)
+        assert all_close(feat_out, feat_ref), f'feat_out: {feat_out}\nfeat_ref: {feat_ref}'
