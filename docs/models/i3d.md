@@ -61,12 +61,12 @@ Activate the environment
 conda activate video_features
 ```
 
-and extract features from `./sample/v_ZNVhz7ctTq0.mp4` video and show the predicted classes
+and extract features from `./sample/v_GGSY1Qvo990.mp4` video and show the predicted classes
 ```bash
 python main.py \
     feature_type=i3d \
     device="cuda:0" \
-    video_paths="[./sample/v_ZNVhz7ctTq0.mp4]" \
+    video_paths="[./sample/v_GGSY1Qvo990.mp4]" \
     show_pred=true
 ```
 
