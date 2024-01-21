@@ -61,18 +61,13 @@ def waveform_to_examples(data, sample_rate, return_tensor=True):
 
     # Frame features into examples.
     features_sample_rate = 1.0 / vggish_params.STFT_HOP_LENGTH_SECONDS
-    example_window_length = int(round(
-        vggish_params.EXAMPLE_WINDOW_SECONDS * features_sample_rate))
-    example_hop_length = int(round(
-        vggish_params.EXAMPLE_HOP_SECONDS * features_sample_rate))
-    log_mel_examples = mel_features.frame(
-        log_mel,
-        window_length=example_window_length,
-        hop_length=example_hop_length)
+    example_window_length = int(round(vggish_params.EXAMPLE_WINDOW_SECONDS * features_sample_rate))
+    example_hop_length = int(round(vggish_params.EXAMPLE_HOP_SECONDS * features_sample_rate))
+    log_mel_examples = mel_features.frame(log_mel, window_length=example_window_length,
+                                          hop_length=example_hop_length)
 
     if return_tensor:
-        log_mel_examples = torch.tensor(
-            log_mel_examples, requires_grad=True)[:, None, :, :].float()
+        log_mel_examples = torch.tensor(log_mel_examples, requires_grad=True)[:, None, :, :].float()
 
     return log_mel_examples
 
