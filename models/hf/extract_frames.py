@@ -78,7 +78,7 @@ class ExtractHF(BaseFrameWiseExtractor):
     def maybe_show_pred(self, feats: torch.Tensor):
         if self.show_pred:
             logits = self.name2module['class_head'](feats)
-            # just a bunch of hardcoded tag ends for now
+            # NOTE: these hardcoded ends assume that the end of the tag corresponds to the last training dset
             if self.hf_tag.endswith(('in1k', 'in1k_288', 'in1k_320', 'in1k_384', 'in1k_475', 'in1k_512',)):
                 show_predictions_on_dataset(logits, 'imagenet1k')
             elif self.hf_tag.endswith(('in21k', 'in21k_288', 'in21k_320', 'in21k_384', 'in21k_475',
