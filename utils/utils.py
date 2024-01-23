@@ -13,7 +13,8 @@ import torch
 import torch.nn.functional as F
 from omegaconf.listconfig import ListConfig
 
-IMAGENET_CLASS_PATH = './utils/IN_label_map.txt'
+IMAGENET1K_CLASS_PATH = './utils/IN1K_label_map.txt'
+IMAGENET21K_CLASS_PATH = './utils/IN21K_label_map.txt'
 KINETICS_CLASS_PATH = './utils/K400_label_map.txt'
 
 
@@ -26,8 +27,10 @@ def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, L
     '''
     if dataset == 'kinetics':
         dataset_classes = [x.strip() for x in open(KINETICS_CLASS_PATH)]
-    elif dataset == 'imagenet':
-        dataset_classes = [x.strip() for x in open(IMAGENET_CLASS_PATH)]
+    elif dataset == 'imagenet1k':
+        dataset_classes = [x.strip() for x in open(IMAGENET1K_CLASS_PATH)]
+    elif dataset == 'imagenet21k':
+        dataset_classes = [x.strip() for x in open(IMAGENET21K_CLASS_PATH)]
     elif isinstance(dataset, list):
         dataset_classes = dataset
     else:
