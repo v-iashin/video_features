@@ -5,6 +5,7 @@ import torch
 from PIL import Image
 from torchvision.transforms import Compose
 from models._base.base_framewise_extractor import BaseFrameWiseExtractor
+from utils.utils import show_predictions_on_dataset
 
 try:
     import timm
@@ -13,7 +14,7 @@ try:
 except ImportError:
     raise ImportError("This features require timm library to be installed.")
 
-class ExtractFrames(BaseFrameWiseExtractor):
+class ExtractHF(BaseFrameWiseExtractor):
     def __init__(self, args: omegaconf.DictConfig) -> None:
         super().__init__(
             feature_type=args.feature_type,
@@ -28,13 +29,13 @@ class ExtractFrames(BaseFrameWiseExtractor):
             extraction_total=args.extraction_total,
             show_pred=args.show_pred,
         )
-        
+
         # transform must be implemented in _create_model
         self.transforms = None
         self.name2module = self.load_model()
 
     def load_model(self) -> Dict[str, torch.nn.Module]:
-        """Defines the models, loads checkpoints and related transforms, 
+        """Defines the models, loads checkpoints and related transforms,
         sends them to the device.
 
         Raises:
@@ -43,19 +44,25 @@ class ExtractFrames(BaseFrameWiseExtractor):
         Returns:
             Dict[str, torch.nn.Module]: model-agnostic dict holding modules for extraction and show_pred
         """
-        
-        # TODO: this is a hack, ideally you want to use model spec to define
-        # behaviour at forward pass. ATM I'm just overriding
-        # to spit out features `run_on_a_batch_function`
-        # example of how it could be done:
-        # model = timm.create_model(self.model_spec['model'], num_classes=0, global_pool='')
-        model = timm.create_model(self.model_name)
-        self.transforms =  create_transform(**resolve_data_config(model.pretrained_cfg, model=model))
+        model = timm.create_model(self.model_name, pretrained=True)
+
+        # transforms
+        self.transforms = create_transform(**resolve_data_config(model.pretrained_cfg, model=model))
         self.transforms = Compose([lambda np_array: Image.fromarray(np_array), self.transforms])
         print(self.transforms)
+
         model.to(self.device)
         model.eval()
-        return {"model": model}
+
+        # remove the classifier after getting it
+        class_head = model.get_classifier()
+        model.reset_classifier(0)
+
+        # to be used in `run_on_a_batch` to determine the how to show predictions
+        self.hf_arch = model.default_cfg['architecture']
+        self.hf_tag = model.default_cfg['tag']
+
+        return {'model': model, 'class_head': class_head, }
 
     def run_on_a_batch(self, batch: List) -> torch.Tensor:
         """This is a hack for timm models to output features.
@@ -64,7 +71,18 @@ class ExtractFrames(BaseFrameWiseExtractor):
         """
         model = self.name2module['model']
         batch = torch.cat(batch).to(self.device)
-        batch_feats = model.forward_features(batch)
-        # FIXME: ignoring likeaboss
-        # self.maybe_show_pred(batch_feats)
+        batch_feats = model(batch)
+        self.maybe_show_pred(batch_feats)
         return batch_feats
+
+    def maybe_show_pred(self, feats: torch.Tensor):
+        if self.show_pred:
+            logits = self.name2module['class_head'](feats)
+            # just a bunch of hardcoded tag ends for now
+            if self.hf_tag.endswith(('in1k', 'in1k_288', 'in1k_320', 'in1k_384', 'in1k_475', 'in1k_512',)):
+                show_predictions_on_dataset(logits, 'imagenet1k')
+            elif self.hf_tag.endswith(('in21k', 'in21k_288', 'in21k_320', 'in21k_384', 'in21k_475',
+                                       'in21k_512',)):
+                show_predictions_on_dataset(logits, 'imagenet21k')
+            else:
+                print(f'No show_pred for {self.hf_arch} with tag {self.hf_tag}; use `show_pred=False`')
