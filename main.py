@@ -32,8 +32,8 @@ def main(args_cli):
         from models.raft.extract_raft import ExtractRAFT as Extractor
     elif args.feature_type == 'clip':
         from models.clip.extract_clip import ExtractCLIP as Extractor
-    elif args.feature_type == 'hf':
-        from models.hf.extract_frames import ExtractHF as Extractor
+    elif args.feature_type == 'timm':
+        from models.timm.extract_frames import ExtractTIMM as Extractor
     else:
         raise NotImplementedError(f'Extractor {args.feature_type} is not implemented.')
 

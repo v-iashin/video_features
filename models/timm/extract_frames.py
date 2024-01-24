@@ -14,7 +14,8 @@ try:
 except ImportError:
     raise ImportError("This features require timm library to be installed.")
 
-class ExtractHF(BaseFrameWiseExtractor):
+class ExtractTIMM(BaseFrameWiseExtractor):
+
     def __init__(self, args: omegaconf.DictConfig) -> None:
         super().__init__(
             feature_type=args.feature_type,
@@ -82,7 +83,9 @@ class ExtractHF(BaseFrameWiseExtractor):
             if self.hf_tag.endswith(('in1k', 'in1k_288', 'in1k_320', 'in1k_384', 'in1k_475', 'in1k_512',)):
                 show_predictions_on_dataset(logits, 'imagenet1k')
             elif self.hf_tag.endswith(('in21k', 'in21k_288', 'in21k_320', 'in21k_384', 'in21k_475',
-                                       'in21k_512',)):
+                                       'in21k_512',
+                                       'in22k', 'in22k_288', 'in22k_320', 'in22k_384', 'in22k_475',
+                                       'in22k_512',)):
                 show_predictions_on_dataset(logits, 'imagenet21k')
             else:
                 print(f'No show_pred for {self.hf_arch} with tag {self.hf_tag}; use `show_pred=False`')
