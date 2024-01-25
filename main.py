@@ -33,7 +33,7 @@ def main(args_cli):
     elif args.feature_type == 'clip':
         from models.clip.extract_clip import ExtractCLIP as Extractor
     elif args.feature_type == 'timm':
-        from models.timm.extract_frames import ExtractTIMM as Extractor
+        from models.timm.extract_timm import ExtractTIMM as Extractor
     else:
         raise NotImplementedError(f'Extractor {args.feature_type} is not implemented.')
 
