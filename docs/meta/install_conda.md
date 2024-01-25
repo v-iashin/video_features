@@ -7,4 +7,6 @@ conda install -c conda-forge omegaconf scipy tqdm pytest opencv
 conda install -c conda-forge ftfy regex
 # vggish
 conda install -c conda-forge resampy pysoundfile
+# timm models
+pip install timm
 ```

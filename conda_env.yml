@@ -242,3 +242,8 @@ dependencies:
   - yaml=0.2.5=h7b6447c_0
   - zlib=1.2.13=hd590300_5
   - zstd=1.5.5=hc292b87_0
+  - pip:
+    - fsspec==2023.12.2
+    - huggingface-hub==0.20.2
+    - safetensors==0.4.1
+    - timm==0.9.12

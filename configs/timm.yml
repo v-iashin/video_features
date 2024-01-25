@@ -1,0 +1,22 @@
+# Model
+feature_type: 'timm'
+model_name: null # any timm model
+batch_size: 1 # Batchsize (only frame-wise extractors are supported)
+extraction_fps: null # For original video fps, leave unspecified 'null' (None)
+extraction_total: null # extract a fix number of frames. It is mutually exclusive with 'fps'
+
+# Extraction Parameters
+device: 'cuda:0' # device as in `torch`, can be 'cpu'
+on_extraction: 'print' # what to do once the features are extracted. Can be ['print', 'save_numpy', 'save_pickle']
+output_path: './output' # where to store results if saved
+tmp_path: './tmp' # folder to store the temporary files used for extraction (frames or aud files)
+keep_tmp_files: false # to keep temp files after feature extraction.
+show_pred: false # to show preds of a model, i.e. on a pre-train dataset for each feature (Kinetics 400)
+pred_texts: null # provide a list of multiple sentences.  if `null`, will perform zero-shot on Kinetics 400
+
+# config
+config: null
+
+# Video paths
+video_paths: null
+file_with_video_paths: null # if the list of videos is large, you might put them in a txt file, use this argument to specify the path
