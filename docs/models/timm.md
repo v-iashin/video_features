@@ -80,6 +80,8 @@ python main.py \
 #    9.818 | 0.040 | dumbbell
 #    9.648 | 0.034 | pusher, thruster
 #    8.527 | 0.011 | bench_press
+
+...
 ```
 
 ## Credits

@@ -61,7 +61,7 @@ class ExtractTIMM(BaseFrameWiseExtractor):
 
         # to be used in `run_on_a_batch` to determine the how to show predictions
         self.hf_arch = model.default_cfg['architecture']
-        self.hf_tag = model.default_cfg['tag']
+        self.hf_tag = model.default_cfg.get('tag', '')
 
         return {'model': model, 'class_head': class_head, }
 
