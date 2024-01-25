@@ -24,6 +24,7 @@ Optical Flow
 
 Frame-wise Features
 
+- [All models from TIMM e.g. ViT, ConvNeXt, EVA, Swin, DINO (ImageNet, LAION, etc)](https://v-iashin.github.io/video_features/models/timm)
 - [CLIP](https://v-iashin.github.io/video_features/models/clip)
 - [ResNet-18,34,50,101,152 (ImageNet)](https://v-iashin.github.io/video_features/models/resnet)
 
@@ -87,7 +88,7 @@ Please, let me know if you found this repo useful for your projects or papers.
 
 ## Acknowledgements
 
-- [@Kamino666](https://github.com/Kamino666): added CLIP model as well as Windows and CPU support (and
-many other small things).
-- [@borijang](https://github.com/borijang): for solving bugs with file names, I3D checkpoint loading enhancement and code style improvements.
+- [@Kamino666](https://github.com/Kamino666): added CLIP model as well as Windows and CPU support (and many other useful things).
 - [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.
+- [@borijang](https://github.com/borijang): for solving bugs with file names, I3D checkpoint loading enhancement and code style improvements.
+- [@bjuncek](https://github.com/bjuncek): for helping with timm models and offline discussion.

@@ -82,7 +82,9 @@ class BaseFrameWiseExtractor(BaseExtractor):
 
     def run_on_a_batch(self, batch: List[torch.Tensor]) -> torch.Tensor:
         model = self.name2module['model']
+        # e.g for ResNet, batch is (B, C, H, W),
         batch = torch.cat(batch).to(self.device)
+        # (B, D)
         batch_feats = model(batch)
         self.maybe_show_pred(batch_feats)
         return batch_feats

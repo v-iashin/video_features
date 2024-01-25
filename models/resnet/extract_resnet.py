@@ -56,4 +56,4 @@ class ExtractResNet(BaseFrameWiseExtractor):
     def maybe_show_pred(self, feats: torch.Tensor):
         if self.show_pred:
             logits = self.name2module['class_head'](feats)
-            show_predictions_on_dataset(logits, 'imagenet')
+            show_predictions_on_dataset(logits, 'imagenet1k')
