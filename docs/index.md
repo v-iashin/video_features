@@ -92,3 +92,16 @@ Please, let me know if you found this repo useful for your projects or papers.
 - [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.
 - [@borijang](https://github.com/borijang): for solving bugs with file names, I3D checkpoint loading enhancement and code style improvements.
 - [@bjuncek](https://github.com/bjuncek): for helping with timm models and offline discussion.
+
+## Citation
+
+If you find this project useful in your research, please consider cite:
+
+```bibtex
+@misc{videofeatures2020,
+  title = {Video Features},
+  author = {Vladimir Iashin and other contributors},
+  year = {2020},
+  howpublished = {\url{https://github.com/v-iashin/video_features}},
+}
+```
