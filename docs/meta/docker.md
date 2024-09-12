@@ -22,7 +22,8 @@ docker pull iashin/video_features
 # preventing newer versions of the image to be downloaded unexpectedly
 docker tag iashin/video_features video_features
 # or
-# docker build - < ./video_features/Dockerfile --tag video_features
+# cd video_features
+# docker build --tag video_features .
 ```
 
 Once it is done, mount (`--mount`) the cloned repository folder,
