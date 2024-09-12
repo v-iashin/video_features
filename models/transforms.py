@@ -145,13 +145,17 @@ class TensorCenterCrop(object):
 
 class ScaleTo1_1(object):
 
-    def __call__(self, tensor: torch.FloatTensor) -> torch.FloatTensor:
+    def __call__(self, tensor):
+        if isinstance(tensor, tuple):
+            return tuple([(2 * t / 255) - 1 for t in tensor])
         return (2 * tensor / 255) - 1
 
 
 class PermuteAndUnsqueeze(object):
 
-    def __call__(self, tensor: torch.FloatTensor) -> torch.FloatTensor:
+    def __call__(self, tensor):
+        if isinstance(tensor, tuple):
+            return tuple([t.permute(1, 0, 2, 3).unsqueeze(0) for t in tensor])
         return tensor.permute(1, 0, 2, 3).unsqueeze(0)
 
 
