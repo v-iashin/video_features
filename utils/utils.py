@@ -53,9 +53,18 @@ def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, L
             print(f'{logit:8.3f} | {smax:.3f} | {cls}')
         print()
 
-def make_path(output_root, video_path, output_key, ext):
+def make_path(output_root, video_path, output_key, ext, idx=None):
     # extract file name and change the extention
-    fname = f'{Path(video_path).stem}_{output_key}{ext}'
+    if idx is not None:
+        if output_key is not None:
+            fname = f'{Path(video_path).stem}_{output_key}_{idx}{ext}'
+        else:
+            fname = f'{Path(video_path).stem}_{idx}{ext}'
+    else:
+        if output_key is not None:
+            fname = f'{Path(video_path).stem}_{output_key}{ext}'
+        else:
+            fname = f'{Path(video_path).stem}_{idx}{ext}'
     # construct the paths to save the features
     return os.path.join(output_root, fname)
 
@@ -138,8 +147,7 @@ def form_list_from_user_input(
         to_shuffle: bool = True,
     ) -> list:
     '''User specifies either list of videos in the cmd or a path to a file with video paths. This function
-       transforms the user input into a list of paths. Files are expected to be formatted with a single
-       video-path in each line.
+       transforms the user input into a list of paths.
 
     Args:
         video_paths (Union[str, ListConfig, None], optional): a list of video paths. Defaults to None.

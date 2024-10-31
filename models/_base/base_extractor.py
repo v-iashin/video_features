@@ -18,9 +18,11 @@ class BaseExtractor(object):
                  output_path: str,
                  keep_tmp_files: bool,
                  device: str,
+                 save_option=None,
                  ) -> None:
         self.feature_type = feature_type
         self.on_extraction = on_extraction
+        self.save_option = save_option
         self.tmp_path = tmp_path
         self.output_path = output_path
         self.keep_tmp_files = keep_tmp_files
@@ -76,6 +78,11 @@ class BaseExtractor(object):
             return
 
         for key, value in feats_dict.items():
+            if self.save_option == 'rgb_only':
+                if key != 'rgb':
+                    continue
+                else:
+                    key = None
             if self.on_extraction == 'print':
                 print(key)
                 print(value)
@@ -84,11 +91,18 @@ class BaseExtractor(object):
             elif self.on_extraction in ['save_numpy', 'save_pickle']:
                 # make dir if doesn't exist
                 os.makedirs(self.output_path, exist_ok=True)
-                fpath = make_path(self.output_path, video_path, key, action2ext[self.on_extraction])
-                if key != 'fps' and len(value) == 0:
-                    print(f'Warning: the value is empty for {key} @ {fpath}')
                 # save the info behind the each key
-                action2savefn[self.on_extraction](fpath, value)
+                if len(value.shape) < 3:
+                    fpath = make_path(self.output_path, video_path, key, action2ext[self.on_extraction])
+                    if key != 'fps' and len(value) == 0:
+                        print(f'Warning: the value is empty for {key} @ {fpath}')
+                    action2savefn[self.on_extraction](fpath, value)
+                else:
+                    for i in range(value.shape[0]):
+                        fpath = make_path(self.output_path, video_path, key, action2ext[self.on_extraction], i)
+                        if key != 'fps' and len(value) == 0:
+                            print(f'Warning: the value is empty for {key} @ {fpath}')
+                        action2savefn[self.on_extraction](fpath, value[i, :])
             else:
                 raise NotImplementedError(f'on_extraction: {self.on_extraction} is not implemented')
 
