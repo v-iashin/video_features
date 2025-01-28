@@ -12,18 +12,11 @@ The extraction of VGGish features is implemeted as a wrapper of the TensorFlow i
 
 ---
 
-## Set up the Environment for VGGish
-Setup `conda` environment. Requirements are in file `conda_env.yml`
-```bash
-# it will create a new conda environment called 'video_features' on your machine
-conda env create -f conda_env.yml
-```
-
----
-
 ## Quick Start
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1r_8OnmwXKwmH0n4RxBfuICVBgpbJt_Fs?usp=sharing)
+
+Ensure that the environment is properly set up before proceeding. See [Setup Environment](../meta/install_conda.md) for detailed instructions.
 
 Activate the environment
 ```bash
@@ -55,6 +48,14 @@ python main.py \
 ---
 
 ## Example
+
+Make sure the environment is set up correctly. For instructions, refer to [Setup Environment](../meta/install_conda.md).
+
+Activate the environment
+
+```bash
+conda activate video_features
+```
 
 The video paths can be specified as a `.txt` file with paths.
 ```bash

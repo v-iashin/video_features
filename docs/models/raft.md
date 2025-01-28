@@ -16,18 +16,11 @@ The optical flow frames have the same size as the video input or as specified by
 
 ---
 
-## Set up the Environment for RAFT
-Setup `conda` environment. Requirements for RAFT are similar to the torchvision zoo, which uses `conda_env.yml`
-```bash
-# it will create a new conda environment called 'video_features' on your machine
-conda env create -f conda_env.yml
-```
-
----
-
 ## Quick Start
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18I95Rn1B3a2ISfD9b-o4o93m3XuHbcIY?usp=sharing)
+
+Ensure that the environment is properly set up before proceeding. See [Setup Environment](../meta/install_conda.md) for detailed instructions.
 
 Activate the environment
 ```bash
@@ -68,6 +61,8 @@ To use `show_pred=true`, a screen must be attached to the machine or X11 forward
 ---
 
 ## Examples
+
+Make sure the environment is set up correctly. For instructions, refer to [Setup Environment](../meta/install_conda.md).
 
 Start by activating the environment
 ```bash
