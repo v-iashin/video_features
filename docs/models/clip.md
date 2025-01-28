@@ -13,19 +13,11 @@ We additionally output timesteps in ms for each feature and fps of the video.
 
 ---
 
-## Set up the Environment for CLIP
-Setup `conda` environment. Requirements are in file `conda_env.yml`
-```bash
-# it will create a new conda environment called 'video_features' on your machine
-conda env create -f conda_env.yml
-```
-
----
-
 ## Quick Start
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Zd7r8uKGLGSxlil4PPnXk_4I3KOsjPpO?usp=sharing)
 
+Ensure that the environment is properly set up before proceeding. See [Setup Environment](../meta/install_conda.md) for detailed instructions.
 
 Activate the environment
 ```bash
@@ -65,6 +57,9 @@ python main.py \
 ---
 
 ## Examples
+
+Make sure the environment is set up correctly. For instructions, refer to [Setup Environment](../meta/install_conda.md).
+
 Start by activating the environment
 ```bash
 conda activate video_features
