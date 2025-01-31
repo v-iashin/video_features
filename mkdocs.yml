@@ -3,6 +3,8 @@ theme:
   name: material
   palette:
     primary: red
+  features:
+    - content.code.copy
 repo_url: https://github.com/v-iashin/video_features
 markdown_extensions:
   - admonition
