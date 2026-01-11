@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, '.')  # nopep8
 
-from models.clip.extract_clip import ExtractCLIP as Extractor
+from video_features.models.clip.extract_clip import ExtractCLIP as Extractor
 from tests.utils import base_test_script
 
 # a bit ugly but it assumes the features being tested has the same folder name,

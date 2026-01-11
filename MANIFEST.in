@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include conda_env.yml
+recursive-include video_features/configs *.yml
+recursive-include video_features/models *checkpoints* *.pt *.pth *.npz
+recursive-include video_features/models/clip/clip_src *.txt.gz
+recursive-include video_features/utils *.txt
+recursive-include sample *.mp4 *.txt
+

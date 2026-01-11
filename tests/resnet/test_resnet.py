@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, '.')  # nopep8
 
-from models.resnet.extract_resnet import ExtractResNet as Extractor
+from video_features.models.resnet.extract_resnet import ExtractResNet as Extractor
 from tests.utils import base_test_script
 
 # a bit ugly but it assumes the features being tested has the same folder name,

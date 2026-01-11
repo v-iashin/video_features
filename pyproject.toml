@@ -1,0 +1,101 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "video-features"
+version = "0.1.0"
+description = "Extract features from video clips using various models"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "Vladimir Iashin and contributors" }]
+license = { text = "MIT" }
+keywords = ["video", "features", "deep-learning", "computer-vision"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "omegaconf>=2.0.0",
+    "tqdm",
+    "numpy",
+    "opencv-python",
+    "pillow",
+    "scipy",
+    "resampy",
+    "pysoundfile",
+    "fsspec",
+    "huggingface-hub",
+    "safetensors",
+    "timm",
+    # Constrain numba to a version that supports Python 3.12
+    # This is needed because resampy depends on numba, which depends on llvmlite
+    # The old llvmlite (0.36.0) doesn't support Python 3.12
+    "numba>=0.59.0; python_version>='3.12'",
+    # Note: torch, torchvision, and torchaudio are not included by default
+    # Install with [cpu] or [cuda] extras, or install PyTorch separately
+    "ftfy>=6.2.0",
+    "regex>=2024.11.6",
+]
+
+[project.optional-dependencies]
+# CPU version of PyTorch (installs from PyTorch's CPU index)
+# Usage: uv pip install video-features[cpu]
+cpu = ["torch>=2.0.0", "torchvision>=0.15.0", "torchaudio>=2.0.0"]
+
+# CUDA 13.0 version of PyTorch (installs from PyTorch's CUDA index)
+# Usage: uv pip install video-features[cu130]
+cu130 = ["torch>=2.0.0", "torchvision>=0.15.0", "torchaudio>=2.0.0"]
+
+# Development dependencies
+dev = [
+    "pytest",
+]
+
+[project.scripts]
+video-features = "video_features.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["video_features"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"video_features/configs" = "video_features/configs"
+"video_features/models/*/checkpoints" = "video_features/models/*/checkpoints"
+"video_features/models/*/checkpoint" = "video_features/models/*/checkpoint"
+"video_features/models/clip/clip_src" = "video_features/models/clip/clip_src"
+"video_features/utils/*.txt" = "video_features/utils"
+
+[tool.uv]
+conflicts = [[{ extra = "cpu" }, { extra = "cu130" }]]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+torchvision = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+torchaudio = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, '.')  # nopep8
 
-from models.vggish.extract_vggish import ExtractVGGish as Extractor
+from video_features.models.vggish.extract_vggish import ExtractVGGish as Extractor
 from tests.utils import base_test_script
 
 # a bit ugly but it assumes the features being tested has the same folder name,

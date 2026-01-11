@@ -29,9 +29,13 @@
 ./pytest_cache
 reference
 
-# vggish checkpoints
+# vggish checkpoints (old path, kept for backward compatibility)
 models/vggish/hub/checkpoints/vggish-10086976.pth
 models/vggish/hub/checkpoints/vggish_pca_params-970ea276.pth
+# Large checkpoint files excluded due to GitHub's 100MB limit
+# These files will be downloaded automatically by the package when needed
+video_features/models/vggish/hub/checkpoints/vggish-10086976.pth
+video_features/models/vggish/hub/checkpoints/vggish_pca_params-970ea276.pth
 
 # extracted features
 tmp/

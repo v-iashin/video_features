@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, '.')  # nopep8
 
-from models.raft.extract_raft import ExtractRAFT as Extractor
+from video_features.models.raft.extract_raft import ExtractRAFT as Extractor
 from tests.utils import base_test_script
 
 # a bit ugly but it assumes the features being tested has the same folder name,

@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, '.')  # nopep8
-from models.i3d.extract_i3d import ExtractI3D as Extractor
+sys.path.insert(0, ".")  # nopep8
+from video_features.models.i3d.extract_i3d import ExtractI3D as Extractor
 from tests.utils import base_test_script
 
 # a bit ugly but it assumes the features being tested has the same folder name,
@@ -14,21 +14,57 @@ THIS_FILE_PATH = __file__
 FEATURE_TYPE = Path(THIS_FILE_PATH).parent.name
 
 # True when run for the first time, then must be False
+# Set to True to generate reference files, then set back to False
 TO_MAKE_REF = False
 
-
-signature = 'device, video_paths, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref'
+signature = "device, video_paths, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref"
 test_params = [
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', None, None, None, TO_MAKE_REF),
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 24, 25, TO_MAKE_REF),
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', None, 'raft', 24, 12, 15, TO_MAKE_REF),
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'rgb', 'raft', None, None, None, TO_MAKE_REF),
-    ('cuda:0', './sample/v_GGSY1Qvo990.mp4', 'flow', 'raft', None, None, None, TO_MAKE_REF),
+    (
+        "cuda:0",
+        "./sample/v_GGSY1Qvo990.mp4",
+        None,
+        "raft",
+        None,
+        None,
+        None,
+        TO_MAKE_REF,
+    ),
+    ("cuda:0", "./sample/v_GGSY1Qvo990.mp4", None, "raft", 24, 24, 25, TO_MAKE_REF),
+    ("cuda:0", "./sample/v_GGSY1Qvo990.mp4", None, "raft", 24, 12, 15, TO_MAKE_REF),
+    (
+        "cuda:0",
+        "./sample/v_GGSY1Qvo990.mp4",
+        "rgb",
+        "raft",
+        None,
+        None,
+        None,
+        TO_MAKE_REF,
+    ),
+    (
+        "cuda:0",
+        "./sample/v_GGSY1Qvo990.mp4",
+        "flow",
+        "raft",
+        None,
+        None,
+        None,
+        TO_MAKE_REF,
+    ),
 ]
 
 
 @pytest.mark.parametrize(signature, test_params)
-def test(device, video_paths, streams, flow_type, stack_size, step_size, extraction_fps, to_make_ref):
+def test(
+    device,
+    video_paths,
+    streams,
+    flow_type,
+    stack_size,
+    step_size,
+    extraction_fps,
+    to_make_ref,
+):
     # get config
     patch_kwargs = dict(
         device=device,
@@ -37,6 +73,6 @@ def test(device, video_paths, streams, flow_type, stack_size, step_size, extract
         flow_type=flow_type,
         stack_size=stack_size,
         step_size=step_size,
-        extraction_fps=extraction_fps
+        extraction_fps=extraction_fps,
     )
     base_test_script(FEATURE_TYPE, Extractor, to_make_ref, **patch_kwargs)

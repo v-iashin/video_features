@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, '.')  # nopep8
 
-from models.s3d.extract_s3d import ExtractS3D as Extractor
+from video_features.models.s3d.extract_s3d import ExtractS3D as Extractor
 from tests.utils import base_test_script
 
 # a bit ugly but it assumes the features being tested has the same folder name,

@@ -8,7 +8,7 @@ from typing import List
 import torch
 from omegaconf import OmegaConf
 
-from utils.utils import (build_cfg_path, load_numpy, load_pickle, make_path, sanity_check)
+from video_features.utils.utils import (build_cfg_path, load_numpy, load_pickle, make_path, sanity_check)
 
 
 def md5sum(path: str):
@@ -29,8 +29,10 @@ def make_ref_path(feature_type, file_key, **patch_kwargs):
             v = v.replace('/', '_')
         filename += f'{v}_'
     filename += f'{file_key}.pt'
-    ref_path = Path('./tests') / feature_type / 'reference' / filename
-    return ref_path
+    # Use absolute path based on this file's location (tests/utils.py)
+    # Path(__file__).parent is the tests/ directory
+    ref_path = Path(__file__).parent / feature_type / 'reference' / filename
+    return ref_path.resolve()
 
 
 def make_ref(args, video_path: Path, data, save_path):
@@ -71,7 +73,8 @@ def get_cmd_api_feats(feature_type: str, file_keys: List[str], **patch_kwargs):
         # we are going to test both: `save_numpy` and `save_pickle`
         for on_extraction in action2loadfn.keys():
             # make a cmd (the quotation of numeric arguments might lead to unwanted fails :/)
-            cmd = f'{sys.executable} main.py'
+            # Use the module entry point instead of main.py
+            cmd = f'{sys.executable} -m video_features'
             cmd += f' feature_type={feature_type}'
             for k, v in patch_kwargs.items():
                 # skips if None, and 0, empty list or dict() but if False does not skip
@@ -126,7 +129,9 @@ def base_test_script(feature_type: str, Extractor, to_make_ref: bool, **patch_kw
         ref_path = make_ref_path(feature_type, k, **patch_kwargs)
         if to_make_ref:
             make_ref(args, patch_kwargs['video_paths'], feat_out, ref_path)
-        feat_ref = torch.load(ref_path)['data']
+        # Load reference files with weights_only=False since they contain omegaconf.DictConfig
+        # These are trusted test reference files
+        feat_ref = torch.load(ref_path, weights_only=False)['data']
         # print(k)
         # print(feat_out - feat_ref)
         # compare shapes
