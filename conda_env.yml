@@ -59,6 +59,7 @@ dependencies:
   - gstreamer-orc=0.4.34=hd590300_0
   - harfbuzz=6.0.0=h8e241bc_0
   - hdf5=1.14.0=nompi_hb72d44e_103
+  - h5py
   - icu=70.1=h27087fc_0
   - idna=3.4=py311h06a4308_0
   - iniconfig=2.0.0=pyhd8ed1ab_0
@@ -247,3 +248,4 @@ dependencies:
     - huggingface-hub==0.20.2
     - safetensors==0.4.1
     - timm==0.9.12
+    
