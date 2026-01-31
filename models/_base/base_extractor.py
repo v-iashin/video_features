@@ -17,7 +17,7 @@ class BaseExtractor(object):
                  output_path: str,
                  keep_tmp_files: bool,
                  device: str,
-                 output_feat_keys: List[str],
+                 output_feat_keys: List[str] = []
                  ) -> None:
         self.feature_type = feature_type
         self.on_extraction = on_extraction
@@ -27,7 +27,6 @@ class BaseExtractor(object):
         self.keep_tmp_files = keep_tmp_files
         self.device = device
         self.output_feat_keys = output_feat_keys
-        assert len(self.output_feat_keys) > 0, 'output_feat_keys should contain at least one key'
 
     def _extract(self, video_path: str):
         """A wrapper around self.extract. It handles exceptions, checks if files already exist and saves
