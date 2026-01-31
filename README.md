@@ -51,7 +51,7 @@ conda env create -f conda_env.yml
 conda activate video_features
 
 # extract r(2+1)d features for the sample videos
-# (defaults to printing; use on_extraction=save_numpy or save_h5 to save to disk)
+# (defaults to printing; use on_extraction=save_numpy or save_h5 or save_pickle to save to disk)
 python main.py \
     feature_type=r21d \
     device="cuda:0" \
@@ -94,14 +94,7 @@ Output is defined by the `on_extraction` argument; by default it prints the feat
 Possible values of output are `['print', 'save_numpy', 'save_pickle', 'save_h5']`.
 
 * **`save_numpy` / `save_pickle`**: Saves the features in the `output_path` folder with the same name as the input video file but with the `.npy` or `.pkl` extension.
-* **`save_h5`**: Saves features into a single HDF5 file per device in the `output_path` (e.g. `video_features_cuda0.h5` or `video_features_cpu.h5`). The features are stored as datasets inside the file, using the video filename as the group key.
-> **Tip for HDF5:** Since `save_h5` appends to the same file (e.g. `video_features_cuda0.h5`), we recommend using different `output_path` directories for different datasets (e.g. `./output/train` vs `./output/test`) to keep your data logically separate.
-### Inspecting H5 Files
-If you used `save_h5`, you can verify the contents of the generated file using the provided utility script. This will print the video names and feature shapes stored inside.
-
-```bash
-python utils/inspect_h5.py ./output/r21d/video_features_cuda.h5
-```
+* **`save_h5`**: Saves features into a single HDF5 file per device in the `output_path` (e.g. `video_features_cuda0.h5`) with video path as keys (`/`/`\\` replaced by `_`). Use `utils.py/inspect_h5()` to explore the content of the HDF5 file.
 
 
 ## Used in
