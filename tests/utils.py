@@ -94,7 +94,7 @@ def get_cmd_api_feats(feature_type: str, file_keys: List[str], **patch_kwargs):
                 fpath = Path(make_path(output_root_load, video_path, key, ext, device))
                 assert fpath.exists(), (fpath, output_root_load)
                 video_key = make_h5_group(video_path) if on_extraction == 'save_h5' else None
-                feat_out_cmd[on_extraction][key] = load_feature_from_file(str(fpath), ext, video_key)
+                feat_out_cmd[on_extraction][key] = load_feature_from_file(str(fpath), ext, video_key, key)
 
     return feat_out_cmd
 
