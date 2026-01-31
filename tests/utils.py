@@ -8,7 +8,7 @@ from typing import List
 import torch
 from omegaconf import OmegaConf
 
-from utils.utils import (build_cfg_path, load_numpy, load_pickle, make_path, sanity_check)
+from utils.utils import ACT2EXT, build_cfg_path, load_feature_from_file, make_h5_group, make_path, sanity_check
 
 
 def md5sum(path: str):
@@ -63,13 +63,11 @@ def get_import_api_feats(extractor, video_paths):
 
 def get_cmd_api_feats(feature_type: str, file_keys: List[str], **patch_kwargs):
     with tempfile.TemporaryDirectory(suffix='_todel_video_features') as output_root:
-        # to reduce the number of code lines, these two dicts are created
-        action2loadfn = {'save_numpy': load_numpy, 'save_pickle': load_pickle}
-        action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl'}
-        feat_out_cmd = {k: dict() for k in action2loadfn.keys()}
+        # we are going to test: `save_numpy`, `save_pickle`, and `save_h5`
+        actions = ['save_numpy', 'save_pickle', 'save_h5']
+        feat_out_cmd = {k: dict() for k in actions}
 
-        # we are going to test both: `save_numpy` and `save_pickle`
-        for on_extraction in action2loadfn.keys():
+        for on_extraction in actions:
             # make a cmd (the quotation of numeric arguments might lead to unwanted fails :/)
             cmd = f'{sys.executable} main.py'
             cmd += f' feature_type={feature_type}'
@@ -82,6 +80,7 @@ def get_cmd_api_feats(feature_type: str, file_keys: List[str], **patch_kwargs):
             subprocess.call(cmd.split())
             print(cmd)
 
+            ext = ACT2EXT[on_extraction]
             # some feature_types do not have model names. Plus, CLIP have `/` in the name
             model_name = patch_kwargs.get('model_name', '').replace('/', '_')
             # TODO: for search: `output_path`
@@ -90,10 +89,12 @@ def get_cmd_api_feats(feature_type: str, file_keys: List[str], **patch_kwargs):
 
             # read from the saved file
             for key in file_keys:
-                load_path = Path(
-                    make_path(output_root_load, patch_kwargs['video_paths'], key, action2ext[on_extraction]))
-                assert load_path.exists(), (load_path, output_root_load)
-                feat_out_cmd[on_extraction][key] = action2loadfn[on_extraction](str(load_path))
+                device = patch_kwargs.get('device', 'cpu')
+                video_path = patch_kwargs['video_paths']
+                fpath = Path(make_path(output_root_load, video_path, key, ext, device))
+                assert fpath.exists(), (fpath, output_root_load)
+                video_key = make_h5_group(video_path) if on_extraction == 'save_h5' else None
+                feat_out_cmd[on_extraction][key] = load_feature_from_file(str(fpath), ext, video_key)
 
     return feat_out_cmd
 
@@ -118,6 +119,8 @@ def base_test_script(feature_type: str, Extractor, to_make_ref: bool, **patch_kw
         # TODO: reuse something like all_close function instead
         # compare features saved by pickle and numpy.
         assert all_close(feat_out_cmd['save_pickle'][k], feat_out_cmd['save_numpy'][k])
+        # compare h5 with numpy
+        assert all_close(feat_out_cmd['save_h5'][k], feat_out_cmd['save_numpy'][k])
         # compare cmd API and import API.
         assert all_close(feat_out_cmd['save_numpy'][k], feat_out_import[k])
         # Assuming if it passes these tests, only `feat_out` will be used

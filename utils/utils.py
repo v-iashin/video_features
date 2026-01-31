@@ -17,6 +17,11 @@ import h5py
 IMAGENET1K_CLASS_PATH = './utils/IN1K_label_map.txt'
 IMAGENET21K_CLASS_PATH = './utils/IN21K_label_map.txt'
 KINETICS_CLASS_PATH = './utils/K400_label_map.txt'
+ACT2EXT = {
+    'save_numpy': '.npy',
+    'save_pickle': '.pkl',
+    'save_h5': '.h5',
+}
 
 
 def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, List]):
@@ -54,13 +59,19 @@ def show_predictions_on_dataset(logits: torch.FloatTensor, dataset: Union[str, L
             print(f'{logit:8.3f} | {smax:.3f} | {cls}')
         print()
 
-def make_path(output_root, video_path, output_key, ext):
-    # extract file name and change the extention
-    fname = f'{Path(video_path).stem}_{output_key}{ext}'
-    # construct the paths to save the features
+def make_path(output_root, video_path, output_key, ext, run_id: str = None):
+    if ext in ['.npy', '.pkl']:
+        # extract file name and change the extention
+        fname = f'{Path(video_path).stem}_{output_key}{ext}'
+    elif ext == '.h5':
+        # Creates a filename specific to the device, e.g., 'video_features_cuda0.h5'
+        # replaced ':' with '_' because ':' is not allowed in Windows filenames
+        sanitized_run_id = run_id.replace(":", "_")
+        # Final filename for device:0 would be video_features_cuda0.h5
+        fname = f"video_features_{sanitized_run_id}{ext}"
     return os.path.join(output_root, fname)
 
-def make_h5_key(video_path: str) -> str:
+def make_h5_group(video_path: str) -> str:
     return video_path.replace('/', '_').replace('\\', '_')
 
 def form_slices(size: int, stack_size: int, step_size: int) -> List[Tuple[int, int]]:
@@ -250,44 +261,37 @@ def dp_state_to_normal(state_dict):
     return new_state_dict
 
 
-def load_numpy(fpath):
-    return np.load(fpath)
+def load_feature_from_file(fpath: str, ext: str, h5_video_key: str = None, h5_group_feat_key: str = None):
+    if ext == '.npy':
+        return np.load(fpath)
+    elif ext == '.pkl':
+        return pickle.load(open(fpath, 'rb'))
+    elif ext == '.h5':
+        with h5py.File(fpath, 'r') as h5f:
+            if h5_video_key not in h5f:
+                return None
+            video_group = h5f[h5_video_key]
+            if h5_group_feat_key not in video_group:
+                return None
+            else:
+                return video_group[h5_group_feat_key][:]
 
-def write_numpy(fpath, value):
-    return np.save(fpath, value)
+def save_feature_to_file(fpath: str, ext: str, feat_val, video_key: str = None, feat_key: str = None):
+    if ext == '.npy':
+        np.save(fpath, feat_val)
+    elif ext == '.pkl':
+        pickle.dump(feat_val, open(fpath, 'wb'))
+    elif ext == '.h5':
+        with h5py.File(fpath, 'a') as h5f:
+            # create or get the group for the video
+            video_group = h5f.require_group(video_key)
+            if feat_key in video_group:
+                print(f'Overwriting existing feature {feat_key} in {fpath} @ group {video_key}')
+                del video_group[feat_key]
+            video_group.create_dataset(feat_key, data=feat_val)
+    else:
+        raise NotImplementedError(f'Extension {ext} is not supported for saving features.')
 
-def load_pickle(fpath):
-    return pickle.load(open(fpath, 'rb'))
-
-def write_pickle(fpath, value):
-    return pickle.dump(value, open(fpath, 'wb'))
-
-def write_h5_single_file(h5_path: str, video_key: str, data_dict: Dict[str, np.ndarray]) -> None:
-    """Writes features to an HDF5 file. Overwrites if the video_key already exists."""
-    # Use 'a' (append) mode to add to existing file or create new
-    with h5py.File(h5_path, 'a') as h5f:
-        # If the video data already exists (e.g. from a failed previous run), delete it to overwrite
-        if video_key in h5f:
-            del h5f[video_key]
-
-        video_group = h5f.create_group(video_key)
-        for key, value in data_dict.items():
-            video_group.create_dataset(key, data=value)
-
-def load_h5_single_file(h5_path: str, video_key: str) -> Dict[str, np.ndarray]:
-    """Loads features from an HDF5 file for a specific video key."""
-    data_dict = {}
-    with h5py.File(h5_path, 'r') as h5f:
-        if video_key in h5f:
-            video_group = h5f[video_key]
-            for key in video_group.keys():
-                data_dict[key] = video_group[key][:]
-    return data_dict
-
-def video_exists_in_h5(h5_path: str, video_key: str) -> bool:
-    """Checks if the video key exists in the HDF5 file."""
-    with h5py.File(h5_path, 'r') as h5f:
-        return video_key in h5f
 
 def inspect_h5(file_path):
     if not os.path.exists(file_path):
