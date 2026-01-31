@@ -75,7 +75,7 @@ class BaseExtractor(object):
             # it is ok to ignore this warning
             print(f'WARNING: extraction didnt find feature files on the 1st try but did on the 2nd try.')
             return
-        
+
         # HDF5 saving : Saving the extracted features in HDF5 File.
         if self.on_extraction == 'save_h5':
             # Creates a filename specific to the device, e.g., 'video_features_cuda0.h5'
@@ -90,8 +90,9 @@ class BaseExtractor(object):
                 if key != 'fps' and len(value) == 0:
                     print(f'Warning: Empty value for {key} @ {h5_path}')
             # save all features in single h5 file
-            write_h5_single_file(h5_path, video2group(video_path), feats_dict)
-        
+            group = make_h5_key(video_path)
+            write_h5_single_file(h5_path, group, feats_dict)
+
         elif self.on_extraction in ['save_numpy', 'save_pickle']:
             for key,value in feats_dict.items():
                 os.makedirs(self.output_path, exist_ok=True)
@@ -99,7 +100,7 @@ class BaseExtractor(object):
                 if key != 'fps' and len(value) == 0:
                     print(f'Warning: Empty value for {key} @ {fpath}')
                 action2savefn[self.on_extraction](fpath,value)
-        
+
         elif self.on_extraction == 'print':
             for key, value in feats_dict.items():
                 if self.on_extraction == 'print':
@@ -110,10 +111,7 @@ class BaseExtractor(object):
         else:
             raise NotImplementedError(f'on_extraction: {self.on_extraction} is not implemented')
 
-    def is_already_exist(
-            self,
-            video_path: Union[str, Path],
-    ) -> bool:
+    def is_already_exist(self, video_path: Union[str, Path]) -> bool:
         """Checks if the all feature files already exist, and also checks if IO does not produce any errors.
 
         Args:
@@ -130,9 +128,11 @@ class BaseExtractor(object):
             sanitized_device = self.device.replace(':', '_')
             h5_filename = f"video_features_{sanitized_device}.h5"
             h5_path = os.path.join(self.output_path, h5_filename)
-            if not os.path.exists(h5_path):
+            if os.path.exists(h5_path):
+                group = make_h5_key(video_path)
+                return video_exists_in_h5(h5_path, group)
+            else:
                 return False
-            return video_exists_in_h5(h5_path, video2group(video_path))
 
         elif self.on_extraction in ['save_numpy', 'save_pickle']:
             how_many_files_should_exist = len(self.output_feat_keys)
@@ -146,8 +146,8 @@ class BaseExtractor(object):
                 else:
                     return False
 
-        if how_many_files_exist == how_many_files_should_exist:
-            print(f'Features for {video_path} already exist in {str(Path(fpath).absolute().parent)}/ - skipping..')
-            return True
-        else:
-            return False
+            if how_many_files_exist == how_many_files_should_exist:
+                print(f'Features for {video_path} already exist in {str(Path(fpath).absolute().parent)}/ - skipping..')
+                return True
+            else:
+                return False
