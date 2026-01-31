@@ -94,7 +94,7 @@ Output is defined by the `on_extraction` argument; by default it prints the feat
 Possible values of output are `['print', 'save_numpy', 'save_pickle', 'save_h5']`.
 
 * **`save_numpy` / `save_pickle`**: Saves the features in the `output_path` folder with the same name as the input video file but with the `.npy` or `.pkl` extension.
-* **`save_h5`**: Saves features into a single HDF5 file per device in the `output_path` (e.g. `video_features_cuda0.h5`) with video path as keys (`/`/`\\` replaced by `_`). Use `utils.py/inspect_h5()` to explore the content of the HDF5 file.
+* **`save_h5`**: Saves features into a single HDF5 file per device in the `output_path` (e.g. `video_features_cuda0.h5`) with video path as keys (`/`/`\\` replaced by `_`). Structure: `file.h5 / video_key (group) / feature_name (rgb, flow, fps etc)`. Use `utils.py/inspect_h5()` to explore the content.
 
 
 ## Used in
