@@ -288,9 +288,35 @@ def video_exists_in_h5(h5_path: str, video_key: str) -> bool:
     with h5py.File(h5_path, 'r') as h5f:
         return video_key in h5f
 
-def video2group(video_path: str) -> str:
-    """
-    Converts a video path to a safe HDF5 group key.
-    Using the full path ensures uniqueness if two files have the same name in different folders.
-    """
-    return video_path.replace('/', '_').replace('\\', '_')
+def inspect_h5(file_path):
+    if not os.path.exists(file_path):
+        print(f"Error: File not found at: {file_path}")
+
+    with h5py.File(file_path, 'r') as f:
+        print(f"Opening: {file_path}")
+        print(f"Total Videos stored: {len(f.keys())}\n")
+        print("-" * 50)
+
+        # Iterate over every video group in the file
+        for video_name in f.keys():
+            print(f"Video Group: {video_name}")
+            group = f[video_name]
+
+            # Iterate over every dataset (feature) in that group
+            for key in group.keys():
+                data = group[key][:]
+
+                if isinstance(data, np.ndarray):
+                    print(f"   ├── Key: '{key}'")
+                    print(f"   │   ├── Shape: {data.shape}")
+                    print(f"   │   ├── Type:  {data.dtype}")
+
+                    # Print sample stats
+                    if data.size > 0:
+                        print(f"   │   └── Mean Value: {np.mean(data):.5f}")
+                    else:
+                        print(f"   │   └── Empty Data")
+                else:
+                    print(f"   ├── Key: '{key}' -> Value: {data}")
+
+            print("-" * 50)
