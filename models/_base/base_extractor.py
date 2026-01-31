@@ -94,7 +94,7 @@ class BaseExtractor(object):
                     print(f'Warning: Empty value for {key} @ {h5_path}')
             # save all features in single h5 file
             group = make_h5_key(video_path)
-            write_h5_single_file(h5_path, group, feats_dict)
+            action2savefn[self.on_extraction](h5_path, group, feats_dict)
 
         elif self.on_extraction in ['save_numpy', 'save_pickle']:
             for key,value in feats_dict.items():
@@ -102,7 +102,7 @@ class BaseExtractor(object):
                 fpath = make_path(self.output_path, video_path, key, action2ext[self.on_extraction])
                 if key != 'fps' and len(value) == 0:
                     print(f'Warning: Empty value for {key} @ {fpath}')
-                action2savefn[self.on_extraction](fpath,value)
+                action2savefn[self.on_extraction](fpath, value)
 
         elif self.on_extraction == 'print':
             for key, value in feats_dict.items():
