@@ -1,12 +1,11 @@
 import os
 import traceback
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 import numpy as np
 from utils.utils import (load_numpy, load_pickle, make_path, write_numpy,
-                         write_pickle)
-
+                         write_pickle, write_h5_single_file, load_h5_single_file, video_exists_in_h5, video2group)
 
 class BaseExtractor(object):
     """Common things to be inherited by every descendant"""
@@ -18,6 +17,7 @@ class BaseExtractor(object):
                  output_path: str,
                  keep_tmp_files: bool,
                  device: str,
+                 output_feat_keys: List[str] = None # adds a python list for output feature keys
                  ) -> None:
         self.feature_type = feature_type
         self.on_extraction = on_extraction
@@ -25,6 +25,7 @@ class BaseExtractor(object):
         self.output_path = output_path
         self.keep_tmp_files = keep_tmp_files
         self.device = device
+        self.output_feat_keys = output_feat_keys if output_feat_keys is not None else []
 
     def _extract(self, video_path: str):
         """A wrapper around self.extract. It handles exceptions, checks if files already exist and saves
@@ -61,36 +62,53 @@ class BaseExtractor(object):
 
         Args:
             feats_dict (Dict[str, np.ndarray]): A dict with features and possibly some meta. Key will be used as
-                                                suffixes to the saved files if `save_numpy` or `save_pickle` is
+                                                suffixes to the saved files if `save_numpy` or `save_pickle` or 'save_h5'
                                                 used.
             video_path (str): A path to the video.
         """
         # since the features are enclosed in a dict with another meta information we will iterate on kv
-        action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl'}
-        action2savefn = {'save_numpy': write_numpy, 'save_pickle': write_pickle}
+        action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl', 'save_h5': '.h5'} # added support for HDF5 extension
+        action2savefn = {'save_numpy': write_numpy, 'save_pickle': write_pickle, 'save_h5': write_h5_single_file}
 
         # playing safe: the second check if files already exist and openable before possibly overwritting them
-        if self.on_extraction in ['save_numpy', 'save_pickle'] and self.is_already_exist(video_path):
+        if self.on_extraction in action2savefn and self.is_already_exist(video_path):
             # it is ok to ignore this warning
             print(f'WARNING: extraction didnt find feature files on the 1st try but did on the 2nd try.')
             return
+        
+        # HDF5 saving : Saving the extracted features in HDF5 File.
+        if self.on_extraction == 'save_h5':
+            # Creates a filename specific to the device, e.g., 'video_features_cuda0.h5'
+            # replaced ':' with '_' because ':' is not allowed in Windows filenames
+            sanitized_device = self.device.replace(":","_")
+            # Final filename for device:0 would be video_features_cuda0.h5
+            h5_filename = f"video_features_{sanitized_device}.h5"
+            h5_path = os.path.join(self.output_path, h5_filename)
 
-        for key, value in feats_dict.items():
-            if self.on_extraction == 'print':
-                print(key)
-                print(value)
-                print(f'max: {value.max():.8f}; mean: {value.mean():.8f}; min: {value.min():.8f}')
-                print()
-            elif self.on_extraction in ['save_numpy', 'save_pickle']:
-                # make dir if doesn't exist
+            os.makedirs(self.output_path, exist_ok=True)
+            for key, value in feats_dict.items():
+                if key != 'fps' and len(value) == 0:
+                    print(f'Warning: Empty value for {key} @ {h5_path}')
+            # save all features in single h5 file
+            write_h5_single_file(h5_path, video2group(video_path), feats_dict)
+        
+        elif self.on_extraction in ['save_numpy', 'save_pickle']:
+            for key,value in feats_dict.items():
                 os.makedirs(self.output_path, exist_ok=True)
                 fpath = make_path(self.output_path, video_path, key, action2ext[self.on_extraction])
                 if key != 'fps' and len(value) == 0:
-                    print(f'Warning: the value is empty for {key} @ {fpath}')
-                # save the info behind the each key
-                action2savefn[self.on_extraction](fpath, value)
-            else:
-                raise NotImplementedError(f'on_extraction: {self.on_extraction} is not implemented')
+                    print(f'Warning: Empty value for {key} @ {fpath}')
+                action2savefn[self.on_extraction](fpath,value)
+        
+        elif self.on_extraction == 'print':
+            for key, value in feats_dict.items():
+                if self.on_extraction == 'print':
+                    print(key)
+                    print(value)
+                    print(f'max: {value.max():.8f}; mean: {value.mean():.8f}; min: {value.min():.8f}')
+                    print()
+        else:
+            raise NotImplementedError(f'on_extraction: {self.on_extraction} is not implemented')
 
     def is_already_exist(
             self,
@@ -105,10 +123,18 @@ class BaseExtractor(object):
         if self.on_extraction == 'print':
             return False
 
-        action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl'}
-        action2loadfn = {'save_numpy': load_numpy, 'save_pickle': load_pickle}
+        action2ext = {'save_numpy': '.npy', 'save_pickle': '.pkl', 'save_h5':'.h5'}
+        action2loadfn = {'save_numpy': load_numpy, 'save_pickle': load_pickle, 'save_h5': load_h5_single_file}
 
-        if self.on_extraction in ['save_numpy', 'save_pickle']:
+        if self.on_extraction == 'save_h5':
+            sanitized_device = self.device.replace(':', '_')
+            h5_filename = f"video_features_{sanitized_device}.h5"
+            h5_path = os.path.join(self.output_path, h5_filename)
+            if not os.path.exists(h5_path):
+                return False
+            return video_exists_in_h5(h5_path, video2group(video_path))
+
+        elif self.on_extraction in ['save_numpy', 'save_pickle']:
             how_many_files_should_exist = len(self.output_feat_keys)
             how_many_files_exist = 0  # it is a counter
 

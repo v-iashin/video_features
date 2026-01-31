@@ -12,6 +12,7 @@ from omegaconf.dictconfig import DictConfig
 import torch
 import torch.nn.functional as F
 from omegaconf.listconfig import ListConfig
+import h5py
 
 IMAGENET1K_CLASS_PATH = './utils/IN1K_label_map.txt'
 IMAGENET21K_CLASS_PATH = './utils/IN21K_label_map.txt'
@@ -257,3 +258,39 @@ def load_pickle(fpath):
 
 def write_pickle(fpath, value):
     return pickle.dump(value, open(fpath, 'wb'))
+
+def write_h5_single_file(h5_path: str, video_key: str, data_dict: Dict[str, np.ndarray]) -> None:
+    """Writes features to an HDF5 file. Overwrites if the video_key already exists."""
+    # Use 'a' (append) mode to add to existing file or create new
+    with h5py.File(h5_path, 'a') as h5f:
+        # If the video data already exists (e.g. from a failed previous run), delete it to overwrite
+        if video_key in h5f:
+            del h5f[video_key]
+        
+        video_group = h5f.create_group(video_key)
+        for key, value in data_dict.items():
+            video_group.create_dataset(key, data=value)
+    
+def load_h5_single_file(h5_path: str, video_key: str) -> Dict[str, np.ndarray]:
+    """Loads features from an HDF5 file for a specific video key."""
+    data_dict = {}
+    with h5py.File(h5_path, 'r') as h5f:
+        if video_key in h5f:
+            video_group = h5f[video_key]
+            for key in video_group.keys():
+                data_dict[key] = video_group[key][:]
+    return data_dict
+
+def video_exists_in_h5(h5_path: str, video_key: str) -> bool:
+    """Checks if the video key exists in the HDF5 file."""
+    if not os.path.exists(h5_path):
+        return False
+    with h5py.File(h5_path, 'r') as h5f:
+        return video_key in h5f
+
+def video2group(video_path: str) -> str:
+    """
+    Converts a video path to a safe HDF5 group key.
+    Using the full path ensures uniqueness if two files have the same name in different folders.
+    """
+    return video_path.replace('/', '_').replace('\\', '_')
