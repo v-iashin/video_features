@@ -4,7 +4,7 @@ import pickle
 import random
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 import platform
 
 import numpy as np
@@ -60,7 +60,10 @@ def make_path(output_root, video_path, output_key, ext):
     # construct the paths to save the features
     return os.path.join(output_root, fname)
 
-def form_slices(size: int, stack_size: int, step_size: int) -> list((int, int)):
+def make_h5_key(video_path: str) -> str:
+    return video_path.replace('/', '_').replace('\\', '_')
+
+def form_slices(size: int, stack_size: int, step_size: int) -> List[Tuple[int, int]]:
     '''print(form_slices(100, 15, 15) - example'''
     slices = []
     # calc how many full stacks can be formed out of framepaths
@@ -266,11 +269,11 @@ def write_h5_single_file(h5_path: str, video_key: str, data_dict: Dict[str, np.n
         # If the video data already exists (e.g. from a failed previous run), delete it to overwrite
         if video_key in h5f:
             del h5f[video_key]
-        
+
         video_group = h5f.create_group(video_key)
         for key, value in data_dict.items():
             video_group.create_dataset(key, data=value)
-    
+
 def load_h5_single_file(h5_path: str, video_key: str) -> Dict[str, np.ndarray]:
     """Loads features from an HDF5 file for a specific video key."""
     data_dict = {}
@@ -283,8 +286,6 @@ def load_h5_single_file(h5_path: str, video_key: str) -> Dict[str, np.ndarray]:
 
 def video_exists_in_h5(h5_path: str, video_key: str) -> bool:
     """Checks if the video key exists in the HDF5 file."""
-    if not os.path.exists(h5_path):
-        return False
     with h5py.File(h5_path, 'r') as h5f:
         return video_key in h5f
 
