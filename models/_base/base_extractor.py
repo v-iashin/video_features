@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Dict, Union, List
 
 import numpy as np
-from utils.utils import (load_numpy, load_pickle, make_path, write_numpy,
-                         write_pickle, write_h5_single_file, load_h5_single_file, video_exists_in_h5, video2group)
+from utils.utils import (load_numpy, load_pickle, make_h5_key, make_path, write_numpy,
+                         write_pickle, write_h5_single_file, load_h5_single_file, video_exists_in_h5)
 
 class BaseExtractor(object):
     """Common things to be inherited by every descendant"""
