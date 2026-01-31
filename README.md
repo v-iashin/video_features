@@ -119,6 +119,7 @@ Please, let me know if you found this repo useful for your projects or papers.
 - [@ohjho](https://github.com/ohjho): added support of 37-layer R(2+1)d favors.
 - [@borijang](https://github.com/borijang): for solving bugs with file names, I3D checkpoint loading enhancement and code style improvements.
 - [@bjuncek](https://github.com/bjuncek): for helping with timm models and offline discussion.
+- [@VivekNarula7](https://github.com/VivekNarula7): for adding support for `.h5` output format.
 
 ## Citation
 
