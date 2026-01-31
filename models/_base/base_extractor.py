@@ -53,6 +53,9 @@ class BaseExtractor(object):
             traceback.print_exc()  # prints the error
             print('Continuing...')
 
+    def extract(self, video_path: str) -> Dict[str, np.ndarray]:
+        raise NotImplementedError('`.extract` should be implemented by the child class')
+
     def action_on_extraction(
             self,
             feats_dict: Dict[str, np.ndarray],
